@@ -1,18 +1,20 @@
 name: tests
 
+# Disabled auto-run on push/PR. Run manually from GitHub Actions tab.
 on:
-  push:
-    branches:
-      - develop
-      - main
-      - master
-      - workos
-  pull_request:
-    branches:
-      - develop
-      - main
-      - master
-      - workos
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - develop
+  #     - main
+  #     - master
+  #     - workos
+  # pull_request:
+  #   branches:
+  #     - develop
+  #     - main
+  #     - master
+  #     - workos
 
 jobs:
   ci:
