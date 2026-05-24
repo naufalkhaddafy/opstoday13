@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\RoleName;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -27,13 +29,32 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'company_id' => null,
+            'employee_id' => fake()->unique()->numerify('EMP-#####'),
             'email_verified_at' => now(),
+            'is_verified' => true,
+            'is_active' => true,
+            'last_active_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
         ];
+    }
+
+    public function forCompany(Company $company): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'company_id' => $company->id,
+        ]);
+    }
+
+    public function withRole(RoleName $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role): void {
+            $user->syncRoles([$role->value]);
+        });
     }
 
     /**

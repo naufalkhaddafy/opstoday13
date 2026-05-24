@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\RoleName;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -13,11 +13,32 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call([
+            RoleSeeder::class,
+            CompanySeeder::class,
+        ]);
+
+        $company = CompanySeeder::$companies[0];
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+            'name' => 'Super Admin',
+            'email' => 'super@example.com',
+            'company_id' => null,
+            'employee_id' => null,
+            'is_verified' => true,
+            'is_active' => true,
+        ])->syncRoles([RoleName::SuperAdmin->value]);
+
+        User::factory()->forCompany($company)->create([
+            'name' => 'Supervisor',
+            'email' => 'supv@example.com',
+            'employee_id' => 'EMP-00001',
+        ])->syncRoles([RoleName::Supv->value]);
+
+        User::factory()->forCompany($company)->create([
+            'name' => 'Engineer',
+            'email' => 'engineer@example.com',
+            'employee_id' => 'EMP-00002',
+        ])->syncRoles([RoleName::Engineer->value]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\RoleName;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 
@@ -10,6 +11,11 @@ class UserRepository implements UserRepositoryInterface
     public function create(array $data): User
     {
         return User::query()->create($data);
+    }
+
+    public function assignRole(User $user, RoleName $role): void
+    {
+        $user->syncRoles([$role->value]);
     }
 
     public function updateProfile(User $user, array $data): User
