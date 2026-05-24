@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CompanySeeder::class,
+            ShiftSeeder::class,
         ]);
 
         $company = CompanySeeder::$companies[0];

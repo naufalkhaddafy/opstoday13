@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'fingerprint' => [
+        'url' => env('FINGERPRINT_API_URL'),
+        'token' => env('FINGERPRINT_API_TOKEN'),
+    ],
+
 ];

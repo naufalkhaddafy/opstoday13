@@ -1,0 +1,85 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\ShiftType;
+use App\Enums\ShiftWorkDateRule;
+use Carbon\CarbonImmutable;
+use Database\Factories\ShiftFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+#[Fillable([
+    'company_id',
+    'code',
+    'name',
+    'start_time',
+    'end_time',
+    'is_overnight',
+    'work_date_rule',
+    'grace_minutes',
+    'type',
+])]
+class Shift extends Model
+{
+    /** @use HasFactory<ShiftFactory> */
+    use HasFactory;
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_overnight' => 'boolean',
+            'work_date_rule' => ShiftWorkDateRule::class,
+            'type' => ShiftType::class,
+            'grace_minutes' => 'integer',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Company, $this>
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * @return HasMany<UserShiftAssignment, $this>
+     */
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(UserShiftAssignment::class);
+    }
+
+    /**
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    public function windowForWorkDate(CarbonImmutable $workDate, string $timezone = 'Asia/Jakarta'): array
+    {
+        $workDate = $workDate->timezone($timezone)->startOfDay();
+
+        if ($this->work_date_rule === ShiftWorkDateRule::NextDay) {
+            $start = $workDate->subDay()->setTimeFromTimeString((string) $this->start_time);
+            $end = $workDate->setTimeFromTimeString((string) $this->end_time);
+
+            return [$start, $end];
+        }
+
+        $start = $workDate->setTimeFromTimeString((string) $this->start_time);
+        $endTime = (string) $this->end_time;
+
+        if ($endTime === '00:00:00' || $endTime === '00:00' || $endTime === '24:00:00' || $endTime === '24:00') {
+            $end = $workDate->addDay()->startOfDay();
+        } else {
+            $end = $workDate->setTimeFromTimeString($endTime);
+        }
+
+        return [$start, $end];
+    }
+}
