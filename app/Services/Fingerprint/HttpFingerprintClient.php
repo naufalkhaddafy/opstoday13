@@ -16,14 +16,12 @@ class HttpFingerprintClient implements FingerprintClientInterface
     public function fetch(CarbonImmutable $from, CarbonImmutable $to): array
     {
         $url = config('services.fingerprint.url');
-        $token = config('services.fingerprint.token');
 
         if (empty($url)) {
             return [];
         }
 
-        $response = Http::withToken($token)
-            ->acceptJson()
+        $response = Http::acceptJson()
             ->get($url, [
                 'from' => $from->toIso8601String(),
                 'to' => $to->toIso8601String(),

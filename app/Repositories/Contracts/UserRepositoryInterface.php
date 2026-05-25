@@ -4,9 +4,14 @@ namespace App\Repositories\Contracts;
 
 use App\Enums\RoleName;
 use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 interface UserRepositoryInterface
 {
+    public function paginate(array $filters = []): LengthAwarePaginator;
+
+    public function find(int $id): User;
+
     public function create(array $data): User;
 
     public function assignRole(User $user, RoleName $role): void;
