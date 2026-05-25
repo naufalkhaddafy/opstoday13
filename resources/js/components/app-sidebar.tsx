@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -15,6 +15,8 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import CompanyController from '@/actions/App/Http/Controllers/Admin/CompanyController';
+import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +29,16 @@ const mainNavItems: NavItem[] = [
         title: 'Manajemen User',
         href: UserController.index(),
         icon: Users,
+    },
+    {
+        title: 'Manajemen Perusahaan',
+        href: CompanyController.index(),
+        icon: Building,
+    },
+    {
+        title: 'Manajemen Shift',
+        href: ShiftController.index(),
+        icon: CalendarClock,
     },
 ];
 

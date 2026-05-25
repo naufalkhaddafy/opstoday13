@@ -1,0 +1,86 @@
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import InputError from '@/components/input-error';
+import CompanyController from '@/actions/App/Http/Controllers/Admin/CompanyController';
+
+export default function CompanyCreate() {
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        whatsapp_group_number: '',
+    });
+
+    const submit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post(CompanyController.store().url);
+    };
+
+    return (
+        <>
+            <Head title="Tambah Perusahaan" />
+
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-3xl mx-auto w-full">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                        <div>
+                            <CardTitle>Tambah Perusahaan Baru</CardTitle>
+                            <CardDescription>Buat data perusahaan pusat atau cabang.</CardDescription>
+                        </div>
+                        <Button variant="outline" asChild>
+                            <Link href={CompanyController.index().url}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                            </Link>
+                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={submit} className="space-y-6">
+                            <div className="space-y-4 max-w-lg">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Nama Perusahaan <span className="text-destructive">*</span></Label>
+                                    <Input
+                                        id="name"
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        required
+                                        placeholder="Misal: OpsToday Branch Jakarta"
+                                    />
+                                    <InputError message={errors.name} />
+                                    <p className="text-xs text-muted-foreground pt-1">
+                                        Slug/URL unik akan di-generate otomatis dari nama ini.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="whatsapp_group_number">No. WhatsApp Grup (Opsional)</Label>
+                                    <Input
+                                        id="whatsapp_group_number"
+                                        value={data.whatsapp_group_number}
+                                        onChange={(e) => setData('whatsapp_group_number', e.target.value)}
+                                        placeholder="Misal: 628123456789-123456"
+                                    />
+                                    <InputError message={errors.whatsapp_group_number} />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-start pt-6 border-t mt-6">
+                                <Button type="submit" disabled={processing}>
+                                    <Save className="mr-2 h-4 w-4" /> Simpan Perusahaan Baru
+                                </Button>
+                            </div>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </>
+    );
+}
+
+CompanyCreate.layout = {
+    breadcrumbs: [
+        { title: 'Manajemen Perusahaan', href: CompanyController.index().url },
+        { title: 'Tambah Perusahaan', href: CompanyController.create().url }
+    ],
+};

@@ -5,6 +5,27 @@ export type AdminCompany = {
     name: string;
 };
 
+export type AdminCompanyItem = {
+    id: number;
+    name: string;
+    slug: string;
+    whatsapp_group_number: string | null;
+    users_count: number;
+    shifts_count: number;
+    created_at: string;
+};
+
+export type AdminShiftItem = {
+    id: number;
+    code: string;
+    name: string;
+    company: AdminCompany;
+    time_window: string;
+    is_overnight: boolean;
+    type: string;
+    assignments_count: number;
+};
+
 export type AdminUserItem = {
     id: number;
     employee_id: string | null;
@@ -38,3 +59,17 @@ export type PaginatedUsers = {
     meta: PaginationMeta;
     links: PaginationLinks;
 };
+
+export type PaginatedCompanies = {
+    data: AdminCompanyItem[];
+    meta: PaginationMeta;
+    links: PaginationLinks;
+};
+
+export type PaginatedShifts = {
+    data: AdminShiftItem[];
+    meta: PaginationMeta;
+    links: PaginationLinks;
+};
+
+

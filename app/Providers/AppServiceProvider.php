@@ -7,10 +7,14 @@ use App\Models\User;
 use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
 use App\Repositories\Contracts\AttendanceLogRepositoryInterface;
 use App\Repositories\Contracts\AttendanceSyncRunRepositoryInterface;
+use App\Repositories\Contracts\CompanyRepositoryInterface;
+use App\Repositories\Contracts\ShiftRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Eloquent\AttendanceDayRepository;
 use App\Repositories\Eloquent\AttendanceLogRepository;
 use App\Repositories\Eloquent\AttendanceSyncRunRepository;
+use App\Repositories\Eloquent\CompanyRepository;
+use App\Repositories\Eloquent\ShiftRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Services\Fingerprint\HttpFingerprintClient;
 use Carbon\CarbonImmutable;
@@ -29,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+        $this->app->bind(CompanyRepositoryInterface::class, CompanyRepository::class);
+        $this->app->bind(ShiftRepositoryInterface::class, ShiftRepository::class);
         $this->app->bind(AttendanceLogRepositoryInterface::class, AttendanceLogRepository::class);
         $this->app->bind(AttendanceDayRepositoryInterface::class, AttendanceDayRepository::class);
         $this->app->bind(AttendanceSyncRunRepositoryInterface::class, AttendanceSyncRunRepository::class);
