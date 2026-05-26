@@ -224,16 +224,23 @@ class UserController extends Controller
 
         // Different shift — close old and create new
         if ($activeAssignment) {
-            $this->assignments->update($activeAssignment, [
-                'effective_to' => now()->subDay()->toDateString(),
-            ]);
+            $newEffectiveFrom = $shiftData['effective_from'] ?: now()->toDateString();
+            $newEffectiveFromCarbon = \Carbon\Carbon::parse($newEffectiveFrom);
+
+            if ($newEffectiveFromCarbon->greaterThan($activeAssignment->effective_from)) {
+                $this->assignments->update($activeAssignment, [
+                    'effective_to' => $newEffectiveFromCarbon->copy()->subDay()->toDateString(),
+                ]);
+            } else {
+                $activeAssignment->delete();
+            }
         }
 
         $this->assignments->create([
             'user_id' => $user->id,
             'shift_id' => $newShiftId,
-            'effective_from' => $shiftData['effective_from'] ?? now()->toDateString(),
-            'effective_to' => $shiftData['effective_to'] ?? null,
+            'effective_from' => $shiftData['effective_from'] ?: now()->toDateString(),
+            'effective_to' => $shiftData['effective_to'] ?: null,
             'days_of_week' => $shiftData['days_of_week'] ?? [1, 2, 3, 4, 5],
         ]);
     }

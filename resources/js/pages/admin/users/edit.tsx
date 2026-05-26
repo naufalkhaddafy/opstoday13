@@ -215,7 +215,20 @@ export default function UserEdit({ user, companies, shifts, roles }: EditProps) 
                                             <Label htmlFor="shift_id">Pilih Shift</Label>
                                             <Select 
                                                 value={data.shift_id} 
-                                                onValueChange={(value) => setData('shift_id', value === 'none' ? '' : value)}
+                                                onValueChange={(value) => {
+                                                    const newShiftId = value === 'none' ? '' : value;
+                                                    const originalShiftId = activeAssignment?.shift_id?.toString() || '';
+                                                    
+                                                    setData((prev) => {
+                                                        const nextData = { ...prev, shift_id: newShiftId };
+                                                        if (newShiftId !== originalShiftId) {
+                                                            nextData.shift_effective_from = new Date().toISOString().split('T')[0];
+                                                        } else {
+                                                            nextData.shift_effective_from = activeAssignment?.effective_from || new Date().toISOString().split('T')[0];
+                                                        }
+                                                        return nextData;
+                                                    });
+                                                }}
                                             >
                                                 <SelectTrigger id="shift_id">
                                                     <SelectValue placeholder="-- Tidak Ada Shift --" />

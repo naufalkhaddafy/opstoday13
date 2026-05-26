@@ -18,13 +18,23 @@ class UserFormResource extends JsonResource
         $activeAssignment = null;
         if (isset($this->resource['user'])) {
             $user = $this->resource['user'];
-            $activeAssignment = $user->shiftAssignments()
+            $assignment = $user->shiftAssignments()
                 ->where(function ($query) {
                     $query->whereNull('effective_to')
                         ->orWhere('effective_to', '>=', now()->toDateString());
                 })
                 ->orderByDesc('effective_from')
                 ->first();
+
+            if ($assignment) {
+                $activeAssignment = [
+                    'id' => $assignment->id,
+                    'shift_id' => $assignment->shift_id,
+                    'effective_from' => $assignment->effective_from->toDateString(),
+                    'effective_to' => $assignment->effective_to?->toDateString(),
+                    'days_of_week' => $assignment->days_of_week,
+                ];
+            }
         }
 
         return [
