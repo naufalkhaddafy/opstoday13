@@ -11,7 +11,6 @@ class ShiftRepository implements ShiftRepositoryInterface
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return Shift::query()
-            ->with('company:id,name,slug')
             ->withCount('assignments')
             ->when(
                 ! empty($filters['search']),
@@ -21,10 +20,6 @@ class ShiftRepository implements ShiftRepositoryInterface
                         ->orWhere('code', 'like', "%{$filters['search']}%");
                 })
             )
-            ->when(
-                ! empty($filters['company_id']),
-                fn ($q) => $q->where('company_id', $filters['company_id'])
-            )
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -33,7 +28,6 @@ class ShiftRepository implements ShiftRepositoryInterface
     public function find(int $id): Shift
     {
         return Shift::query()
-            ->with('company:id,name,slug')
             ->withCount('assignments')
             ->findOrFail($id);
     }

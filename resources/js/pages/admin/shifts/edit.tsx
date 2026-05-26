@@ -8,12 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/input-error';
 import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
-import type { AdminCompany } from '@/types';
+
 
 type ShiftFormProps = {
     shift: {
         id: number;
-        company_id: number;
         code: string;
         name: string;
         start_time: string;
@@ -23,16 +22,14 @@ type ShiftFormProps = {
         grace_minutes: number;
         type: string;
     };
-    companies: AdminCompany[];
     enums: {
         types: { value: string; label: string }[];
         work_date_rules: { value: string; label: string }[];
     };
 };
 
-export default function ShiftEdit({ shift, companies, enums }: ShiftFormProps) {
+export default function ShiftEdit({ shift, enums }: ShiftFormProps) {
     const { data, setData, put, processing, errors } = useForm({
-        company_id: shift.company_id.toString(),
         code: shift.code,
         name: shift.name,
         start_time: shift.start_time,
@@ -57,7 +54,7 @@ export default function ShiftEdit({ shift, companies, enums }: ShiftFormProps) {
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <div>
                             <CardTitle>Edit Shift</CardTitle>
-                            <CardDescription>Perbarui konfigurasi jam kerja.</CardDescription>
+                            <CardDescription>Perbarui konfigurasi jam kerja secara global.</CardDescription>
                         </div>
                         <Button variant="outline" asChild>
                             <Link href={ShiftController.index().url}>
@@ -71,27 +68,6 @@ export default function ShiftEdit({ shift, companies, enums }: ShiftFormProps) {
                                 {/* Left Column: Basic Details */}
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Informasi Dasar</h3>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="company_id">Perusahaan / Cabang <span className="text-destructive">*</span></Label>
-                                        <Select 
-                                            value={data.company_id} 
-                                            onValueChange={(value) => setData('company_id', value)}
-                                            required
-                                        >
-                                            <SelectTrigger id="company_id">
-                                                <SelectValue placeholder="Pilih Perusahaan" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {companies.map((company) => (
-                                                    <SelectItem key={company.id} value={company.id.toString()}>
-                                                        {company.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <InputError message={errors.company_id} />
-                                    </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="code">Kode Shift <span className="text-destructive">*</span></Label>

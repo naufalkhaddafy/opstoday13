@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'company_id',
     'code',
     'name',
     'start_time',
@@ -41,13 +40,7 @@ class Shift extends Model
         ];
     }
 
-    /**
-     * @return BelongsTo<Company, $this>
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
-    }
+
 
     /**
      * @return HasMany<UserShiftAssignment, $this>

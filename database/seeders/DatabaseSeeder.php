@@ -43,9 +43,9 @@ class DatabaseSeeder extends Seeder
         ])->syncRoles([RoleName::Engineer->value]);
 
         // Query shifts for assignments
-        $officeShift = \App\Models\Shift::query()->where('company_id', $company->id)->where('code', 'office')->first();
-        $soreShift = \App\Models\Shift::query()->where('company_id', $company->id)->where('code', 'sore')->first();
-        $malamShift = \App\Models\Shift::query()->where('company_id', $company->id)->where('code', 'malam')->first();
+        $officeShift = \App\Models\Shift::query()->where('code', 'office')->first();
+        $soreShift = \App\Models\Shift::query()->where('code', 'sore')->first();
+        $malamShift = \App\Models\Shift::query()->where('code', 'malam')->first();
 
         // Seed dummy users matching dummy-backend data
         $dummyEmployees = [

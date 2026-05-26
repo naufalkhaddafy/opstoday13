@@ -21,7 +21,6 @@ class ShiftFactory extends Factory
     public function definition(): array
     {
         return [
-            'company_id' => Company::factory(),
             'code' => fake()->unique()->lexify('shift-????'),
             'name' => fake()->words(2, true),
             'start_time' => '08:00:00',

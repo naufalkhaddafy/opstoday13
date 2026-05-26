@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\Admin;
 
-use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,9 +13,6 @@ class ShiftPageResource extends JsonResource
     public function toArray(Request $request): array
     {
         $paginator = $this->resource['shifts'];
-
-        // Get minimal company data for filter dropdown
-        $companies = Company::query()->select('id', 'name')->get();
 
         return [
             'shifts' => [
@@ -36,7 +32,6 @@ class ShiftPageResource extends JsonResource
                     'next' => $paginator->nextPageUrl(),
                 ],
             ],
-            'companies' => $companies,
             'filters' => $this->resource['filters'],
         ];
     }

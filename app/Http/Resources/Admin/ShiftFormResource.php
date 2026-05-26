@@ -4,7 +4,6 @@ namespace App\Http\Resources\Admin;
 
 use App\Enums\ShiftType;
 use App\Enums\ShiftWorkDateRule;
-use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,13 +14,11 @@ class ShiftFormResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $companies = Company::query()->select('id', 'name')->get();
 
         return [
             'shift' => isset($this->resource['shift'])
                 ? [
                     'id' => $this->resource['shift']->id,
-                    'company_id' => $this->resource['shift']->company_id,
                     'code' => $this->resource['shift']->code,
                     'name' => $this->resource['shift']->name,
                     // Strip the seconds from time strings if needed for HTML time inputs
@@ -33,7 +30,6 @@ class ShiftFormResource extends JsonResource
                     'type' => $this->resource['shift']->type->value,
                 ]
                 : null,
-            'companies' => $companies,
             'enums' => [
                 'types' => collect(ShiftType::cases())->map(fn ($case) => [
                     'value' => $case->value,

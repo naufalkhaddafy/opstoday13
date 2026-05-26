@@ -15,11 +15,27 @@ class UserFormResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $activeAssignment = null;
+        if (isset($this->resource['user'])) {
+            $user = $this->resource['user'];
+            $activeAssignment = $user->shiftAssignments()
+                ->where(function ($query) {
+                    $query->whereNull('effective_to')
+                        ->orWhere('effective_to', '>=', now()->toDateString());
+                })
+                ->orderByDesc('effective_from')
+                ->first();
+        }
+
         return [
             'user' => isset($this->resource['user'])
-                ? UserResource::make($this->resource['user'])->resolve()
+                ? array_merge(
+                    UserResource::make($this->resource['user'])->resolve(),
+                    ['active_shift_assignment' => $activeAssignment]
+                )
                 : null,
             'companies' => Company::select('id', 'name')->get()->toArray(),
+            'shifts' => \App\Models\Shift::select('id', 'name', 'code')->get()->toArray(),
             'roles' => array_column(RoleName::cases(), 'value'),
         ];
     }

@@ -4,43 +4,36 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
 import { useState, useCallback, useEffect } from 'react';
-import type { PaginatedShifts, AdminCompany } from '@/types';
+import type { PaginatedShifts } from '@/types';
 
 type IndexProps = {
     shifts: PaginatedShifts;
-    companies: AdminCompany[];
     filters: {
         search?: string;
-        company_id?: string;
     };
 };
 
-export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
+export default function ShiftIndex({ shifts, filters }: IndexProps) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    const [companyFilter, setCompanyFilter] = useState<string>(filters.company_id || 'all');
-    
+
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [shiftToDelete, setShiftToDelete] = useState<{ id: number; name: string; code: string } | null>(null);
 
     // Apply filters
     const applyFilters = useCallback(
-        (newSearch?: string, newCompany?: string) => {
+        (newSearch?: string) => {
             const query: Record<string, string> = {};
-            
+
             const searchVal = newSearch !== undefined ? newSearch : searchTerm;
             if (searchVal) query.search = searchVal;
-            
-            const companyVal = newCompany !== undefined ? newCompany : companyFilter;
-            if (companyVal && companyVal !== 'all') query.company_id = companyVal;
-            
+
             router.get(ShiftController.index().url, query, { preserveState: true, preserveScroll: true, replace: true });
         },
-        [searchTerm, companyFilter]
+        [searchTerm]
     );
 
     // Handle search input with debounce
@@ -53,14 +46,8 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
         return () => clearTimeout(timeoutId);
     }, [searchTerm, filters.search, applyFilters]);
 
-    const handleCompanyChange = (value: string) => {
-        setCompanyFilter(value);
-        applyFilters(undefined, value);
-    };
-
     const clearFilters = () => {
         setSearchTerm('');
-        setCompanyFilter('all');
         router.get(ShiftController.index().url);
     };
 
@@ -89,7 +76,7 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <div>
                             <CardTitle>Manajemen Shift / Jadwal Kerja</CardTitle>
-                            <CardDescription>Kelola konfigurasi jam kerja karyawan berdasarkan cabang perusahaan.</CardDescription>
+                            <CardDescription>Kelola konfigurasi jam kerja karyawan secara global.</CardDescription>
                         </div>
                         <Button asChild>
                             <Link href={ShiftController.create().url}>
@@ -109,21 +96,8 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <Select value={companyFilter} onValueChange={handleCompanyChange}>
-                                <SelectTrigger className="w-full sm:w-[200px]">
-                                    <SelectValue placeholder="Semua Perusahaan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Perusahaan</SelectItem>
-                                    {companies.map((company) => (
-                                        <SelectItem key={company.id} value={company.id.toString()}>
-                                            {company.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                             <div className="flex flex-1 gap-2">
-                                {(filters.search || filters.company_id) && (
+                                {filters.search && (
                                     <Button variant="ghost" size="icon" onClick={clearFilters} title="Hapus Filter">
                                         <FilterX className="h-4 w-4" />
                                     </Button>
@@ -137,7 +111,6 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
                                 <thead className="bg-muted/50 text-muted-foreground font-medium">
                                     <tr>
                                         <th className="px-4 py-3">Kode & Nama Shift</th>
-                                        <th className="px-4 py-3">Perusahaan / Cabang</th>
                                         <th className="px-4 py-3">Jam Kerja</th>
                                         <th className="px-4 py-3">Tipe</th>
                                         <th className="px-4 py-3 text-center">Ditugaskan</th>
@@ -154,9 +127,6 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
                                                         {shift.code}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground pl-6">{shift.name}</div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {shift.company ? shift.company.name : <span className="text-muted-foreground italic">Tidak ada</span>}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
@@ -186,12 +156,12 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
                                                             </TooltipTrigger>
                                                             <TooltipContent>Edit Shift</TooltipContent>
                                                         </Tooltip>
-                                                        
+
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <Button 
-                                                                    variant="ghost" 
-                                                                    size="icon" 
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
                                                                     className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                                                     onClick={() => confirmDelete(shift.id, shift.name, shift.code)}
                                                                 >
@@ -252,7 +222,7 @@ export default function ShiftIndex({ shifts, companies, filters }: IndexProps) {
                         <DialogTitle>Hapus Shift</DialogTitle>
                         <DialogDescription>
                             Apakah Anda yakin ingin menghapus shift <strong>{shiftToDelete?.code} ({shiftToDelete?.name})</strong>?
-                            <br/><br/>
+                            <br /><br />
                             <span className="text-destructive font-semibold">Perhatian:</span> Shift tidak dapat dihapus jika masih ada karyawan yang ditugaskan pada jam kerja ini.
                         </DialogDescription>
                     </DialogHeader>

@@ -113,7 +113,6 @@ export default function CompanyIndex({ companies, filters }: IndexProps) {
                                         <th className="px-4 py-3">Nama Perusahaan & Slug</th>
                                         <th className="px-4 py-3">No. WhatsApp Group</th>
                                         <th className="px-4 py-3 text-center">User</th>
-                                        <th className="px-4 py-3 text-center">Shift</th>
                                         <th className="px-4 py-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
@@ -131,9 +130,6 @@ export default function CompanyIndex({ companies, filters }: IndexProps) {
                                                 <td className="px-4 py-3">{company.whatsapp_group_number || '-'}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <Badge variant="secondary">{company.users_count}</Badge>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <Badge variant="secondary">{company.shifts_count}</Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex justify-end gap-2">
@@ -167,7 +163,7 @@ export default function CompanyIndex({ companies, filters }: IndexProps) {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={5} className="h-24 text-center text-muted-foreground">
+                                            <td colSpan={4} className="h-24 text-center text-muted-foreground">
                                                 Tidak ada data perusahaan yang ditemukan.
                                             </td>
                                         </tr>
@@ -214,7 +210,7 @@ export default function CompanyIndex({ companies, filters }: IndexProps) {
                         <DialogDescription>
                             Apakah Anda yakin ingin menghapus perusahaan <strong>{companyToDelete?.name}</strong>?
                             <br/><br/>
-                            <span className="text-destructive font-semibold">Perhatian:</span> Perusahaan tidak dapat dihapus jika masih ada karyawan atau shift yang terdaftar pada perusahaan tersebut.
+                            <span className="text-destructive font-semibold">Perhatian:</span> Perusahaan tidak dapat dihapus jika masih ada karyawan yang terdaftar pada perusahaan tersebut.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

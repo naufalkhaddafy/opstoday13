@@ -21,12 +21,4 @@ class Company extends Model
     {
         return $this->hasMany(User::class);
     }
-
-    /**
-     * @return HasMany<Shift, $this>
-     */
-    public function shifts(): HasMany
-    {
-        return $this->hasMany(Shift::class);
-    }
 }

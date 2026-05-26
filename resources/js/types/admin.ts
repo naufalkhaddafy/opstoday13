@@ -11,7 +11,6 @@ export type AdminCompanyItem = {
     slug: string;
     whatsapp_group_number: string | null;
     users_count: number;
-    shifts_count: number;
     created_at: string;
 };
 
@@ -19,11 +18,19 @@ export type AdminShiftItem = {
     id: number;
     code: string;
     name: string;
-    company: AdminCompany;
     time_window: string;
     is_overnight: boolean;
     type: string;
     assignments_count: number;
+};
+
+export type AdminAssignmentItem = {
+    id: number;
+    user: { id: number; name: string; employee_id: string | null };
+    shift: { id: number; name: string; code: string };
+    effective_from: string;
+    effective_to: string | null;
+    days_of_week: number[] | null;
 };
 
 export type AdminUserItem = {
@@ -33,6 +40,15 @@ export type AdminUserItem = {
     email: string;
     role: string | null;
     company: AdminCompany | null;
+    active_assignment: {
+        id: number;
+        days_of_week: number[] | null;
+        shift: {
+            id: number;
+            name: string;
+            code: string;
+        } | null;
+    } | null;
     is_active: boolean;
     is_verified: boolean;
     created_at: string;
@@ -71,5 +87,12 @@ export type PaginatedShifts = {
     meta: PaginationMeta;
     links: PaginationLinks;
 };
+
+export type PaginatedAssignments = {
+    data: AdminAssignmentItem[];
+    meta: PaginationMeta;
+    links: PaginationLinks;
+};
+
 
 

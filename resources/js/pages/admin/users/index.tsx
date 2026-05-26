@@ -97,6 +97,21 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
         return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
 
+    const formatDaysOfWeek = (days: number[] | null) => {
+        if (!days || days.length === 0) return 'Semua hari';
+        if (days.length === 7) return 'Setiap hari';
+        
+        const dayNames = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+        const sortedDays = [...days].sort((a, b) => a - b);
+        
+        const isConsecutive = sortedDays.every((d, i) => i === 0 || d === sortedDays[i - 1] + 1);
+        if (isConsecutive && sortedDays.length > 2) {
+            return `${dayNames[sortedDays[0] - 1]} - ${dayNames[sortedDays[sortedDays.length - 1] - 1]}`;
+        }
+        
+        return sortedDays.map(d => dayNames[d - 1]).join(', ');
+    };
+
     return (
         <>
             <Head title="Manajemen User" />
@@ -172,6 +187,7 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                         <th className="px-4 py-3">Employee ID</th>
                                         <th className="px-4 py-3">Role</th>
                                         <th className="px-4 py-3">Perusahaan</th>
+                                        <th className="px-4 py-3">Shift & Hari</th>
                                         <th className="px-4 py-3 text-center">Status</th>
                                         <th className="px-4 py-3 text-right">Aksi</th>
                                     </tr>
@@ -189,6 +205,20 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                                     <Badge variant="outline">{formatRole(user.role)}</Badge>
                                                 </td>
                                                 <td className="px-4 py-3">{user.company?.name || '-'}</td>
+                                                <td className="px-4 py-3">
+                                                    {user.active_assignment?.shift ? (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <div className="font-medium text-foreground">
+                                                                {user.active_assignment.shift.name} ({user.active_assignment.shift.code})
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground">
+                                                                {formatDaysOfWeek(user.active_assignment.days_of_week)}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-xs">-</span>
+                                                    )}
+                                                </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <div className="flex flex-col gap-1 items-center">
                                                         <Badge variant={user.is_active ? 'default' : 'secondary'} className="text-[10px] px-1 py-0 h-4">
@@ -233,7 +263,7 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={6} className="h-24 text-center text-muted-foreground">
+                                            <td colSpan={7} className="h-24 text-center text-muted-foreground">
                                                 Tidak ada data pengguna yang ditemukan.
                                             </td>
                                         </tr>

@@ -25,7 +25,7 @@ class ShiftController extends Controller
      */
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'company_id']);
+        $filters = $request->only(['search']);
 
         $paginator = $this->shifts->paginate($filters);
 

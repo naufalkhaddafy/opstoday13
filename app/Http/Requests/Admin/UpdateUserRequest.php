@@ -28,6 +28,13 @@ class UpdateUserRequest extends FormRequest
             'role' => ['required', 'string', Rule::in(array_column(RoleName::cases(), 'value'))],
             'is_active' => ['boolean'],
             'is_verified' => ['boolean'],
+            
+            // Shift Assignment Fields
+            'shift_id' => ['nullable', 'integer', Rule::exists('shifts', 'id')],
+            'shift_effective_from' => ['nullable', 'date'],
+            'shift_effective_to' => ['nullable', 'date', 'after_or_equal:shift_effective_from'],
+            'shift_days_of_week' => ['nullable', 'array'],
+            'shift_days_of_week.*' => ['integer', 'min:1', 'max:7'],
         ];
     }
 }

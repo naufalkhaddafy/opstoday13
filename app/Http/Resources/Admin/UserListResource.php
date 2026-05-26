@@ -24,6 +24,15 @@ class UserListResource extends JsonResource
                 'id' => $this->company->id,
                 'name' => $this->company->name,
             ]),
+            'active_assignment' => $this->relationLoaded('activeShiftAssignment') && $this->activeShiftAssignment ? [
+                'id' => $this->activeShiftAssignment->id,
+                'days_of_week' => $this->activeShiftAssignment->days_of_week,
+                'shift' => $this->activeShiftAssignment->shift ? [
+                    'id' => $this->activeShiftAssignment->shift->id,
+                    'name' => $this->activeShiftAssignment->shift->name,
+                    'code' => $this->activeShiftAssignment->shift->code,
+                ] : null,
+            ] : null,
             'is_active' => $this->is_active,
             'is_verified' => $this->is_verified,
             'created_at' => $this->created_at,

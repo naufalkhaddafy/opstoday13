@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -52,6 +53,19 @@ class User extends Authenticatable
     public function shiftAssignments(): HasMany
     {
         return $this->hasMany(UserShiftAssignment::class);
+    }
+
+    /**
+     * @return HasOne<UserShiftAssignment, $this>
+     */
+    public function activeShiftAssignment(): HasOne
+    {
+        return $this->hasOne(UserShiftAssignment::class)
+            ->where(function ($query) {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', now()->toDateString());
+            })
+            ->orderByDesc('effective_from');
     }
 
     /**

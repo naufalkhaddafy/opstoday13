@@ -10,13 +10,34 @@ import InputError from '@/components/input-error';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import type { AdminCompany, User } from '@/types';
 
+type ActiveShiftAssignment = {
+    id: number;
+    shift_id: number;
+    effective_from: string;
+    effective_to: string | null;
+    days_of_week: number[];
+} | null;
+
 type EditProps = {
-    user: User;
+    user: User & { active_shift_assignment: ActiveShiftAssignment };
     companies: AdminCompany[];
+    shifts: { id: number; name: string; code: string }[];
     roles: string[];
 };
 
-export default function UserEdit({ user, companies, roles }: EditProps) {
+const DAY_NAMES = [
+    { id: 1, name: 'Senin' },
+    { id: 2, name: 'Selasa' },
+    { id: 3, name: 'Rabu' },
+    { id: 4, name: 'Kamis' },
+    { id: 5, name: 'Jumat' },
+    { id: 6, name: 'Sabtu' },
+    { id: 7, name: 'Minggu' },
+];
+
+export default function UserEdit({ user, companies, shifts, roles }: EditProps) {
+    const activeAssignment = user.active_shift_assignment;
+
     const { data, setData, put, processing, errors } = useForm({
         name: user.name,
         email: user.email,
@@ -25,17 +46,15 @@ export default function UserEdit({ user, companies, roles }: EditProps) {
         company_id: user.company?.id?.toString() || 'none',
         is_active: user.is_active,
         is_verified: user.is_verified,
+        // Shift Assignment
+        shift_id: activeAssignment?.shift_id?.toString() || '',
+        shift_effective_from: activeAssignment?.effective_from || new Date().toISOString().split('T')[0],
+        shift_effective_to: activeAssignment?.effective_to || '',
+        shift_days_of_week: activeAssignment?.days_of_week || [1, 2, 3, 4, 5] as number[],
     });
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Remove company_id if 'none' before sending
-        const payload = { ...data };
-        if (payload.company_id === 'none') {
-            payload.company_id = '';
-        }
-
         put(UserController.update({ user: user.id }).url);
     };
 
@@ -43,11 +62,19 @@ export default function UserEdit({ user, companies, roles }: EditProps) {
         return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
 
+    const handleDayToggle = (dayId: number, checked: boolean) => {
+        if (checked) {
+            setData('shift_days_of_week', [...data.shift_days_of_week, dayId].sort());
+        } else {
+            setData('shift_days_of_week', data.shift_days_of_week.filter(d => d !== dayId));
+        }
+    };
+
     return (
         <>
             <Head title={`Edit User: ${user.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-3xl mx-auto w-full">
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-4xl mx-auto w-full">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <div>
@@ -179,6 +206,83 @@ export default function UserEdit({ user, companies, roles }: EditProps) {
                                 </div>
                             </div>
 
+                            {/* Shift Assignment Section */}
+                            <div className="border-t pt-6 mt-2">
+                                <h3 className="text-sm font-medium border-b pb-2 mb-4">Pengaturan Jadwal / Shift</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shift_id">Pilih Shift</Label>
+                                            <Select 
+                                                value={data.shift_id} 
+                                                onValueChange={(value) => setData('shift_id', value === 'none' ? '' : value)}
+                                            >
+                                                <SelectTrigger id="shift_id">
+                                                    <SelectValue placeholder="-- Tidak Ada Shift --" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="none">Tidak Ada Shift</SelectItem>
+                                                    {shifts.map((shift) => (
+                                                        <SelectItem key={shift.id} value={shift.id.toString()}>
+                                                            {shift.code} - {shift.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <InputError message={errors.shift_id} />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="shift_effective_from">Mulai Berlaku</Label>
+                                                <Input
+                                                    id="shift_effective_from"
+                                                    type="date"
+                                                    value={data.shift_effective_from}
+                                                    onChange={(e) => setData('shift_effective_from', e.target.value)}
+                                                    disabled={!data.shift_id}
+                                                />
+                                                <InputError message={errors.shift_effective_from} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="shift_effective_to">Berakhir (Opsional)</Label>
+                                                <Input
+                                                    id="shift_effective_to"
+                                                    type="date"
+                                                    value={data.shift_effective_to}
+                                                    onChange={(e) => setData('shift_effective_to', e.target.value)}
+                                                    disabled={!data.shift_id}
+                                                />
+                                                <InputError message={errors.shift_effective_to} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Hari Kerja Terjadwal</Label>
+                                        <div className="flex flex-wrap gap-4 mt-2">
+                                            {DAY_NAMES.map((day) => (
+                                                <div key={day.id} className="flex items-center space-x-2">
+                                                    <Checkbox 
+                                                        id={`day-${day.id}`} 
+                                                        checked={data.shift_days_of_week.includes(day.id)}
+                                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked as boolean)}
+                                                        disabled={!data.shift_id}
+                                                    />
+                                                    <Label htmlFor={`day-${day.id}`} className="cursor-pointer font-normal text-sm">
+                                                        {day.name}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <InputError message={errors.shift_days_of_week} />
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            Jika shift diganti, sistem akan menutup penugasan lama dan membuat penugasan baru otomatis.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="flex justify-end pt-6 border-t mt-6">
                                 <Button type="submit" disabled={processing}>
                                     <Save className="mr-2 h-4 w-4" /> Simpan Perubahan
@@ -198,5 +302,3 @@ UserEdit.layout = {
         { title: 'Edit User', href: '#' }
     ]
 };
-
-

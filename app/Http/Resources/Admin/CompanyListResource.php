@@ -20,7 +20,6 @@ class CompanyListResource extends JsonResource
             'slug' => $this->slug,
             'whatsapp_group_number' => $this->whatsapp_group_number,
             'users_count' => $this->users_count ?? 0,
-            'shifts_count' => $this->shifts_count ?? 0,
             'created_at' => $this->created_at,
         ];
     }

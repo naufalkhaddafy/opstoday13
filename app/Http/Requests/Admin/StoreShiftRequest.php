@@ -20,8 +20,7 @@ class StoreShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id' => ['required', 'exists:companies,id'],
-            'code' => ['required', 'string', 'max:50', 'unique:shifts,code'],
+            'code' => ['required', 'string', 'max:255', Rule::unique('shifts', 'code')],
             'name' => ['required', 'string', 'max:255'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],

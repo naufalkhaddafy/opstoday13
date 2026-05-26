@@ -10,8 +10,7 @@ return new class extends Migration
     {
         Schema::create('shifts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('company_id')->constrained()->cascadeOnDelete();
-            $table->string('code');
+            $table->string('code')->unique();
             $table->string('name');
             $table->time('start_time');
             $table->time('end_time');
@@ -20,8 +19,6 @@ return new class extends Migration
             $table->unsignedSmallInteger('grace_minutes')->default(15);
             $table->string('type')->default('shift');
             $table->timestamps();
-
-            $table->unique(['company_id', 'code']);
         });
     }
 

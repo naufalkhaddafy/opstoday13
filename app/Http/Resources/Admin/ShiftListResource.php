@@ -18,10 +18,6 @@ class ShiftListResource extends JsonResource
             'id' => $this->id,
             'code' => $this->code,
             'name' => $this->name,
-            'company' => $this->whenLoaded('company', fn () => [
-                'id' => $this->company->id,
-                'name' => $this->company->name,
-            ]),
             'time_window' => $this->start_time . ' - ' . $this->end_time,
             'is_overnight' => $this->is_overnight,
             'type' => $this->type->value,

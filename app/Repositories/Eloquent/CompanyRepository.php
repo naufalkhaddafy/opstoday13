@@ -11,7 +11,7 @@ class CompanyRepository implements CompanyRepositoryInterface
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return Company::query()
-            ->withCount(['users', 'shifts'])
+            ->withCount(['users'])
             ->when(
                 ! empty($filters['search']),
                 fn ($q) => $q->where(function ($inner) use ($filters) {
@@ -28,7 +28,7 @@ class CompanyRepository implements CompanyRepositoryInterface
     public function find(int $id): Company
     {
         return Company::query()
-            ->withCount(['users', 'shifts'])
+            ->withCount(['users'])
             ->findOrFail($id);
     }
 

@@ -20,7 +20,6 @@ class UpdateShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id' => ['required', 'exists:companies,id'],
             'code' => ['required', 'string', 'max:50', Rule::unique('shifts')->ignore($this->route('shift'))],
             'name' => ['required', 'string', 'max:255'],
             'start_time' => ['required', 'date_format:H:i'],

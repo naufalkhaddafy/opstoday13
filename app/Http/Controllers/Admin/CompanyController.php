@@ -111,14 +111,6 @@ class CompanyController extends Controller
             return back();
         }
 
-        if ($company->shifts()->count() > 0) {
-            Inertia::flash('toast', [
-                'type' => 'error', 
-                'message' => 'Tidak dapat menghapus: Perusahaan masih memiliki data Shift yang terikat.'
-            ]);
-            return back();
-        }
-
         $this->companies->delete($company);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Perusahaan berhasil dihapus.']);

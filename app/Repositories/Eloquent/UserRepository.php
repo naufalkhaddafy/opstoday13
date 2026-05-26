@@ -12,7 +12,7 @@ class UserRepository implements UserRepositoryInterface
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return User::query()
-            ->with('company')
+            ->with(['company', 'activeShiftAssignment.shift'])
             ->when(
                 ! empty($filters['search']),
                 fn ($q) => $q->where(function ($inner) use ($filters) {

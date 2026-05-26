@@ -156,7 +156,7 @@ function TwoFactorVerificationStep({
 
     return (
         <Form
-            {...confirm.form()}
+            action={confirm().url} method={confirm().method}
             onSuccess={() => onClose()}
             resetOnError
             resetOnSuccess
