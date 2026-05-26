@@ -11,9 +11,13 @@ use Illuminate\Support\Collection;
 
 class AttendanceWorkDateResolver
 {
+    protected string $timezone;
+
     public function __construct(
-        protected string $timezone = 'Asia/Jakarta',
-    ) {}
+        ?string $timezone = null,
+    ) {
+        $this->timezone = $timezone ?? config('app.timezone');
+    }
 
     /**
      * @return array{work_date: CarbonImmutable, shift: Shift}|null

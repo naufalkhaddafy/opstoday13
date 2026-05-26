@@ -22,10 +22,7 @@ class HttpFingerprintClient implements FingerprintClientInterface
         }
 
         $response = Http::acceptJson()
-            ->get($url, [
-                'from' => $from->toIso8601String(),
-                'to' => $to->toIso8601String(),
-            ]);
+            ->get($url);
 
         if (! $response->successful()) {
             Log::warning('Fingerprint API fetch failed', [
@@ -37,7 +34,7 @@ class HttpFingerprintClient implements FingerprintClientInterface
         }
 
         $records = [];
-        $timezone = config('app.timezone', 'Asia/Jakarta');
+        $timezone = config('app.timezone');
 
         foreach ($response->json('data', $response->json()) ?? [] as $row) {
             $status = AttendanceLogStatus::tryFromApi($row['status1'] ?? $row['status'] ?? null);
@@ -47,6 +44,11 @@ class HttpFingerprintClient implements FingerprintClientInterface
             }
 
             $punchedAt = CarbonImmutable::parse($row['fdDate'] ?? $row['punched_at'], $timezone);
+
+            // Filter in-memory to only include records within the requested range
+            if ($punchedAt->lt($from) || $punchedAt->gt($to)) {
+                continue;
+            }
 
             $records[] = [
                 'employee_id' => (string) ($row['fsIdNo'] ?? $row['employee_id']),

@@ -13,6 +13,8 @@ use Carbon\CarbonImmutable;
 
 class AttendanceSyncService
 {
+    protected string $timezone;
+
     public function __construct(
         protected FingerprintClientInterface $fingerprintClient,
         protected AttendanceLogRepositoryInterface $logRepository,
@@ -20,8 +22,10 @@ class AttendanceSyncService
         protected AttendanceDayRepositoryInterface $dayRepository,
         protected AttendanceWorkDateResolver $workDateResolver,
         protected AttendanceSyncWindowResolver $windowResolver,
-        protected string $timezone = 'Asia/Jakarta',
-    ) {}
+        ?string $timezone = null,
+    ) {
+        $this->timezone = $timezone ?? config('app.timezone');
+    }
 
     public function sync(?CarbonImmutable $now = null): AttendanceSyncRun
     {
@@ -39,11 +43,14 @@ class AttendanceSyncService
 
             foreach ($records as $record) {
                 $user = User::query()->where('employee_id', $record['employee_id'])->first();
-                $punchedAt = $this->logRepository->normalizePunchedAt($record['punched_at']);
 
-                $workDate = $user !== null
-                    ? ($this->workDateResolver->resolve($user, $punchedAt)['work_date'] ?? $punchedAt->startOfDay())
-                    : $punchedAt->startOfDay();
+                if ($user === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                $punchedAt = $this->logRepository->normalizePunchedAt($record['punched_at']);
+                $workDate = $this->workDateResolver->resolve($user, $punchedAt)['work_date'] ?? $punchedAt->startOfDay();
 
                 if ($this->logRepository->insertFromSyncRecord(
                     [
@@ -56,10 +63,7 @@ class AttendanceSyncService
                     $run,
                 )) {
                     $inserted++;
-
-                    if ($user !== null) {
-                        $affected[$user->id][] = $workDate->toDateString();
-                    }
+                    $affected[$user->id][] = $workDate->toDateString();
                 } else {
                     $skipped++;
                 }

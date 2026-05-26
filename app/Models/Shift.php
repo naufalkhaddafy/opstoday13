@@ -53,8 +53,9 @@ class Shift extends Model
     /**
      * @return array{0: CarbonImmutable, 1: CarbonImmutable}
      */
-    public function windowForWorkDate(CarbonImmutable $workDate, string $timezone = 'Asia/Jakarta'): array
+    public function windowForWorkDate(CarbonImmutable $workDate, ?string $timezone = null): array
     {
+        $timezone ??= config('app.timezone');
         $workDate = $workDate->timezone($timezone)->startOfDay();
 
         if ($this->work_date_rule === ShiftWorkDateRule::NextDay) {

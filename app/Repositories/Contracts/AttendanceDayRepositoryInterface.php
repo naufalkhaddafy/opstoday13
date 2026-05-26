@@ -13,4 +13,13 @@ interface AttendanceDayRepositoryInterface
         CarbonImmutable $workDate,
         bool $allowAbsentMarking = true,
     ): AttendanceDay;
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, AttendanceDay>
+     */
+    public function getForUserInDateRange(
+        User $user,
+        CarbonImmutable $startDate,
+        CarbonImmutable $endDate,
+    ): \Illuminate\Database\Eloquent\Collection;
 }

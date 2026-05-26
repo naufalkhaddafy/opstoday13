@@ -8,9 +8,11 @@ use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Resources\Admin\UserFormResource;
 use App\Http\Resources\Admin\UserPageResource;
+use App\Http\Resources\Admin\UserAttendancePageResource;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserShiftAssignmentRepositoryInterface;
+use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -22,6 +24,7 @@ class UserController extends Controller
     public function __construct(
         private readonly UserRepositoryInterface $users,
         private readonly UserShiftAssignmentRepositoryInterface $assignments,
+        private readonly AttendanceDayRepositoryInterface $attendanceDays,
     ) {}
 
     /**
@@ -243,5 +246,36 @@ class UserController extends Controller
             'effective_to' => $shiftData['effective_to'] ?: null,
             'days_of_week' => $shiftData['days_of_week'] ?? [1, 2, 3, 4, 5],
         ]);
+    }
+
+    /**
+     * Tampilkan detail rekap absensi harian & KPI bulanan user terpilih.
+     */
+    public function attendance(
+        Request $request,
+        User $user,
+        \App\Services\Attendance\ShiftAssignmentResolver $shiftResolver
+    ): Response {
+        $timezone = config('app.timezone');
+        
+        $year = (int) $request->input('year', now($timezone)->year);
+        $month = (int) $request->input('month', now($timezone)->month);
+        
+        $startOfMonth = \Carbon\CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
+        $endOfMonth = $startOfMonth->endOfMonth();
+        
+        $days = $this->attendanceDays->getForUserInDateRange($user, $startOfMonth, $endOfMonth)
+            ->keyBy(fn ($record) => $record->work_date->toDateString());
+            
+        return Inertia::render(
+            'admin/users/attendance',
+            UserAttendancePageResource::make([
+                'user' => $user,
+                'attendance_days' => $days,
+                'month' => $month,
+                'year' => $year,
+                'shift_resolver' => $shiftResolver,
+            ])->resolve()
+        );
     }
 }

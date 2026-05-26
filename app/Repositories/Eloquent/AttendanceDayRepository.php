@@ -21,4 +21,16 @@ class AttendanceDayRepository implements AttendanceDayRepositoryInterface
     ): AttendanceDay {
         return $this->aggregator->rebuildForUserAndDate($user, $workDate, $allowAbsentMarking);
     }
+
+    public function getForUserInDateRange(
+        User $user,
+        CarbonImmutable $startDate,
+        CarbonImmutable $endDate,
+    ): \Illuminate\Database\Eloquent\Collection {
+        return AttendanceDay::query()
+            ->with('shift')
+            ->where('user_id', $user->id)
+            ->whereBetween('work_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->get();
+    }
 }

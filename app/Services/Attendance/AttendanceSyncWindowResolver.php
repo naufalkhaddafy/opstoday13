@@ -6,9 +6,13 @@ use Carbon\CarbonImmutable;
 
 class AttendanceSyncWindowResolver
 {
+    protected string $timezone;
+
     public function __construct(
-        protected string $timezone = 'Asia/Jakarta',
-    ) {}
+        ?string $timezone = null,
+    ) {
+        $this->timezone = $timezone ?? config('app.timezone');
+    }
 
     /**
      * @return array{window_from: CarbonImmutable, window_to: CarbonImmutable, rebuild_dates: list<CarbonImmutable>, allow_absent_marking: bool}

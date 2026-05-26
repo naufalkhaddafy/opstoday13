@@ -14,11 +14,15 @@ use Illuminate\Support\Collection;
 
 class AttendanceDayAggregator
 {
+    protected string $timezone;
+
     public function __construct(
         protected AttendanceWorkDateResolver $workDateResolver,
         protected ShiftAssignmentResolver $shiftAssignmentResolver,
-        protected string $timezone = 'Asia/Jakarta',
-    ) {}
+        ?string $timezone = null,
+    ) {
+        $this->timezone = $timezone ?? config('app.timezone');
+    }
 
     public function rebuildForUserAndDate(User $user, CarbonImmutable $workDate, bool $allowAbsentMarking = true): AttendanceDay
     {
@@ -32,8 +36,21 @@ class AttendanceDayAggregator
 
         $shift = $this->shiftAssignmentResolver->shiftForWorkDate($user, $workDate);
 
+        // Ambil log masuk: cari yang berstatus 'hadir' paling awal, fallback ke log paling pertama hari itu
         $checkIn = $logs->first(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Hadir);
+        if ($checkIn === null && $logs->isNotEmpty()) {
+            $checkIn = $logs->first();
+        }
+
+        // Ambil log keluar: cari yang berstatus 'keluar' paling akhir, fallback ke log paling terakhir hari itu (harus berbeda dengan log masuk)
         $checkOut = $logs->filter(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Keluar)->last();
+        if ($checkOut === null && $logs->isNotEmpty()) {
+            $lastLog = $logs->last();
+            if ($checkIn !== null && $lastLog->id !== $checkIn->id) {
+                $checkOut = $lastLog;
+            }
+        }
+
         $hasAbsen = $logs->contains(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Absen);
 
         $presence = $this->resolvePresence($logs, $checkIn, $checkOut, $hasAbsen, $workDate, $allowAbsentMarking);

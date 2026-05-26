@@ -29,7 +29,7 @@ class RebuildAttendanceDaysJob implements ShouldQueue
             return;
         }
 
-        $timezone = config('app.timezone', 'Asia/Jakarta');
+        $timezone = config('app.timezone');
 
         foreach ($this->workDates as $workDate) {
             $dayRepository->rebuildForUserAndDate(

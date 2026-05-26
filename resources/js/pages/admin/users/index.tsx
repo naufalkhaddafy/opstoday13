@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, Search, FilterX } from 'lucide-react';
+import { Pencil, Plus, Trash2, Search, FilterX, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -233,6 +233,17 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex justify-end gap-2">
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-950/40" asChild>
+                                                                    <Link href={UserController.attendance({ user: user.id }).url}>
+                                                                        <Calendar className="h-4 w-4" />
+                                                                    </Link>
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>Lihat Absensi & KPI</TooltipContent>
+                                                        </Tooltip>
+
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <Button variant="ghost" size="icon" className="h-8 w-8" asChild>

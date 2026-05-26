@@ -40,7 +40,7 @@ test('duplicate attendance log insert is ignored', function () {
         'status' => 'running',
     ]);
 
-    $punchedAt = CarbonImmutable::parse('2026-05-26 15:05:00', 'Asia/Jakarta');
+    $punchedAt = CarbonImmutable::parse('2026-05-26 15:05:00', 'Asia/Makassar');
     $workDate = $punchedAt->startOfDay();
 
     $record = [
@@ -71,14 +71,14 @@ test('malam shift work_date uses next day for evening check-in', function () {
 
     $resolver = app(AttendanceWorkDateResolver::class);
 
-    $checkIn = CarbonImmutable::parse('2026-05-26 23:10:00', 'Asia/Jakarta');
+    $checkIn = CarbonImmutable::parse('2026-05-26 23:10:00', 'Asia/Makassar');
     $resolved = $resolver->resolve($user, $checkIn);
 
     expect($resolved)->not->toBeNull()
         ->and($resolved['work_date']->toDateString())->toBe('2026-05-27')
         ->and($resolved['shift']->code)->toBe('malam');
 
-    $checkOut = CarbonImmutable::parse('2026-05-27 07:55:00', 'Asia/Jakarta');
+    $checkOut = CarbonImmutable::parse('2026-05-27 07:55:00', 'Asia/Makassar');
     $resolvedOut = $resolver->resolve($user, $checkOut);
 
     expect($resolvedOut['work_date']->toDateString())->toBe('2026-05-27');
@@ -99,14 +99,14 @@ test('aggregator marks hadir when check-in and check-out exist for malam shift',
         'days_of_week' => [1, 2, 3, 4, 5, 6, 7],
     ]);
 
-    $workDate = CarbonImmutable::parse('2026-05-27', 'Asia/Jakarta');
+    $workDate = CarbonImmutable::parse('2026-05-27', 'Asia/Makassar');
 
     AttendanceLog::query()->create([
         'employee_id' => '10003',
         'user_id' => $user->id,
         'company_id' => $company->id,
         'status' => AttendanceLogStatus::Hadir,
-        'punched_at' => CarbonImmutable::parse('2026-05-26 23:05:00', 'Asia/Jakarta'),
+        'punched_at' => CarbonImmutable::parse('2026-05-26 23:05:00', 'Asia/Makassar'),
         'work_date' => '2026-05-27',
         'created_at' => now(),
     ]);
@@ -116,7 +116,7 @@ test('aggregator marks hadir when check-in and check-out exist for malam shift',
         'user_id' => $user->id,
         'company_id' => $company->id,
         'status' => AttendanceLogStatus::Keluar,
-        'punched_at' => CarbonImmutable::parse('2026-05-27 07:50:00', 'Asia/Jakarta'),
+        'punched_at' => CarbonImmutable::parse('2026-05-27 07:50:00', 'Asia/Makassar'),
         'work_date' => '2026-05-27',
         'created_at' => now(),
     ]);
@@ -151,16 +151,16 @@ test('sync command imports records and rebuilds attendance days', function () {
         [
             'employee_id' => '10004',
             'status' => AttendanceLogStatus::Hadir->value,
-            'punched_at' => CarbonImmutable::parse('2026-05-27 15:10:00', 'Asia/Jakarta'),
+            'punched_at' => CarbonImmutable::parse('2026-05-27 15:10:00', 'Asia/Makassar'),
         ],
         [
             'employee_id' => '10004',
             'status' => AttendanceLogStatus::Keluar->value,
-            'punched_at' => CarbonImmutable::parse('2026-05-27 23:50:00', 'Asia/Jakarta'),
+            'punched_at' => CarbonImmutable::parse('2026-05-27 23:50:00', 'Asia/Makassar'),
         ],
     ]));
 
-    CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-27 18:05:00', 'Asia/Jakarta'));
+    CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-05-27 18:05:00', 'Asia/Makassar'));
 
     $this->artisan('attendance:sync')->assertSuccessful();
 
