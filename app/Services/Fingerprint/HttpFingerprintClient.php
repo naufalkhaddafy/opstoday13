@@ -37,13 +37,14 @@ class HttpFingerprintClient implements FingerprintClientInterface
         $timezone = config('app.timezone');
 
         foreach ($response->json('data', $response->json()) ?? [] as $row) {
-            $status = AttendanceLogStatus::tryFromApi($row['status1'] ?? $row['status'] ?? null);
+            $status = AttendanceLogStatus::tryFromApi($row['status1'] ?? null);
 
             if ($status === null) {
                 continue;
             }
 
-            $punchedAt = CarbonImmutable::parse($row['fdDate'] ?? $row['punched_at'], $timezone);
+            $cleanDate = substr(str_replace('T', ' ', $row['fdDate']), 0, 19);
+            $punchedAt = CarbonImmutable::parse($cleanDate, $timezone);
 
             // Filter in-memory to only include records within the requested range
             if ($punchedAt->lt($from) || $punchedAt->gt($to)) {
@@ -51,7 +52,7 @@ class HttpFingerprintClient implements FingerprintClientInterface
             }
 
             $records[] = [
-                'employee_id' => (string) ($row['fsIdNo'] ?? $row['employee_id']),
+                'employee_id' => (string) $row['fsIdNo'],
                 'status' => $status->value,
                 'punched_at' => $punchedAt,
             ];

@@ -26,7 +26,7 @@ class AttendanceSyncWindowResolver
         if ($hour === 9 && $minute < 45) {
             return [
                 'window_from' => $now->subDays(2)->startOfDay(),
-                'window_to' => $now,
+                'window_to' => $now->endOfDay(),
                 'rebuild_dates' => [
                     $now->startOfDay(),
                     $now->subDay()->startOfDay(),
@@ -38,7 +38,7 @@ class AttendanceSyncWindowResolver
         if ($hour === 23 && $minute >= 25) {
             return [
                 'window_from' => $now->subDay()->startOfDay(),
-                'window_to' => $now,
+                'window_to' => $now->endOfDay(),
                 'rebuild_dates' => [
                     $now->startOfDay(),
                     $now->addDay()->startOfDay(),
@@ -49,7 +49,7 @@ class AttendanceSyncWindowResolver
 
         return [
             'window_from' => $now->subDay()->startOfDay(),
-            'window_to' => $now,
+            'window_to' => $now->endOfDay(),
             'rebuild_dates' => [
                 $now->startOfDay(),
             ],
