@@ -21,4 +21,9 @@ interface UserRepositoryInterface
     public function updatePassword(User $user, string $password): void;
 
     public function delete(User $user): void;
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, User>
+     */
+    public function getEmployeesForRoster(array $filters = []): \Illuminate\Database\Eloquent\Collection;
 }

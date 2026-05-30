@@ -12,7 +12,7 @@ class UserRepository implements UserRepositoryInterface
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return User::query()
-            ->with(['company', 'activeShiftAssignment.shift'])
+            ->with(['company', 'group', 'activeShiftAssignment'])
             ->when(
                 ! empty($filters['search']),
                 fn ($q) => $q->where(function ($inner) use ($filters) {
@@ -74,5 +74,28 @@ class UserRepository implements UserRepositoryInterface
     public function delete(User $user): void
     {
         $user->delete();
+    }
+
+    public function getEmployeesForRoster(array $filters = []): \Illuminate\Database\Eloquent\Collection
+    {
+        return User::query()
+            ->with(['company', 'group', 'shiftAssignments', 'exceptions'])
+            ->whereNotNull('employee_id')
+            ->where('is_active', true)
+            ->when(! empty($filters['search']), function ($q) use ($filters) {
+                $q->where(function ($inner) use ($filters) {
+                    $inner->where('name', 'like', "%{$filters['search']}%")
+                          ->orWhere('email', 'like', "%{$filters['search']}%")
+                          ->orWhere('employee_id', 'like', "%{$filters['search']}%");
+                });
+            })
+            ->when(! empty($filters['company_id']) && $filters['company_id'] !== 'all', function ($q) use ($filters) {
+                $q->where('company_id', $filters['company_id']);
+            })
+            ->when(! empty($filters['group_id']) && $filters['group_id'] !== 'all', function ($q) use ($filters) {
+                $q->where('group_id', $filters['group_id']);
+            })
+            ->orderBy('name')
+            ->get();
     }
 }

@@ -94,7 +94,7 @@ class ShiftController extends Controller
     public function destroy(Shift $shift): RedirectResponse
     {
         // Validasi dependensi sebelum menghapus
-        if ($shift->assignments()->count() > 0) {
+        if ($shift->assignmentsCount() > 0) {
             Inertia::flash('toast', [
                 'type' => 'error', 
                 'message' => 'Tidak dapat menghapus: Konfigurasi Shift ini sedang ditugaskan ke Pengguna/Karyawan.'

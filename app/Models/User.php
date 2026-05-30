@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'company_id', 'employee_id', 'is_verified', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'company_id', 'group_id', 'employee_id', 'is_verified', 'is_active'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -48,11 +48,27 @@ class User extends Authenticatable
     }
 
     /**
+     * @return BelongsTo<Group, $this>
+     */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
+
+    /**
      * @return HasMany<UserShiftAssignment, $this>
      */
     public function shiftAssignments(): HasMany
     {
         return $this->hasMany(UserShiftAssignment::class);
+    }
+
+    /**
+     * @return HasMany<UserShiftException, $this>
+     */
+    public function exceptions(): HasMany
+    {
+        return $this->hasMany(UserShiftException::class);
     }
 
     /**

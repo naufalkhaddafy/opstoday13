@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,21 +8,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import InputError from '@/components/input-error';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
 import type { AdminCompany, User } from '@/types';
 
 type ActiveShiftAssignment = {
     id: number;
-    shift_id: number;
+    schedule: Record<number, number | string | null> | null;
     effective_from: string;
     effective_to: string | null;
-    days_of_week: number[];
 } | null;
 
 type EditProps = {
-    user: User & { active_shift_assignment: ActiveShiftAssignment };
+    user: User & { active_shift_assignment: ActiveShiftAssignment; group?: { id: number; name: string } };
     companies: AdminCompany[];
+    groups: { id: number; name: string }[];
     shifts: { id: number; name: string; code: string }[];
     roles: string[];
+    from?: string | null;
 };
 
 const DAY_NAMES = [
@@ -35,23 +37,57 @@ const DAY_NAMES = [
     { id: 7, name: 'Minggu' },
 ];
 
-export default function UserEdit({ user, companies, shifts, roles }: EditProps) {
+export default function UserEdit({ user, companies, groups, shifts, roles, from }: EditProps) {
     const activeAssignment = user.active_shift_assignment;
+    const isFromRoster = from === 'roster';
 
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, transform } = useForm({
         name: user.name,
         email: user.email,
         employee_id: user.employee_id || '',
         role: user.role || '',
         company_id: user.company?.id?.toString() || 'none',
+        group_id: user.group?.id?.toString() || 'none',
         is_active: user.is_active,
         is_verified: user.is_verified,
         // Shift Assignment
-        shift_id: activeAssignment?.shift_id?.toString() || '',
+        shift_schedule: (function () {
+            const sched: Record<number, string> = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '' };
+            if (activeAssignment && activeAssignment.schedule) {
+                if (Array.isArray(activeAssignment.schedule)) {
+                    // Jika dari backend berupa array 0-indexed [shiftSenin, shiftSelasa, ...]
+                    const offset = activeAssignment.schedule.length === 7 ? 1 : 0;
+                    activeAssignment.schedule.forEach((shiftId, index) => {
+                        const day = index + offset;
+                        if (day >= 1 && day <= 7) {
+                            sched[day] = shiftId ? shiftId.toString() : '';
+                        }
+                    });
+                } else {
+                    // Jika dari backend berupa object {"1": shiftSenin, "2": shiftSelasa, ...}
+                    Object.entries(activeAssignment.schedule).forEach(([day, shiftId]) => {
+                        const dayNum = Number(day);
+                        if (dayNum >= 1 && dayNum <= 7) {
+                            sched[dayNum] = shiftId ? shiftId.toString() : '';
+                        }
+                    });
+                }
+            }
+            return sched;
+        })(),
         shift_effective_from: activeAssignment?.effective_from || new Date().toISOString().split('T')[0],
         shift_effective_to: activeAssignment?.effective_to || '',
-        shift_days_of_week: activeAssignment?.days_of_week || [1, 2, 3, 4, 5] as number[],
+        from: from || '',
     });
+
+    transform((data) => ({
+        ...data,
+        company_id: data.company_id === 'none' ? null : data.company_id,
+        group_id: data.group_id === 'none' ? null : data.group_id,
+        shift_schedule: Object.fromEntries(
+            Object.entries(data.shift_schedule).map(([k, v]) => [k, v === '' ? null : Number(v)])
+        ),
+    }));
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,12 +98,18 @@ export default function UserEdit({ user, companies, shifts, roles }: EditProps) 
         return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
 
-    const handleDayToggle = (dayId: number, checked: boolean) => {
-        if (checked) {
-            setData('shift_days_of_week', [...data.shift_days_of_week, dayId].sort());
-        } else {
-            setData('shift_days_of_week', data.shift_days_of_week.filter(d => d !== dayId));
-        }
+    // Normalize a schedule value to a comparable string: number→string, null/undefined/''→''
+    const normalizeShiftVal = (val: number | string | null | undefined): string => {
+        if (val === null || val === undefined || val === '') return '';
+        return String(val);
+    };
+
+    const handleShiftScheduleChange = (dayId: number, value: string) => {
+        const newShiftId = value === 'none' ? '' : value;
+        setData('shift_schedule', {
+            ...data.shift_schedule,
+            [dayId]: newShiftId,
+        });
     };
 
     return (
@@ -82,7 +124,7 @@ export default function UserEdit({ user, companies, shifts, roles }: EditProps) 
                             <CardDescription>Perbarui informasi profil dan hak akses untuk {user.name}.</CardDescription>
                         </div>
                         <Button variant="outline" asChild>
-                            <Link href={UserController.index().url}>
+                            <Link href={isFromRoster ? RosterController.index().url : UserController.index().url}>
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                             </Link>
                         </Button>
@@ -178,6 +220,27 @@ export default function UserEdit({ user, companies, shifts, roles }: EditProps) 
                                         <InputError message={errors.company_id} />
                                     </div>
 
+                                    <div className="space-y-2">
+                                        <Label htmlFor="group_id">Grup / Divisi (Opsional)</Label>
+                                        <Select 
+                                            value={data.group_id} 
+                                            onValueChange={(value) => setData('group_id', value)}
+                                        >
+                                            <SelectTrigger id="group_id">
+                                                <SelectValue placeholder="Pilih Grup" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">Tidak ada (Kosong)</SelectItem>
+                                                {groups.map((group) => (
+                                                    <SelectItem key={group.id} value={group.id.toString()}>
+                                                        {group.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={errors.group_id} />
+                                    </div>
+
                                     <div className="space-y-4 pt-4">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox 
@@ -208,91 +271,71 @@ export default function UserEdit({ user, companies, shifts, roles }: EditProps) 
 
                             {/* Shift Assignment Section */}
                             <div className="border-t pt-6 mt-2">
-                                <h3 className="text-sm font-medium border-b pb-2 mb-4">Pengaturan Jadwal / Shift</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shift_id">Pilih Shift</Label>
-                                            <Select 
-                                                value={data.shift_id} 
-                                                onValueChange={(value) => {
-                                                    const newShiftId = value === 'none' ? '' : value;
-                                                    const originalShiftId = activeAssignment?.shift_id?.toString() || '';
-                                                    
-                                                    setData((prev) => {
-                                                        const nextData = { ...prev, shift_id: newShiftId };
-                                                        if (newShiftId !== originalShiftId) {
-                                                            nextData.shift_effective_from = new Date().toISOString().split('T')[0];
-                                                        } else {
-                                                            nextData.shift_effective_from = activeAssignment?.effective_from || new Date().toISOString().split('T')[0];
-                                                        }
-                                                        return nextData;
-                                                    });
-                                                }}
-                                            >
-                                                <SelectTrigger id="shift_id">
-                                                    <SelectValue placeholder="-- Tidak Ada Shift --" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="none">Tidak Ada Shift</SelectItem>
-                                                    {shifts.map((shift) => (
-                                                        <SelectItem key={shift.id} value={shift.id.toString()}>
-                                                            {shift.code} - {shift.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <InputError message={errors.shift_id} />
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="shift_effective_from">Mulai Berlaku</Label>
-                                                <Input
-                                                    id="shift_effective_from"
-                                                    type="date"
-                                                    value={data.shift_effective_from}
-                                                    onChange={(e) => setData('shift_effective_from', e.target.value)}
-                                                    disabled={!data.shift_id}
-                                                />
-                                                <InputError message={errors.shift_effective_from} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="shift_effective_to">Berakhir (Opsional)</Label>
-                                                <Input
-                                                    id="shift_effective_to"
-                                                    type="date"
-                                                    value={data.shift_effective_to}
-                                                    onChange={(e) => setData('shift_effective_to', e.target.value)}
-                                                    disabled={!data.shift_id}
-                                                />
-                                                <InputError message={errors.shift_effective_to} />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Hari Kerja Terjadwal</Label>
-                                        <div className="flex flex-wrap gap-4 mt-2">
-                                            {DAY_NAMES.map((day) => (
-                                                <div key={day.id} className="flex items-center space-x-2">
-                                                    <Checkbox 
-                                                        id={`day-${day.id}`} 
-                                                        checked={data.shift_days_of_week.includes(day.id)}
-                                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked as boolean)}
-                                                        disabled={!data.shift_id}
-                                                    />
-                                                    <Label htmlFor={`day-${day.id}`} className="cursor-pointer font-normal text-sm">
+                                <h3 className="text-sm font-medium border-b pb-2 mb-4 flex items-center gap-2">
+                                    <CalendarClock className="h-4 w-4 text-indigo-500" />
+                                    <span>Jadwal Kerja Mingguan</span>
+                                </h3>
+                                
+                                <div className="space-y-6">
+                                    {/* Grid Jadwal Senin - Minggu */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+                                        {DAY_NAMES.map((day) => {
+                                            const currentVal = data.shift_schedule[day.id] || 'none';
+                                            return (
+                                                <div key={day.id} className="flex flex-col p-3 rounded-lg border bg-card/40 gap-2">
+                                                    <Label htmlFor={`day-shift-${day.id}`} className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                                                         {day.name}
                                                     </Label>
+                                                    <Select 
+                                                        value={currentVal} 
+                                                        onValueChange={(val) => handleShiftScheduleChange(day.id, val)}
+                                                    >
+                                                        <SelectTrigger id={`day-shift-${day.id}`} className="h-8 text-xs px-2">
+                                                            <SelectValue placeholder="Libur" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="none" className="text-xs text-rose-600 dark:text-rose-400 font-medium">Libur</SelectItem>
+                                                            {shifts.map((shift) => (
+                                                                <SelectItem key={shift.id} value={shift.id.toString()} className="text-xs">
+                                                                    {shift.code.toUpperCase()}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
-                                            ))}
-                                        </div>
-                                        <InputError message={errors.shift_days_of_week} />
-                                        <p className="text-xs text-muted-foreground mt-2">
-                                            Jika shift diganti, sistem akan menutup penugasan lama dan membuat penugasan baru otomatis.
-                                        </p>
+                                            );
+                                        })}
                                     </div>
+                                    <InputError message={errors.shift_schedule} />
+
+                                    {/* Rentang Masa Berlaku */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shift_effective_from">Mulai Berlaku</Label>
+                                            <Input
+                                                id="shift_effective_from"
+                                                type="date"
+                                                value={data.shift_effective_from}
+                                                onChange={(e) => setData('shift_effective_from', e.target.value)}
+                                                disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
+                                            />
+                                            <InputError message={errors.shift_effective_from} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shift_effective_to">Berakhir (Opsional)</Label>
+                                            <Input
+                                                id="shift_effective_to"
+                                                type="date"
+                                                value={data.shift_effective_to}
+                                                onChange={(e) => setData('shift_effective_to', e.target.value)}
+                                                disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
+                                            />
+                                            <InputError message={errors.shift_effective_to} />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Jika jadwal diganti, sistem akan menutup penugasan lama dan membuat penugasan baru secara otomatis.
+                                    </p>
                                 </div>
                             </div>
 

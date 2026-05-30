@@ -40,6 +40,7 @@ export type AdminUserItem = {
     email: string;
     role: string | null;
     company: AdminCompany | null;
+    group: { id: number; name: string } | null;
     active_assignment: {
         id: number;
         days_of_week: number[] | null;
@@ -94,5 +95,16 @@ export type PaginatedAssignments = {
     links: PaginationLinks;
 };
 
+export type AdminGroupItem = {
+    id: number;
+    name: string;
+    slug: string;
+    users_count?: number;
+    created_at: string;
+};
 
-
+export type PaginatedGroups = {
+    data: AdminGroupItem[];
+    meta: PaginationMeta;
+    links: PaginationLinks;
+};

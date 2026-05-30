@@ -30,6 +30,11 @@ class UserResource extends JsonResource
                 'slug' => $this->company->slug,
                 'whatsapp_group_number' => $this->company->whatsapp_group_number,
             ]),
+            'group' => $this->whenLoaded('group', fn () => $this->group === null ? null : [
+                'id' => $this->group->id,
+                'name' => $this->group->name,
+                'slug' => $this->group->slug,
+            ]),
             'two_factor_enabled' => $this->hasEnabledTwoFactorAuthentication(),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

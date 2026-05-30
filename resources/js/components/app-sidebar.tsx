@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -17,27 +17,45 @@ import { dashboard } from '@/routes';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import CompanyController from '@/actions/App/Http/Controllers/Admin/CompanyController';
 import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
+import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
+import GroupController from '@/actions/App/Http/Controllers/Admin/GroupController';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
+const dashboardItems: NavItem[] = [
     {
         title: 'Dashboard',
-        href: dashboard(),
+        href: dashboard().url,
         icon: LayoutGrid,
     },
+];
+
+const rosterItems: NavItem[] = [
+    {
+        title: 'Roster Kerja',
+        href: RosterController.index().url,
+        icon: CalendarRange,
+    },
+];
+
+const managementItems: NavItem[] = [
     {
         title: 'Manajemen User',
-        href: UserController.index(),
+        href: UserController.index().url,
         icon: Users,
     },
     {
         title: 'Manajemen Perusahaan',
-        href: CompanyController.index(),
+        href: CompanyController.index().url,
         icon: Building,
     },
     {
+        title: 'Manajemen Grup',
+        href: GroupController.index().url,
+        icon: Users,
+    },
+    {
         title: 'Manajemen Shift',
-        href: ShiftController.index(),
+        href: ShiftController.index().url,
         icon: CalendarClock,
     },
 ];
@@ -72,7 +90,9 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={dashboardItems} title="Utama" />
+                <NavMain items={rosterItems} title="Operasional" />
+                <NavMain items={managementItems} title="Master Data" />
             </SidebarContent>
 
             <SidebarFooter>

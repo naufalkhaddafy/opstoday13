@@ -17,6 +17,7 @@ export type User = {
     last_active_at: string | null;
     role?: string | null;
     company?: UserCompany | null;
+    group?: { id: number; name: string; slug: string } | null;
     two_factor_enabled?: boolean;
     created_at: string;
     updated_at: string;

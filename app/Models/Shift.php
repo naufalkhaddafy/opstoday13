@@ -42,12 +42,17 @@ class Shift extends Model
 
 
 
-    /**
-     * @return HasMany<UserShiftAssignment, $this>
-     */
-    public function assignments(): HasMany
+    public function assignmentsCount(): int
     {
-        return $this->hasMany(UserShiftAssignment::class);
+        $shiftId = $this->id;
+        return UserShiftAssignment::query()
+            ->where(function ($q) use ($shiftId) {
+                for ($day = 1; $day <= 7; $day++) {
+                    $q->orWhere('schedule->' . $day, $shiftId)
+                      ->orWhere('schedule->' . (string) $day, $shiftId);
+                }
+            })
+            ->count();
     }
 
     /**

@@ -48,4 +48,9 @@ class CompanyRepository implements CompanyRepositoryInterface
     {
         $company->delete();
     }
+
+    public function all(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Company::query()->select('id', 'name')->orderBy('name')->get();
+    }
 }

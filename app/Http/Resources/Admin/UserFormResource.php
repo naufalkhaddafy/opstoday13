@@ -29,10 +29,9 @@ class UserFormResource extends JsonResource
             if ($assignment) {
                 $activeAssignment = [
                     'id' => $assignment->id,
-                    'shift_id' => $assignment->shift_id,
+                    'schedule' => $assignment->schedule,
                     'effective_from' => $assignment->effective_from->toDateString(),
                     'effective_to' => $assignment->effective_to?->toDateString(),
-                    'days_of_week' => $assignment->days_of_week,
                 ];
             }
         }
@@ -45,7 +44,10 @@ class UserFormResource extends JsonResource
                 )
                 : null,
             'companies' => Company::select('id', 'name')->get()->toArray(),
-            'shifts' => \App\Models\Shift::select('id', 'name', 'code')->get()->toArray(),
+            'groups' => \App\Models\Group::select('id', 'name')->get()->toArray(),
+            'shifts' => \App\Models\Shift::select('id', 'name', 'code')
+                ->get()
+                ->toArray(),
             'roles' => array_column(RoleName::cases(), 'value'),
         ];
     }

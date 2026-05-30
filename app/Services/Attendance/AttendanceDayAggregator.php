@@ -42,6 +42,29 @@ class AttendanceDayAggregator
             $checkIn = $logs->first();
         }
 
+        // Auto-match: jika shift adalah placeholder generik, cocokkan ke shift riil terdekat
+        $placeholderCodes = ['steady', 'shift'];
+        if ($shift !== null && in_array($shift->code, $placeholderCodes, true) && $checkIn !== null) {
+            $realShifts = Shift::where('type', $shift->type)
+                ->whereNotIn('code', $placeholderCodes)
+                ->get();
+
+            $matchingShifts = [];
+            foreach ($realShifts as $realShift) {
+                [$start, $end] = $realShift->windowForWorkDate($workDate, $this->timezone);
+                $diff = abs($checkIn->punched_at->diffInMinutes($start));
+                $matchingShifts[] = [
+                    'shift' => $realShift,
+                    'diff' => $diff,
+                ];
+            }
+
+            if (! empty($matchingShifts)) {
+                usort($matchingShifts, fn ($a, $b) => $a['diff'] <=> $b['diff']);
+                $shift = $matchingShifts[0]['shift'];
+            }
+        }
+
         // Ambil log keluar: cari yang berstatus 'keluar' paling akhir, fallback ke log paling terakhir hari itu (harus berbeda dengan log masuk)
         $checkOut = $logs->filter(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Keluar)->last();
         if ($checkOut === null && $logs->isNotEmpty()) {

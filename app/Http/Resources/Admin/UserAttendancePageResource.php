@@ -43,7 +43,7 @@ class UserAttendancePageResource extends JsonResource
             
             // Check active shift assignment
             $assignment = $shiftResolver->forWorkDate($user, $date);
-            $shift = $assignment?->shift;
+            $shift = $shiftResolver->shiftForWorkDate($user, $date);
             $isWorkday = $assignment !== null && $assignment->isActiveOn($date);
             
             $dbRecord = $attendanceDays->get($dateString);
@@ -124,7 +124,7 @@ class UserAttendancePageResource extends JsonResource
         
         $today = \Carbon\CarbonImmutable::now($timezone);
         $currentAssignment = $shiftResolver->forWorkDate($user, $today);
-        $currentShift = $currentAssignment?->shift;
+        $currentShift = $currentAssignment ? $shiftResolver->shiftForWorkDate($user, $today) : null;
         
         return [
             'user' => [
@@ -140,8 +140,40 @@ class UserAttendancePageResource extends JsonResource
                 'code' => $currentShift->code,
                 'start_time' => substr($currentShift->start_time, 0, 5),
                 'end_time' => substr($currentShift->end_time, 0, 5),
-                'days' => $currentAssignment->days_of_week,
-            ] : null,
+                'days' => (function () use ($currentAssignment) {
+                    $days = [];
+                    if ($currentAssignment && is_array($currentAssignment->schedule)) {
+                        foreach ($currentAssignment->schedule as $day => $val) {
+                            if ($val !== null) {
+                                $days[] = (int) $day;
+                            }
+                        }
+                    }
+                    sort($days);
+                    return $days;
+                })(),
+            ] : (function () use ($currentAssignment) {
+                if (! $currentAssignment || ! is_array($currentAssignment->schedule)) {
+                    return null;
+                }
+                $days = [];
+                foreach ($currentAssignment->schedule as $day => $val) {
+                    if ($val !== null) {
+                        $days[] = (int) $day;
+                    }
+                }
+                sort($days);
+                if (empty($days)) {
+                    return null;
+                }
+                return [
+                    'name' => 'Jadwal Mingguan',
+                    'code' => 'Custom',
+                    'start_time' => '-',
+                    'end_time' => '-',
+                    'days' => $days,
+                ];
+            })(),
             'filters' => [
                 'month' => $month,
                 'year' => $year,

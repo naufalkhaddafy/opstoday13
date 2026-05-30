@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             CompanySeeder::class,
+            GroupSeeder::class,
             ShiftSeeder::class,
         ]);
 
@@ -42,77 +43,28 @@ class DatabaseSeeder extends Seeder
             'employee_id' => 'EMP-00002',
         ])->syncRoles([RoleName::Engineer->value]);
 
-        // Query shifts for assignments
-        $officeShift = \App\Models\Shift::query()->where('code', 'office')->first();
-        $soreShift = \App\Models\Shift::query()->where('code', 'sore')->first();
-        $malamShift = \App\Models\Shift::query()->where('code', 'malam')->first();
+        // Query placeholder shifts for assignments
+        $steadyPlaceholder = \App\Models\Shift::query()->where('code', 'steady')->first();
+        $shiftPlaceholder = \App\Models\Shift::query()->where('code', 'shift')->first();
 
         // Seed dummy users matching dummy-backend data
         $dummyEmployees = [
-            [
-                'employee_id' => '00012497',
-                'name' => 'Sutisna Hariyanto',
-                'email' => 'sutisna@example.com',
-                'shift' => $officeShift,
-            ],
-            [
-                'employee_id' => '00013411',
-                'name' => 'Rahmaniati',
-                'email' => 'rahmaniati@example.com',
-                'shift' => $officeShift,
-            ],
-            [
-                'employee_id' => '00014022',
-                'name' => 'Ahmad Fauzi',
-                'email' => 'fauzi@example.com',
-                'shift' => $officeShift,
-            ],
-            [
-                'employee_id' => '00011503',
-                'name' => 'Budi Santoso',
-                'email' => 'budi@example.com',
-                'shift' => $officeShift,
-            ],
-            [
-                'employee_id' => '00012894',
-                'name' => 'Dewi Lestari',
-                'email' => 'dewi@example.com',
-                'shift' => $officeShift,
-            ],
-            [
-                'employee_id' => '00013145',
-                'name' => 'Eko Prasetyo',
-                'email' => 'eko@example.com',
-                'shift' => $officeShift,
-            ],
-            [
-                'employee_id' => '00014356',
-                'name' => 'Fitriani',
-                'email' => 'fitriani@example.com',
-                'shift' => $soreShift,
-            ],
-            [
-                'employee_id' => '00012089',
-                'name' => 'Gunawan Wibisono',
-                'email' => 'gunawan@example.com',
-                'shift' => $soreShift,
-            ],
-            [
-                'employee_id' => '00013912',
-                'name' => 'Hariyanto',
-                'email' => 'hariyanto@example.com',
-                'shift' => $malamShift,
-            ],
-            [
-                'employee_id' => '00014567',
-                'name' => 'Indah Permatasari',
-                'email' => 'indah@example.com',
-                'shift' => $malamShift,
-            ],
+            ['employee_id' => 'Z23123', 'name' => 'Bayu', 'email' => 'bayu@example.com', 'shift' => $shiftPlaceholder],
+            ['employee_id' => 'Z23124', 'name' => 'Adam', 'email' => 'adam@example.com', 'shift' => $shiftPlaceholder],
+            ['employee_id' => 'Z23125', 'name' => 'Agung', 'email' => 'agung@example.com', 'shift' => $shiftPlaceholder],
+            ['employee_id' => 'Z23126', 'name' => 'Whyndi Dwi Chananta', 'email' => 'whyndi@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23127', 'name' => 'Burhanudin', 'email' => 'burhanudin@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23128', 'name' => 'Naufal', 'email' => 'naufal@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23129', 'name' => 'Kukuh Raharja', 'email' => 'kukuh@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23130', 'name' => 'Koko Yuardi', 'email' => 'koko@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23131', 'name' => 'Oby Teguh Adi Prasetyo', 'email' => 'oby@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23132', 'name' => 'Abdul Saleh Arifin', 'email' => 'abdul@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23133', 'name' => 'Rahmat Novian Nur', 'email' => 'rahmat@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z23134', 'name' => 'Yusuf Satria Borneo', 'email' => 'yusuf@example.com', 'shift' => $steadyPlaceholder],
         ];
 
         foreach ($dummyEmployees as $emp) {
-            $user = User::factory()->forCompany($company)->create([
+            $user = User::factory()->create([
                 'name' => $emp['name'],
                 'email' => $emp['email'],
                 'employee_id' => $emp['employee_id'],
@@ -121,7 +73,15 @@ class DatabaseSeeder extends Seeder
             if ($emp['shift'] !== null) {
                 \App\Models\UserShiftAssignment::factory()->create([
                     'user_id' => $user->id,
-                    'shift_id' => $emp['shift']->id,
+                    'schedule' => [
+                        1 => $emp['shift']->id,
+                        2 => $emp['shift']->id,
+                        3 => $emp['shift']->id,
+                        4 => $emp['shift']->id,
+                        5 => $emp['shift']->id,
+                        6 => null,
+                        7 => null,
+                    ],
                 ]);
             }
         }

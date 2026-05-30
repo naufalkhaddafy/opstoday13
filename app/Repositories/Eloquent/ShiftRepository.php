@@ -11,7 +11,17 @@ class ShiftRepository implements ShiftRepositoryInterface
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return Shift::query()
-            ->withCount('assignments')
+            ->select('shifts.*')
+            ->selectSub(function ($query) {
+                $query->selectRaw('count(*)')
+                    ->from('user_shift_assignments')
+                    ->where(function ($q) {
+                        for ($day = 1; $day <= 7; $day++) {
+                            $q->orWhereRaw("JSON_EXTRACT(user_shift_assignments.schedule, '$.\"" . $day . "\"') = shifts.id")
+                              ->orWhereRaw("JSON_EXTRACT(user_shift_assignments.schedule, '$.\"" . (string) $day . "\"') = shifts.id");
+                        }
+                    });
+            }, 'assignments_count')
             ->when(
                 ! empty($filters['search']),
                 fn ($q) => $q->where(function ($inner) use ($filters) {
@@ -28,7 +38,17 @@ class ShiftRepository implements ShiftRepositoryInterface
     public function find(int $id): Shift
     {
         return Shift::query()
-            ->withCount('assignments')
+            ->select('shifts.*')
+            ->selectSub(function ($query) {
+                $query->selectRaw('count(*)')
+                    ->from('user_shift_assignments')
+                    ->where(function ($q) {
+                        for ($day = 1; $day <= 7; $day++) {
+                            $q->orWhereRaw("JSON_EXTRACT(user_shift_assignments.schedule, '$.\"" . $day . "\"') = shifts.id")
+                              ->orWhereRaw("JSON_EXTRACT(user_shift_assignments.schedule, '$.\"" . (string) $day . "\"') = shifts.id");
+                        }
+                    });
+            }, 'assignments_count')
             ->findOrFail($id);
     }
 

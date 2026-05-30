@@ -11,10 +11,9 @@ return new class extends Migration
         Schema::create('user_shift_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('shift_id')->constrained()->cascadeOnDelete();
+            $table->json('schedule')->nullable();
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
-            $table->json('days_of_week')->nullable();
             $table->timestamps();
 
             $table->index(['user_id', 'effective_from']);

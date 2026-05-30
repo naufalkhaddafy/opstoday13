@@ -56,7 +56,7 @@ test('duplicate attendance log insert is ignored', function () {
 
 test('malam shift work_date uses next day for evening check-in', function () {
     $company = CompanySeeder::$companies[0];
-    $shift = ShiftSeeder::forCompany($company, 'malam');
+    $shift = ShiftSeeder::get('malam');
 
     $user = User::factory()->forCompany($company)->create([
         'employee_id' => '10002',
@@ -64,9 +64,8 @@ test('malam shift work_date uses next day for evening check-in', function () {
 
     UserShiftAssignment::factory()->create([
         'user_id' => $user->id,
-        'shift_id' => $shift->id,
+        'schedule' => array_fill_keys(range(1, 7), $shift->id),
         'effective_from' => '2026-01-01',
-        'days_of_week' => [1, 2, 3, 4, 5, 6, 7],
     ]);
 
     $resolver = app(AttendanceWorkDateResolver::class);
@@ -86,7 +85,7 @@ test('malam shift work_date uses next day for evening check-in', function () {
 
 test('aggregator marks hadir when check-in and check-out exist for malam shift', function () {
     $company = CompanySeeder::$companies[0];
-    $shift = ShiftSeeder::forCompany($company, 'malam');
+    $shift = ShiftSeeder::get('malam');
 
     $user = User::factory()->forCompany($company)->create([
         'employee_id' => '10003',
@@ -94,9 +93,8 @@ test('aggregator marks hadir when check-in and check-out exist for malam shift',
 
     UserShiftAssignment::factory()->create([
         'user_id' => $user->id,
-        'shift_id' => $shift->id,
+        'schedule' => array_fill_keys(range(1, 7), $shift->id),
         'effective_from' => '2026-01-01',
-        'days_of_week' => [1, 2, 3, 4, 5, 6, 7],
     ]);
 
     $workDate = CarbonImmutable::parse('2026-05-27', 'Asia/Makassar');
@@ -134,7 +132,7 @@ test('aggregator marks hadir when check-in and check-out exist for malam shift',
 
 test('sync command imports records and rebuilds attendance days', function () {
     $company = CompanySeeder::$companies[0];
-    $shift = ShiftSeeder::forCompany($company, 'sore');
+    $shift = ShiftSeeder::get('sore');
 
     $user = User::factory()->forCompany($company)->create([
         'employee_id' => '10004',
@@ -142,9 +140,8 @@ test('sync command imports records and rebuilds attendance days', function () {
 
     UserShiftAssignment::factory()->create([
         'user_id' => $user->id,
-        'shift_id' => $shift->id,
+        'schedule' => array_fill_keys(range(1, 7), $shift->id),
         'effective_from' => '2026-01-01',
-        'days_of_week' => [1, 2, 3, 4, 5, 6, 7],
     ]);
 
     $this->app->instance(FingerprintClientInterface::class, new ArrayFingerprintClient([

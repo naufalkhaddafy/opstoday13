@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import type { AdminCompany } from '@/types';
 
 type CreateProps = {
     companies: AdminCompany[];
+    groups: { id: number; name: string }[];
     shifts: { id: number; name: string; code: string }[];
     roles: string[];
 };
@@ -26,8 +27,8 @@ const DAY_NAMES = [
     { id: 7, name: 'Minggu' },
 ];
 
-export default function UserCreate({ companies, shifts, roles }: CreateProps) {
-    const { data, setData, post, processing, errors } = useForm({
+export default function UserCreate({ companies, groups, shifts, roles }: CreateProps) {
+    const { data, setData, post, processing, errors, transform } = useForm({
         name: '',
         email: '',
         employee_id: '',
@@ -35,14 +36,31 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
         password_confirmation: '',
         role: '',
         company_id: '',
+        group_id: '',
         is_active: true,
         is_verified: false,
         // Shift Assignment
-        shift_id: '',
+        shift_schedule: {
+            1: '',
+            2: '',
+            3: '',
+            4: '',
+            5: '',
+            6: '',
+            7: '',
+        } as Record<number, string>,
         shift_effective_from: new Date().toISOString().split('T')[0],
         shift_effective_to: '',
-        shift_days_of_week: [1, 2, 3, 4, 5] as number[],
     });
+
+    transform((data) => ({
+        ...data,
+        company_id: data.company_id === 'none' ? null : data.company_id,
+        group_id: data.group_id === 'none' ? null : data.group_id,
+        shift_schedule: Object.fromEntries(
+            Object.entries(data.shift_schedule).map(([k, v]) => [k, v === '' ? null : Number(v)])
+        ),
+    }));
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,12 +71,11 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
         return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
 
-    const handleDayToggle = (dayId: number, checked: boolean) => {
-        if (checked) {
-            setData('shift_days_of_week', [...data.shift_days_of_week, dayId].sort());
-        } else {
-            setData('shift_days_of_week', data.shift_days_of_week.filter(d => d !== dayId));
-        }
+    const handleShiftScheduleChange = (dayId: number, value: string) => {
+        setData('shift_schedule', {
+            ...data.shift_schedule,
+            [dayId]: value === 'none' ? '' : value,
+        });
     };
 
     return (
@@ -84,7 +101,7 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
                                 {/* Left Column: Personal Data */}
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Informasi Profil</h3>
-                                    
+
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Nama Lengkap <span className="text-destructive">*</span></Label>
                                         <Input
@@ -153,8 +170,8 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="role">Role / Peran <span className="text-destructive">*</span></Label>
-                                        <Select 
-                                            value={data.role} 
+                                        <Select
+                                            value={data.role}
                                             onValueChange={(value) => setData('role', value)}
                                             required
                                         >
@@ -174,8 +191,8 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
 
                                     <div className="space-y-2">
                                         <Label htmlFor="company_id">Perusahaan (Opsional)</Label>
-                                        <Select 
-                                            value={data.company_id} 
+                                        <Select
+                                            value={data.company_id}
                                             onValueChange={(value) => setData('company_id', value)}
                                         >
                                             <SelectTrigger id="company_id">
@@ -193,10 +210,31 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
                                         <InputError message={errors.company_id} />
                                     </div>
 
+                                    <div className="space-y-2">
+                                        <Label htmlFor="group_id">Grup / Divisi (Opsional)</Label>
+                                        <Select
+                                            value={data.group_id}
+                                            onValueChange={(value) => setData('group_id', value)}
+                                        >
+                                            <SelectTrigger id="group_id">
+                                                <SelectValue placeholder="Pilih Grup" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">Tidak ada (Kosong)</SelectItem>
+                                                {groups.map((group) => (
+                                                    <SelectItem key={group.id} value={group.id.toString()}>
+                                                        {group.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={errors.group_id} />
+                                    </div>
+
                                     <div className="space-y-4 pt-4">
                                         <div className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id="is_active" 
+                                            <Checkbox
+                                                id="is_active"
                                                 checked={data.is_active}
                                                 onCheckedChange={(checked) => setData('is_active', checked as boolean)}
                                             />
@@ -207,8 +245,8 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
                                         <InputError message={errors.is_active} />
 
                                         <div className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id="is_verified" 
+                                            <Checkbox
+                                                id="is_verified"
                                                 checked={data.is_verified}
                                                 onCheckedChange={(checked) => setData('is_verified', checked as boolean)}
                                             />
@@ -223,77 +261,67 @@ export default function UserCreate({ companies, shifts, roles }: CreateProps) {
 
                             {/* Shift Assignment Section */}
                             <div className="border-t pt-6 mt-2">
-                                <h3 className="text-sm font-medium border-b pb-2 mb-4">Pengaturan Jadwal / Shift (Opsional)</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shift_id">Pilih Shift</Label>
-                                            <Select 
-                                                value={data.shift_id} 
-                                                onValueChange={(value) => setData('shift_id', value === 'none' ? '' : value)}
-                                            >
-                                                <SelectTrigger id="shift_id">
-                                                    <SelectValue placeholder="-- Tidak Ada Shift --" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="none">Tidak Ada Shift</SelectItem>
-                                                    {shifts.map((shift) => (
-                                                        <SelectItem key={shift.id} value={shift.id.toString()}>
-                                                            {shift.code} - {shift.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <InputError message={errors.shift_id} />
-                                        </div>
+                                <h3 className="text-sm font-medium border-b pb-2 mb-4 flex items-center gap-2">
+                                    <CalendarClock className="h-4 w-4 text-indigo-500" />
+                                    <span>Jadwal Kerja Mingguan (Opsional)</span>
+                                </h3>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="shift_effective_from">Mulai Berlaku</Label>
-                                                <Input
-                                                    id="shift_effective_from"
-                                                    type="date"
-                                                    value={data.shift_effective_from}
-                                                    onChange={(e) => setData('shift_effective_from', e.target.value)}
-                                                    disabled={!data.shift_id}
-                                                />
-                                                <InputError message={errors.shift_effective_from} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="shift_effective_to">Berakhir (Opsional)</Label>
-                                                <Input
-                                                    id="shift_effective_to"
-                                                    type="date"
-                                                    value={data.shift_effective_to}
-                                                    onChange={(e) => setData('shift_effective_to', e.target.value)}
-                                                    disabled={!data.shift_id}
-                                                />
-                                                <InputError message={errors.shift_effective_to} />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Hari Kerja Terjadwal</Label>
-                                        <div className="flex flex-wrap gap-4 mt-2">
-                                            {DAY_NAMES.map((day) => (
-                                                <div key={day.id} className="flex items-center space-x-2">
-                                                    <Checkbox 
-                                                        id={`day-${day.id}`} 
-                                                        checked={data.shift_days_of_week.includes(day.id)}
-                                                        onCheckedChange={(checked) => handleDayToggle(day.id, checked as boolean)}
-                                                        disabled={!data.shift_id}
-                                                    />
-                                                    <Label htmlFor={`day-${day.id}`} className="cursor-pointer font-normal text-sm">
+                                <div className="space-y-6">
+                                    {/* Grid Jadwal Senin - Minggu */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+                                        {DAY_NAMES.map((day) => {
+                                            const currentVal = data.shift_schedule[day.id] || 'none';
+                                            return (
+                                                <div key={day.id} className="flex flex-col p-3 rounded-lg border bg-card/40 gap-2">
+                                                    <Label htmlFor={`day-shift-${day.id}`} className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
                                                         {day.name}
                                                     </Label>
+                                                    <Select
+                                                        value={currentVal}
+                                                        onValueChange={(val) => handleShiftScheduleChange(day.id, val)}
+                                                    >
+                                                        <SelectTrigger id={`day-shift-${day.id}`} className="h-8 text-xs px-2">
+                                                            <SelectValue placeholder="Libur" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="none" className="text-xs text-rose-600 dark:text-rose-400 font-medium">Libur</SelectItem>
+                                                            {shifts.map((shift) => (
+                                                                <SelectItem key={shift.id} value={shift.id.toString()} className="text-xs">
+                                                                    {shift.code.toUpperCase()}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
-                                            ))}
+                                            );
+                                        })}
+                                    </div>
+                                    <InputError message={errors.shift_schedule} />
+
+                                    {/* Rentang Masa Berlaku */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shift_effective_from">Mulai Berlaku</Label>
+                                            <Input
+                                                id="shift_effective_from"
+                                                type="date"
+                                                value={data.shift_effective_from}
+                                                onChange={(e) => setData('shift_effective_from', e.target.value)}
+                                                disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
+                                            />
+                                            <InputError message={errors.shift_effective_from} />
                                         </div>
-                                        <InputError message={errors.shift_days_of_week} />
-                                        <p className="text-xs text-muted-foreground mt-2">
-                                            Jika semua hari di-uncheck, maka shift ini akan dihitung berlaku <em>setiap hari</em>.
-                                        </p>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="shift_effective_to">Berakhir (Opsional)</Label>
+                                            <Input
+                                                id="shift_effective_to"
+                                                type="date"
+                                                value={data.shift_effective_to}
+                                                onChange={(e) => setData('shift_effective_to', e.target.value)}
+                                                disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
+                                            />
+                                            <InputError message={errors.shift_effective_to} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

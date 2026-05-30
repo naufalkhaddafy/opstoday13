@@ -80,14 +80,14 @@ class UserController extends Controller
         $user = $this->users->create($validated);
         $this->users->assignRole($user, $role);
 
-        // Create shift assignment if shift_id was provided
-        if (! empty($shiftData['shift_id'])) {
+        // Create shift assignment if shift_schedule was provided
+        $hasSchedule = ! empty($shiftData['shift_schedule']) && collect($shiftData['shift_schedule'])->filter()->isNotEmpty();
+        if ($hasSchedule) {
             $this->assignments->create([
                 'user_id' => $user->id,
-                'shift_id' => $shiftData['shift_id'],
+                'schedule' => $shiftData['shift_schedule'],
                 'effective_from' => $shiftData['effective_from'] ?? now()->toDateString(),
                 'effective_to' => $shiftData['effective_to'] ?? null,
-                'days_of_week' => $shiftData['days_of_week'] ?? [1, 2, 3, 4, 5],
             ]);
         }
 
@@ -99,14 +99,17 @@ class UserController extends Controller
     /**
      * Tampilkan form edit user.
      */
-    public function edit(User $user): Response
+    public function edit(Request $request, User $user): Response
     {
-        // Muat relasi company sebelum dikirim ke Resource
-        $user->load('company');
+        // Muat relasi company & group sebelum dikirim ke Resource
+        $user->load(['company', 'group']);
 
         return Inertia::render(
             'admin/users/edit',
-            UserFormResource::make(['user' => $user])->resolve(),
+            array_merge(
+                UserFormResource::make(['user' => $user])->resolve(),
+                ['from' => $request->input('from')],
+            ),
         );
     }
 
@@ -145,6 +148,10 @@ class UserController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User berhasil diperbarui.']);
 
+        if ($request->input('from') === 'roster') {
+            return to_route('admin.roster.index');
+        }
+
         return to_route('admin.users.index');
     }
 
@@ -163,31 +170,63 @@ class UserController extends Controller
     /**
      * Extract shift-related fields from validated data and remove them.
      *
-     * @return array{shift_id: int|null, effective_from: string|null, effective_to: string|null, days_of_week: int[]|null}
+     * @return array{shift_schedule: array|null, effective_from: string|null, effective_to: string|null}
      */
     private function extractShiftData(array &$validated): array
     {
+        $shiftSchedule = $validated['shift_schedule'] ?? null;
+        if (is_array($shiftSchedule)) {
+            // Ensure keys are strictly 1 to 7 and not 0-indexed garbage
+            $cleanSchedule = [];
+            for ($i = 1; $i <= 7; $i++) {
+                $val = null;
+                if (array_key_exists($i, $shiftSchedule)) {
+                    $val = $shiftSchedule[$i];
+                } elseif (array_key_exists((string)$i, $shiftSchedule)) {
+                    $val = $shiftSchedule[(string)$i];
+                }
+                
+                // Keep it strictly integer or null
+                $cleanSchedule[$i] = $val !== null ? (int)$val : null;
+            }
+            $shiftSchedule = $cleanSchedule;
+        }
+
         $shiftData = [
-            'shift_id' => $validated['shift_id'] ?? null,
+            'shift_schedule' => $shiftSchedule,
             'effective_from' => $validated['shift_effective_from'] ?? null,
             'effective_to' => $validated['shift_effective_to'] ?? null,
-            'days_of_week' => $validated['shift_days_of_week'] ?? null,
         ];
 
         unset(
-            $validated['shift_id'],
+            $validated['shift_schedule'],
             $validated['shift_effective_from'],
             $validated['shift_effective_to'],
-            $validated['shift_days_of_week'],
         );
 
         return $shiftData;
     }
 
     /**
+     * Normalize a schedule array to consistent format: int keys 1-7, int|null values.
+     *
+     * @return array<int, int|null>
+     */
+    private function normalizeSchedule(?array $schedule): array
+    {
+        $normalized = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $val = $schedule[$i] ?? $schedule[(string) $i] ?? null;
+            $normalized[$i] = $val !== null ? (int) $val : null;
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Sync the active shift assignment for a user.
-     * If the shift changed, close the old assignment and create a new one.
-     * If shift_id is null/empty, close any active assignment.
+     * If the shift schedule changed, close the old assignment and create a new one.
+     * If shift_schedule is empty or has no active shifts, close any active assignment.
      */
     private function syncShiftAssignment(User $user, array $shiftData): void
     {
@@ -199,10 +238,11 @@ class UserController extends Controller
             ->orderByDesc('effective_from')
             ->first();
 
-        $newShiftId = $shiftData['shift_id'] ?? null;
+        $newSchedule = $shiftData['shift_schedule'] ?? null;
+        $hasNewSchedule = ! empty($newSchedule) && collect($newSchedule)->filter()->isNotEmpty();
 
-        // No shift selected — close any active assignment
-        if (empty($newShiftId)) {
+        // No shift schedule selected — close any active assignment
+        if (! $hasNewSchedule) {
             if ($activeAssignment) {
                 $this->assignments->update($activeAssignment, [
                     'effective_to' => now()->subDay()->toDateString(),
@@ -211,21 +251,28 @@ class UserController extends Controller
             return;
         }
 
-        // Same shift — update the existing assignment details
-        if ($activeAssignment && $activeAssignment->shift_id == $newShiftId) {
+        // Normalize the new schedule to consistent format
+        $newNormalized = $this->normalizeSchedule($newSchedule);
+
+        // Compare schedules using normalized format (fixes string/int key mismatch)
+        $areSchedulesIdentical = false;
+        if ($activeAssignment && $activeAssignment->schedule) {
+            $oldNormalized = $this->normalizeSchedule($activeAssignment->schedule);
+            $areSchedulesIdentical = ($oldNormalized === $newNormalized);
+        }
+
+        // Same schedule — update the existing assignment details
+        if ($activeAssignment && $areSchedulesIdentical) {
             $updateData = [];
             if ($shiftData['effective_from'] !== null) {
                 $updateData['effective_from'] = $shiftData['effective_from'];
             }
             $updateData['effective_to'] = $shiftData['effective_to'];
-            if ($shiftData['days_of_week'] !== null) {
-                $updateData['days_of_week'] = $shiftData['days_of_week'];
-            }
             $this->assignments->update($activeAssignment, $updateData);
             return;
         }
 
-        // Different shift — close old and create new
+        // Different schedule — close old and create new
         if ($activeAssignment) {
             $newEffectiveFrom = $shiftData['effective_from'] ?: now()->toDateString();
             $newEffectiveFromCarbon = \Carbon\Carbon::parse($newEffectiveFrom);
@@ -239,12 +286,12 @@ class UserController extends Controller
             }
         }
 
+        // Store with normalized schedule to prevent future mismatches
         $this->assignments->create([
             'user_id' => $user->id,
-            'shift_id' => $newShiftId,
+            'schedule' => $newNormalized,
             'effective_from' => $shiftData['effective_from'] ?: now()->toDateString(),
             'effective_to' => $shiftData['effective_to'] ?: null,
-            'days_of_week' => $shiftData['days_of_week'] ?? [1, 2, 3, 4, 5],
         ]);
     }
 

@@ -19,13 +19,18 @@ class CompanySeeder extends Seeder
     {
         self::$companies = [
             Company::factory()->create([
-                'name' => 'OpsToday HQ',
-                'slug' => 'opstoday-hq',
+                'name' => 'PT. Berca',
+                'slug' => 'pt-berca',
                 'whatsapp_group_number' => '6281234567890',
             ]),
             Company::factory()->create([
-                'name' => 'OpsToday Branch',
-                'slug' => 'opstoday-branch',
+                'name' => 'PT. DCS',
+                'slug' => 'pt-dcs',
+                'whatsapp_group_number' => null,
+            ]),
+            Company::factory()->create([
+                'name' => 'PT. MKN',
+                'slug' => 'pt-mkn',
                 'whatsapp_group_number' => null,
             ]),
         ];

@@ -17,6 +17,7 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->nullOnDelete();
+            $table->foreignId('group_id')->nullable()->constrained()->nullOnDelete();
             $table->string('employee_id')->nullable()->unique();
             $table->string('name');
             $table->string('email')->unique();

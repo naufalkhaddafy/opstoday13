@@ -11,10 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'user_id',
-    'shift_id',
+    'schedule',
     'effective_from',
     'effective_to',
-    'days_of_week',
 ])]
 class UserShiftAssignment extends Model
 {
@@ -29,7 +28,7 @@ class UserShiftAssignment extends Model
         return [
             'effective_from' => 'date',
             'effective_to' => 'date',
-            'days_of_week' => 'array',
+            'schedule' => 'array',
         ];
     }
 
@@ -39,14 +38,6 @@ class UserShiftAssignment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * @return BelongsTo<Shift, $this>
-     */
-    public function shift(): BelongsTo
-    {
-        return $this->belongsTo(Shift::class);
     }
 
     public function isActiveOn(CarbonImmutable $workDate): bool
@@ -61,10 +52,13 @@ class UserShiftAssignment extends Model
             return false;
         }
 
-        if ($this->days_of_week === null) {
-            return true;
+        if ($this->schedule === null) {
+            return false;
         }
 
-        return in_array($workDate->dayOfWeekIso, $this->days_of_week, true);
+        $dayOfWeek = $workDate->dayOfWeekIso;
+        $shiftId = $this->schedule[$dayOfWeek] ?? $this->schedule[(string) $dayOfWeek] ?? null;
+
+        return $shiftId !== null;
     }
 }

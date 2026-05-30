@@ -11,7 +11,7 @@ class UserShiftAssignmentRepository implements UserShiftAssignmentRepositoryInte
     public function paginate(array $filters = []): LengthAwarePaginator
     {
         return UserShiftAssignment::query()
-            ->with(['user:id,name,employee_id', 'shift:id,name,code'])
+            ->with(['user:id,name,employee_id'])
             ->when(
                 ! empty($filters['user_id']),
                 fn ($q) => $q->where('user_id', $filters['user_id'])
@@ -28,7 +28,7 @@ class UserShiftAssignmentRepository implements UserShiftAssignmentRepositoryInte
     public function find(int $id): UserShiftAssignment
     {
         return UserShiftAssignment::query()
-            ->with(['user:id,name', 'shift:id,name,code'])
+            ->with(['user:id,name'])
             ->findOrFail($id);
     }
 

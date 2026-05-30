@@ -21,10 +21,20 @@ class UserShiftAssignmentFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'shift_id' => Shift::factory(),
-            'effective_from' => now()->subYear()->toDateString(),
+            'schedule' => function () {
+                $shift = Shift::first() ?: Shift::factory()->create();
+                return [
+                    1 => $shift->id,
+                    2 => $shift->id,
+                    3 => $shift->id,
+                    4 => $shift->id,
+                    5 => $shift->id,
+                    6 => null,
+                    7 => null,
+                ];
+            },
+            'effective_from' => now()->month(5)->startOfMonth()->toDateString(),
             'effective_to' => null,
-            'days_of_week' => [1, 2, 3, 4, 5, 6, 7],
         ];
     }
 }

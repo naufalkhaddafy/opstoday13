@@ -16,4 +16,9 @@ interface CompanyRepositoryInterface
     public function update(Company $company, array $data): Company;
 
     public function delete(Company $company): void;
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, Company>
+     */
+    public function all(): \Illuminate\Database\Eloquent\Collection;
 }

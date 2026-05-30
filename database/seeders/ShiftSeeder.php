@@ -18,6 +18,69 @@ class ShiftSeeder extends Seeder
     {
         self::$shifts = [];
 
+        // ─── Placeholder generik (untuk assignment) ──────────────────────
+        // Admin hanya memilih ini saat assign jadwal ke karyawan.
+        // Jam riil ditentukan otomatis oleh auto-match.
+
+        self::$shifts['steady'] = Shift::query()->create([
+            'code' => 'steady',
+            'name' => 'Steady Day',
+            'start_time' => '08:00:00',
+            'end_time' => '17:00:00',
+            'is_overnight' => false,
+            'work_date_rule' => ShiftWorkDateRule::CalendarDay,
+            'grace_minutes' => 15,
+            'type' => ShiftType::Steady,
+        ]);
+
+        self::$shifts['shift'] = Shift::query()->create([
+            'code' => 'shift',
+            'name' => 'Shift',
+            'start_time' => '15:00:00',
+            'end_time' => '00:00:00',
+            'is_overnight' => false,
+            'work_date_rule' => ShiftWorkDateRule::CalendarDay,
+            'grace_minutes' => 15,
+            'type' => ShiftType::Shift,
+        ]);
+
+        // ─── Konfigurasi Steady riil (auto-match target) ─────────────────
+
+        self::$shifts['pagi-7'] = Shift::query()->create([
+            'code' => 'pagi-7',
+            'name' => 'Steady Pagi 07:00',
+            'start_time' => '07:00:00',
+            'end_time' => '16:00:00',
+            'is_overnight' => false,
+            'work_date_rule' => ShiftWorkDateRule::CalendarDay,
+            'grace_minutes' => 15,
+            'type' => ShiftType::Steady,
+        ]);
+
+        self::$shifts['pagi-8'] = Shift::query()->create([
+            'code' => 'pagi-8',
+            'name' => 'Steady Pagi 08:00',
+            'start_time' => '08:00:00',
+            'end_time' => '17:00:00',
+            'is_overnight' => false,
+            'work_date_rule' => ShiftWorkDateRule::CalendarDay,
+            'grace_minutes' => 15,
+            'type' => ShiftType::Steady,
+        ]);
+
+        self::$shifts['pagi-9'] = Shift::query()->create([
+            'code' => 'pagi-9',
+            'name' => 'Steady Pagi 09:00',
+            'start_time' => '09:00:00',
+            'end_time' => '18:00:00',
+            'is_overnight' => false,
+            'work_date_rule' => ShiftWorkDateRule::CalendarDay,
+            'grace_minutes' => 15,
+            'type' => ShiftType::Steady,
+        ]);
+
+        // ─── Konfigurasi Shift riil (auto-match target) ──────────────────
+
         self::$shifts['sore'] = Shift::query()->create([
             'code' => 'sore',
             'name' => 'Shift Sore',
@@ -38,17 +101,6 @@ class ShiftSeeder extends Seeder
             'work_date_rule' => ShiftWorkDateRule::NextDay,
             'grace_minutes' => 15,
             'type' => ShiftType::Shift,
-        ]);
-
-        self::$shifts['office'] = Shift::query()->create([
-            'code' => 'office',
-            'name' => 'Office Steady',
-            'start_time' => '08:00:00',
-            'end_time' => '17:00:00',
-            'is_overnight' => false,
-            'work_date_rule' => ShiftWorkDateRule::CalendarDay,
-            'grace_minutes' => 15,
-            'type' => ShiftType::Steady,
         ]);
     }
 

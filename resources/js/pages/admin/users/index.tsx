@@ -186,7 +186,7 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                         <th className="px-4 py-3">Nama & Email</th>
                                         <th className="px-4 py-3">Employee ID</th>
                                         <th className="px-4 py-3">Role</th>
-                                        <th className="px-4 py-3">Perusahaan</th>
+                                        <th className="px-4 py-3">Perusahaan & Grup</th>
                                         <th className="px-4 py-3">Shift & Hari</th>
                                         <th className="px-4 py-3 text-center">Status</th>
                                         <th className="px-4 py-3 text-right">Aksi</th>
@@ -204,7 +204,10 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                                 <td className="px-4 py-3">
                                                     <Badge variant="outline">{formatRole(user.role)}</Badge>
                                                 </td>
-                                                <td className="px-4 py-3">{user.company?.name || '-'}</td>
+                                                <td className="px-4 py-3">
+                                                    <div className="font-medium text-foreground">{user.company?.name || '-'}</div>
+                                                    <div className="text-xs text-muted-foreground">{user.group?.name || '-'}</div>
+                                                </td>
                                                 <td className="px-4 py-3">
                                                     {user.active_assignment?.shift ? (
                                                         <div className="flex flex-col gap-0.5">

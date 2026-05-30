@@ -29,8 +29,9 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'company_id' => null,
-            'employee_id' => fake()->unique()->numerify('EMP-#####'),
+            'company_id' => Company::inRandomOrder()->value('id') ?? Company::factory(),
+            'group_id' => \App\Models\Group::inRandomOrder()->value('id') ?? \App\Models\Group::factory(),
+            'employee_id' => fake()->unique()->numerify('Z#####'),
             'email_verified_at' => now(),
             'is_verified' => true,
             'is_active' => true,
