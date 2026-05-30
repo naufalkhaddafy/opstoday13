@@ -27,6 +27,10 @@ class UserRepository implements UserRepositoryInterface
                 fn ($q) => $q->where('company_id', $filters['company_id'])
             )
             ->when(
+                ! empty($filters['group_id']),
+                fn ($q) => $q->where('group_id', $filters['group_id'])
+            )
+            ->when(
                 ! empty($filters['role']),
                 fn ($q) => $q->role($filters['role'])
             )

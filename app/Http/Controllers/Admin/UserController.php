@@ -32,7 +32,7 @@ class UserController extends Controller
      */
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'role', 'company_id']);
+        $filters = $request->only(['search', 'role', 'company_id', 'group_id']);
 
         $paginator = $this->users->paginate($filters);
 

@@ -14,25 +14,28 @@ import type { PaginatedUsers, AdminCompany } from '@/types';
 type IndexProps = {
     users: PaginatedUsers;
     companies: AdminCompany[];
+    groups: { id: number; name: string }[];
     roles: string[];
     filters: {
         search?: string;
         role?: string;
         company_id?: string;
+        group_id?: string;
     };
 };
 
-export default function UserIndex({ users, companies, roles, filters }: IndexProps) {
+export default function UserIndex({ users, companies, groups, roles, filters }: IndexProps) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
     const [companyFilter, setCompanyFilter] = useState(filters.company_id || 'all');
+    const [groupFilter, setGroupFilter] = useState(filters.group_id || 'all');
     
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<{ id: number; name: string } | null>(null);
 
     // Apply filters
     const applyFilters = useCallback(
-        (newSearch?: string, newRole?: string, newCompany?: string) => {
+        (newSearch?: string, newRole?: string, newCompany?: string, newGroup?: string) => {
             const query: Record<string, string> = {};
             
             const searchVal = newSearch !== undefined ? newSearch : searchTerm;
@@ -44,16 +47,19 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
             const companyVal = newCompany !== undefined ? newCompany : companyFilter;
             if (companyVal !== 'all') query.company_id = companyVal;
 
+            const groupVal = newGroup !== undefined ? newGroup : groupFilter;
+            if (groupVal !== 'all') query.group_id = groupVal;
+
             router.get(UserController.index().url, query, { preserveState: true, preserveScroll: true, replace: true });
         },
-        [searchTerm, roleFilter, companyFilter]
+        [searchTerm, roleFilter, companyFilter, groupFilter]
     );
 
     // Handle search input with debounce
     useEffect(() => {
         const timeoutId = setTimeout(() => {
             if (searchTerm !== filters.search) {
-                applyFilters(searchTerm, undefined, undefined);
+                applyFilters(searchTerm, undefined, undefined, undefined);
             }
         }, 300);
         return () => clearTimeout(timeoutId);
@@ -61,18 +67,24 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
 
     const handleRoleChange = (value: string) => {
         setRoleFilter(value);
-        applyFilters(undefined, value, undefined);
+        applyFilters(undefined, value, undefined, undefined);
     };
 
     const handleCompanyChange = (value: string) => {
         setCompanyFilter(value);
-        applyFilters(undefined, undefined, value);
+        applyFilters(undefined, undefined, value, undefined);
+    };
+
+    const handleGroupChange = (value: string) => {
+        setGroupFilter(value);
+        applyFilters(undefined, undefined, undefined, value);
     };
 
     const clearFilters = () => {
         setSearchTerm('');
         setRoleFilter('all');
         setCompanyFilter('all');
+        setGroupFilter('all');
         router.get(UserController.index().url);
     };
 
@@ -170,7 +182,21 @@ export default function UserIndex({ users, companies, roles, filters }: IndexPro
                                     </SelectContent>
                                 </Select>
 
-                                {(filters.search || filters.role || filters.company_id) && (
+                                <Select value={groupFilter} onValueChange={handleGroupChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Pilih Grup" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Grup</SelectItem>
+                                        {groups.map((group) => (
+                                            <SelectItem key={group.id} value={group.id.toString()}>
+                                                {group.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                {(filters.search || filters.role || filters.company_id || filters.group_id) && (
                                     <Button variant="ghost" size="icon" onClick={clearFilters} title="Hapus Filter">
                                         <FilterX className="h-4 w-4" />
                                     </Button>

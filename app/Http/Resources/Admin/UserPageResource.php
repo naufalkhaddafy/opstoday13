@@ -35,6 +35,7 @@ class UserPageResource extends JsonResource
                 ],
             ],
             'companies' => Company::select('id', 'name')->get()->toArray(),
+            'groups' => \App\Models\Group::select('id', 'name')->get()->toArray(),
             'roles' => array_column(RoleName::cases(), 'value'),
             'filters' => $this->resource['filters'],
         ];
