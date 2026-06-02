@@ -7,6 +7,7 @@ use App\Repositories\Contracts\GroupRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class GroupRepository implements GroupRepositoryInterface
 {
@@ -24,7 +25,9 @@ class GroupRepository implements GroupRepositoryInterface
 
     public function all(): Collection
     {
-        return Group::orderBy('name')->get();
+        return Cache::rememberForever('groups.all', function () {
+            return Group::orderBy('name')->get();
+        });
     }
 
     public function create(array $data): Group

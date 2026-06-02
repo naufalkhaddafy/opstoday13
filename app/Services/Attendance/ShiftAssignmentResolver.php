@@ -5,6 +5,7 @@ namespace App\Services\Attendance;
 use App\Models\Shift;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
+use App\Models\UserShiftException;
 use Carbon\CarbonImmutable;
 
 class ShiftAssignmentResolver
@@ -51,7 +52,7 @@ class ShiftAssignmentResolver
         if ($user->relationLoaded('exceptions')) {
             $exception = $user->exceptions->first(fn($e) => $e->date->toDateString() === $dateStr);
         } else {
-            $exception = \App\Models\UserShiftException::where('user_id', $user->id)
+            $exception = UserShiftException::where('user_id', $user->id)
                 ->where('date', $dateStr)
                 ->first();
         }

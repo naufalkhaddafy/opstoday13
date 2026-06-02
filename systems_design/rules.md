@@ -229,3 +229,4 @@ app/
 - Fitur baru: Form Request + Repository (jika perlu) + Resource sebelum memperbesar controller.
 - Tulis kode dengan mempertimbangkan keamanan dan efisiensi memori (terutama saat memproses file/dokumen).
 - Berikan komentar singkat pada logika yang kompleks.
+- **Hindari FQN Inline**: Jangan menulis *Fully Qualified Namespace* (FQN) secara inline di dalam kode (contoh: `\App\Models\User::all()`). Selalu gunakan statement `use` di bagian atas file (contoh: `use App\Models\User;` lalu `User::all()`).

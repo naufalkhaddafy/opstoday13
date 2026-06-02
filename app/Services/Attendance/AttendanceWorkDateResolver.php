@@ -7,6 +7,7 @@ use App\Enums\ShiftWorkDateRule;
 use App\Models\Shift;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
+use App\Models\UserShiftException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -33,7 +34,7 @@ class AttendanceWorkDateResolver
         // Check each candidate date for an explicit exception
         foreach ($this->candidateWorkDates($punchedAt) as $workDate) {
             $dateStr = $workDate->toDateString();
-            $exception = \App\Models\UserShiftException::where('user_id', $user->id)
+            $exception = UserShiftException::where('user_id', $user->id)
                 ->where('date', $dateStr)
                 ->first();
 
@@ -61,7 +62,7 @@ class AttendanceWorkDateResolver
         foreach ($assignments as $assignment) {
             foreach ($this->candidateWorkDates($punchedAt) as $workDate) {
                 // If an exception exists for this candidate date, skip checking the weekly assignment
-                if (\App\Models\UserShiftException::where('user_id', $user->id)->where('date', $workDate->toDateString())->exists()) {
+                if (UserShiftException::where('user_id', $user->id)->where('date', $workDate->toDateString())->exists()) {
                     continue;
                 }
 
@@ -191,7 +192,7 @@ class AttendanceWorkDateResolver
     {
         // First check if there's an explicit exception for today. If it's explicitly null (Libur), then don't fallback.
         $dateStr = $punchedAt->toDateString();
-        $exception = \App\Models\UserShiftException::where('user_id', $user->id)
+        $exception = UserShiftException::where('user_id', $user->id)
             ->where('date', $dateStr)
             ->first();
 

@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Models\Company;
 use App\Repositories\Contracts\CompanyRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
 class CompanyRepository implements CompanyRepositoryInterface
 {
@@ -51,6 +52,8 @@ class CompanyRepository implements CompanyRepositoryInterface
 
     public function all(): \Illuminate\Database\Eloquent\Collection
     {
-        return Company::query()->select('id', 'name')->orderBy('name')->get();
+        return Cache::rememberForever('companies.all', function () {
+            return Company::query()->select('id', 'name')->orderBy('name')->get();
+        });
     }
 }

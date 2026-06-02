@@ -5,6 +5,8 @@ namespace App\Http\Resources\Admin;
 use App\Enums\RoleName;
 use App\Http\Resources\UserResource;
 use App\Models\Company;
+use App\Models\Group;
+use App\Models\Shift;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -44,8 +46,8 @@ class UserFormResource extends JsonResource
                 )
                 : null,
             'companies' => Company::select('id', 'name')->get()->toArray(),
-            'groups' => \App\Models\Group::select('id', 'name')->get()->toArray(),
-            'shifts' => \App\Models\Shift::select('id', 'name', 'code')
+            'groups' => Group::select('id', 'name')->get()->toArray(),
+            'shifts' => Shift::select('id', 'name', 'code')
                 ->get()
                 ->toArray(),
             'roles' => array_column(RoleName::cases(), 'value'),

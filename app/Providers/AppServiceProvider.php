@@ -4,6 +4,12 @@ namespace App\Providers;
 
 use App\Contracts\Fingerprint\FingerprintClientInterface;
 use App\Models\User;
+use App\Models\Company;
+use App\Models\Group;
+use App\Models\Shift;
+use App\Observers\CompanyObserver;
+use App\Observers\GroupObserver;
+use App\Observers\ShiftObserver;
 use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
 use App\Repositories\Contracts\AttendanceLogRepositoryInterface;
 use App\Repositories\Contracts\AttendanceSyncRunRepositoryInterface;
@@ -11,6 +17,8 @@ use App\Repositories\Contracts\CompanyRepositoryInterface;
 use App\Repositories\Contracts\ShiftRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserShiftAssignmentRepositoryInterface;
+use App\Repositories\Contracts\GroupRepositoryInterface;
+use App\Repositories\Contracts\UserLeaveRepositoryInterface;
 use App\Repositories\Eloquent\AttendanceDayRepository;
 use App\Repositories\Eloquent\AttendanceLogRepository;
 use App\Repositories\Eloquent\AttendanceSyncRunRepository;
@@ -18,6 +26,8 @@ use App\Repositories\Eloquent\CompanyRepository;
 use App\Repositories\Eloquent\ShiftRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserShiftAssignmentRepository;
+use App\Repositories\Eloquent\GroupRepository;
+use App\Repositories\Eloquent\UserLeaveRepository;
 use App\Services\Fingerprint\HttpFingerprintClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
@@ -42,8 +52,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AttendanceDayRepositoryInterface::class, AttendanceDayRepository::class);
         $this->app->bind(AttendanceSyncRunRepositoryInterface::class, AttendanceSyncRunRepository::class);
         $this->app->bind(FingerprintClientInterface::class, HttpFingerprintClient::class);
-        $this->app->bind(\App\Repositories\Contracts\GroupRepositoryInterface::class, \App\Repositories\Eloquent\GroupRepository::class);
-        $this->app->bind(\App\Repositories\Contracts\UserLeaveRepositoryInterface::class, \App\Repositories\Eloquent\UserLeaveRepository::class);
+        $this->app->bind(GroupRepositoryInterface::class, GroupRepository::class);
+        $this->app->bind(UserLeaveRepositoryInterface::class, UserLeaveRepository::class);
     }
 
     /**
@@ -53,6 +63,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureLastActiveTracking();
+
+        Company::observe(CompanyObserver::class);
+        Group::observe(GroupObserver::class);
+        Shift::observe(ShiftObserver::class);
     }
 
     protected function configureLastActiveTracking(): void

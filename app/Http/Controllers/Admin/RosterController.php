@@ -9,6 +9,9 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use App\Models\Group;
+use App\Models\Shift;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,8 +47,14 @@ class RosterController extends Controller
         // Fetch data through repositories (following rules.md)
         $employees = $this->users->getEmployeesForRoster($filters);
         $companiesList = $this->companies->all();
-        $groupsList = \App\Models\Group::select('id', 'name')->get();
-        $shiftsList = \App\Models\Shift::select('id', 'name', 'code')->get();
+        
+        $groupsList = Cache::rememberForever('groups.all_select', function () {
+            return Group::select('id', 'name')->get();
+        });
+        
+        $shiftsList = Cache::rememberForever('shifts.all', function () {
+            return Shift::select('id', 'name', 'code')->get();
+        });
 
         // Return Inertia rendering with Page Resource shaping (following rules.md)
         return Inertia::render(

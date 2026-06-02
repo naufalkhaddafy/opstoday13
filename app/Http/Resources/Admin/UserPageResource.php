@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use App\Enums\RoleName;
 use App\Models\Company;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,7 +36,7 @@ class UserPageResource extends JsonResource
                 ],
             ],
             'companies' => Company::select('id', 'name')->get()->toArray(),
-            'groups' => \App\Models\Group::select('id', 'name')->get()->toArray(),
+            'groups' => Group::select('id', 'name')->get()->toArray(),
             'roles' => array_column(RoleName::cases(), 'value'),
             'filters' => $this->resource['filters'],
         ];

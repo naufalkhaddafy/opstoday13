@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Models\Shift;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -48,7 +49,7 @@ class UserListResource extends JsonResource
                 sort($activeDays);
 
                 $shiftIds = array_unique($shiftIds);
-                $shifts = \App\Models\Shift::query()->whereIn('id', $shiftIds)->get();
+                $shifts = Shift::query()->whereIn('id', $shiftIds)->get();
 
                 if ($shifts->isEmpty()) {
                     $shiftName = 'Libur';

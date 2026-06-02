@@ -9,6 +9,7 @@ use App\Models\AttendanceDay;
 use App\Models\AttendanceLog;
 use App\Models\Shift;
 use App\Models\User;
+use App\Models\UserLeave;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -119,7 +120,7 @@ class AttendanceDayAggregator
         CarbonImmutable $workDate,
         bool $allowAbsentMarking,
     ): AttendancePresenceStatus {
-        $activeLeave = \App\Models\UserLeave::query()
+        $activeLeave = UserLeave::query()
             ->where('user_id', $user->id)
             ->approved()
             ->activeOn($workDate->toDateString())
