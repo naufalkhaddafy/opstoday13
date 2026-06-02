@@ -25,6 +25,22 @@ class UserLeaveRepository implements UserLeaveRepositoryInterface
             $query->where('status', $status);
         }
 
+        if ($search = Arr::get($filters, 'search')) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($month = Arr::get($filters, 'month')) {
+            $query->whereMonth('start_date', $month);
+        }
+
+        if ($year = Arr::get($filters, 'year')) {
+            $query->whereYear('start_date', $year);
+        }
+
         return $query->orderByDesc('start_date')
             ->paginate($perPage)
             ->withQueryString();

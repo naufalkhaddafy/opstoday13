@@ -26,6 +26,7 @@ type Shift = {
 type RosterDay = {
     date: string;
     is_exception: boolean;
+    leave?: { type: string; description: string | null } | null;
     shift: Shift | null;
 };
 
@@ -253,6 +254,40 @@ export default function RosterIndex({
         const shift = day.shift;
         const dateStr = day.date;
         const today = isToday(dateStr);
+        const leave = day.leave;
+
+        if (leave) {
+            let bgClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'; // Default Cuti
+            let displayCode = 'CTI';
+            let tooltipText = 'Cuti';
+            
+            if (leave.type === 'sakit') {
+                bgClass = 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
+                displayCode = 'SKT';
+                tooltipText = 'Sakit';
+            } else if (leave.type === 'izin') {
+                bgClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+                displayCode = 'IZN';
+                tooltipText = 'Izin';
+            }
+
+            return (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className={`relative flex items-center justify-center h-7 rounded text-[9px] font-bold tracking-wide cursor-help transition-all hover:scale-105 ${bgClass} ${today ? 'ring-2 ring-indigo-500 shadow-sm' : ''}`}>
+                            {displayCode}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                        <div className="text-xs space-y-0.5">
+                            <p className="font-bold text-foreground">{tooltipText}</p>
+                            <p className="text-muted-foreground">{leave.description || 'Tidak ada keterangan'}</p>
+                            {shift && <p className="text-[10px] text-muted-foreground mt-1 line-through opacity-70">Jadwal asli: {shift.name}</p>}
+                        </div>
+                    </TooltipContent>
+                </Tooltip>
+            );
+        }
 
         if (!shift) {
             return (
@@ -571,6 +606,18 @@ export default function RosterIndex({
                             <div className="flex items-center gap-1.5 ml-4">
                                 <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
                                 <span>Jadwal Khusus (Override)</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 ml-4">
+                                <span className="h-4 w-7 rounded bg-blue-100 dark:bg-blue-900/40 inline-flex items-center justify-center text-[8px] font-bold text-blue-700 dark:text-blue-300">CTI</span>
+                                <span>Cuti</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-4 w-7 rounded bg-rose-100 dark:bg-rose-900/40 border border-rose-200 dark:border-rose-800 inline-flex items-center justify-center text-[8px] font-bold text-rose-700 dark:text-rose-300">SKT</span>
+                                <span>Sakit</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="h-4 w-7 rounded bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 inline-flex items-center justify-center text-[8px] font-bold text-slate-700 dark:text-slate-300">IZN</span>
+                                <span>Izin</span>
                             </div>
                         </div>
                     </CardContent>

@@ -29,7 +29,7 @@ class UpdateUserLeaveRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:500'],
         ];
 
-        if ($this->user()->role === RoleName::SuperAdmin || $this->user()->role === RoleName::Supv) {
+        if ($this->user()->hasRole(RoleName::SuperAdmin->value) || $this->user()->hasRole(RoleName::Supv->value)) {
             $rules['user_id'] = ['required', 'exists:users,id'];
             $rules['status'] = ['required', 'in:pending,approved,rejected'];
         }

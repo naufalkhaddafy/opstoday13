@@ -22,9 +22,9 @@ class LeaveController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['status', 'type']);
+        $filters = $request->only(['status', 'type', 'search', 'month', 'year']);
         
-        if ($request->user()->role === RoleName::Engineer) {
+        if ($request->user()->hasRole(RoleName::Engineer->value)) {
             $filters['user_id'] = $request->user()->id;
         } else {
             $filters['user_id'] = $request->input('user_id');
@@ -52,7 +52,7 @@ class LeaveController extends Controller
         $validated = $request->validated();
         
         // If engineer, force user_id to their own and status to approved as per new requirement
-        if ($request->user()->role === RoleName::Engineer) {
+        if ($request->user()->hasRole(RoleName::Engineer->value)) {
             $validated['user_id'] = $request->user()->id;
             $validated['status'] = 'approved'; 
         } else {
@@ -70,7 +70,7 @@ class LeaveController extends Controller
     public function edit(Request $request, UserLeave $leave): Response
     {
         // Engineers can only edit their own leaves
-        if ($request->user()->role === RoleName::Engineer && $leave->user_id !== $request->user()->id) {
+        if ($request->user()->hasRole(RoleName::Engineer->value) && $leave->user_id !== $request->user()->id) {
             abort(403);
         }
 
@@ -81,13 +81,13 @@ class LeaveController extends Controller
 
     public function update(UpdateUserLeaveRequest $request, UserLeave $leave): RedirectResponse
     {
-        if ($request->user()->role === RoleName::Engineer && $leave->user_id !== $request->user()->id) {
+        if ($request->user()->hasRole(RoleName::Engineer->value) && $leave->user_id !== $request->user()->id) {
             abort(403);
         }
 
         $validated = $request->validated();
 
-        if ($request->user()->role === RoleName::Engineer) {
+        if ($request->user()->hasRole(RoleName::Engineer->value)) {
             // Engineers cannot change the status
             unset($validated['status']);
         }
@@ -101,7 +101,7 @@ class LeaveController extends Controller
 
     public function destroy(Request $request, UserLeave $leave): RedirectResponse
     {
-        if ($request->user()->role === RoleName::Engineer && $leave->user_id !== $request->user()->id) {
+        if ($request->user()->hasRole(RoleName::Engineer->value) && $leave->user_id !== $request->user()->id) {
             abort(403);
         }
 

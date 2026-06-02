@@ -21,7 +21,7 @@ class UserLeaveFormResource extends JsonResource
             'types' => ['cuti', 'sakit', 'izin'],
         ];
 
-        if ($request->user()->role === RoleName::SuperAdmin || $request->user()->role === RoleName::Supv) {
+        if ($request->user()->hasRole(RoleName::SuperAdmin->value) || $request->user()->hasRole(RoleName::Supv->value)) {
             $data['users'] = User::select('id', 'name', 'employee_id')->get()->toArray();
             $data['statuses'] = ['pending', 'approved', 'rejected'];
         }

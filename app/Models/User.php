@@ -100,6 +100,14 @@ class User extends Authenticatable
         return $this->hasMany(AttendanceDay::class);
     }
 
+    /**
+     * @return HasMany<UserLeave, $this>
+     */
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(UserLeave::class);
+    }
+
     public function markLastActive(): void
     {
         $this->newQuery()

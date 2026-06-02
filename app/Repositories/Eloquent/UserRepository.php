@@ -83,7 +83,7 @@ class UserRepository implements UserRepositoryInterface
     public function getEmployeesForRoster(array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
         return User::query()
-            ->with(['company', 'group', 'shiftAssignments', 'exceptions'])
+            ->with(['company', 'group', 'shiftAssignments', 'exceptions', 'leaves' => fn($q) => $q->approved()])
             ->whereNotNull('employee_id')
             ->where('is_active', true)
             ->when(! empty($filters['search']), function ($q) use ($filters) {

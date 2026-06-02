@@ -31,7 +31,7 @@ class StoreUserLeaveRequest extends FormRequest
 
         // Only admins can select which user the leave is for.
         // Engineers can only request for themselves.
-        if ($this->user()->role === RoleName::SuperAdmin || $this->user()->role === RoleName::Supv) {
+        if ($this->user()->hasRole(RoleName::SuperAdmin->value) || $this->user()->hasRole(RoleName::Supv->value)) {
             $rules['user_id'] = ['required', 'exists:users,id'];
         }
 

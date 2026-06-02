@@ -4,8 +4,42 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const MONTHS = [
+    { value: '1', label: 'Januari' },
+    { value: '2', label: 'Februari' },
+    { value: '3', label: 'Maret' },
+    { value: '4', label: 'April' },
+    { value: '5', label: 'Mei' },
+    { value: '6', label: 'Juni' },
+    { value: '7', label: 'Juli' },
+    { value: '8', label: 'Agustus' },
+    { value: '9', label: 'September' },
+    { value: '10', label: 'Oktober' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'Desember' },
+];
 
 export default function LeaveIndex({ leaves, filters }: any) {
+    const [search, setSearch] = useDebouncedSearch(filters?.search || '');
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 5 }, (_, i) => (currentYear - 2 + i).toString());
+
+    const handleFilterChange = (key: string, value: string) => {
+        const params = new URLSearchParams(window.location.search);
+        if (value && value !== 'all') {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+        router.get(window.location.pathname, Object.fromEntries(params.entries()), {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
     return (
         <>
             <Head title="Pengajuan Cuti" />
@@ -35,10 +69,46 @@ export default function LeaveIndex({ leaves, filters }: any) {
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     type="search"
-                                    placeholder="Cari (Belum Tersedia)..."
+                                    placeholder="Cari nama atau keterangan..."
                                     className="pl-8"
-                                    disabled
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
                                 />
+                            </div>
+                            <div className="flex flex-1 flex-col md:flex-row gap-2">
+                                <Select
+                                    value={filters?.month || 'all'}
+                                    onValueChange={(val) => handleFilterChange('month', val)}
+                                >
+                                    <SelectTrigger className="w-full md:w-[150px]">
+                                        <SelectValue placeholder="Bulan" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Bulan</SelectItem>
+                                        {MONTHS.map((m) => (
+                                            <SelectItem key={m.value} value={m.value}>
+                                                {m.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Select
+                                    value={filters?.year || 'all'}
+                                    onValueChange={(val) => handleFilterChange('year', val)}
+                                >
+                                    <SelectTrigger className="w-full md:w-[150px]">
+                                        <SelectValue placeholder="Tahun" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Semua Tahun</SelectItem>
+                                        {years.map((y) => (
+                                            <SelectItem key={y} value={y}>
+                                                {y}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

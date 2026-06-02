@@ -52,9 +52,24 @@ class RosterPageResource extends JsonResource
                     $isException = $exception !== null;
                 }
 
+                $activeLeave = null;
+                if ($user->relationLoaded('leaves')) {
+                    $dateStr = $workDate->toDateString();
+                    $leave = $user->leaves->first(function ($l) use ($dateStr) {
+                        return $l->start_date->toDateString() <= $dateStr && $l->end_date->toDateString() >= $dateStr;
+                    });
+                    if ($leave) {
+                        $activeLeave = [
+                            'type' => $leave->type,
+                            'description' => $leave->description,
+                        ];
+                    }
+                }
+
                 $schedule[] = [
                     'date' => $day['date'],
                     'is_exception' => $isException,
+                    'leave' => $activeLeave,
                     'shift' => $shift ? [
                         'id' => $shift->id,
                         'code' => $shift->code,

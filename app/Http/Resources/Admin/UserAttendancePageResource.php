@@ -35,8 +35,20 @@ class UserAttendancePageResource extends JsonResource
             'total_early_leave_days' => 0,
             'total_early_leave_minutes' => 0,
             'total_off_days' => 0,
+            'total_cuti' => 0,
+            'total_sakit' => 0,
+            'total_izin' => 0,
         ];
         
+        $activeLeaves = [];
+        if ($user->relationLoaded('leaves')) {
+            $activeLeaves = $user->leaves;
+        } else {
+            // Eager load it now just in case
+            $user->load(['leaves' => fn($q) => $q->approved()]);
+            $activeLeaves = $user->leaves;
+        }
+
         for ($day = 1; $day <= $totalDays; $day++) {
             $date = $startOfMonth->setDay($day);
             $dateString = $date->toDateString();
@@ -48,6 +60,11 @@ class UserAttendancePageResource extends JsonResource
             
             $dbRecord = $attendanceDays->get($dateString);
             
+            // Check active leave for this day
+            $activeLeave = $activeLeaves->first(function ($l) use ($dateString) {
+                return $l->start_date->toDateString() <= $dateString && $l->end_date->toDateString() >= $dateString;
+            });
+
             $checkIn = null;
             $checkOut = null;
             $presence = 'off_day'; // Default
@@ -75,6 +92,9 @@ class UserAttendancePageResource extends JsonResource
                 } elseif ($presence === 'absen' || $presence === 'tidak_hadir') {
                     $summary['total_absent']++;
                     $summary['total_scheduled']++;
+                } elseif (in_array($presence, ['cuti', 'sakit', 'izin'])) {
+                    $summary["total_{$presence}"]++;
+                    $summary['total_scheduled']++;
                 }
                 
                 if ($lateMinutes > 0) {
@@ -87,7 +107,11 @@ class UserAttendancePageResource extends JsonResource
                 }
             } else {
                 // If no DB record exists
-                if ($isWorkday) {
+                if ($activeLeave) {
+                    $presence = $activeLeave->type;
+                    $summary["total_{$presence}"]++;
+                    $summary['total_scheduled']++;
+                } elseif ($isWorkday) {
                     $summary['total_scheduled']++;
                     if ($date->isPast() && !$date->isToday()) {
                         $presence = 'tidak_hadir';
