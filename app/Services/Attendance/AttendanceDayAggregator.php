@@ -66,14 +66,8 @@ class AttendanceDayAggregator
             }
         }
 
-        // Ambil log keluar: cari yang berstatus 'keluar' paling akhir, fallback ke log paling terakhir hari itu (harus berbeda dengan log masuk)
+        // Ambil log keluar: cari yang berstatus 'keluar' paling akhir
         $checkOut = $logs->filter(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Keluar)->last();
-        if ($checkOut === null && $logs->isNotEmpty()) {
-            $lastLog = $logs->last();
-            if ($checkIn !== null && $lastLog->id !== $checkIn->id) {
-                $checkOut = $lastLog;
-            }
-        }
 
         $hasAbsen = $logs->contains(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Absen);
 
@@ -83,9 +77,11 @@ class AttendanceDayAggregator
         $early = 0;
         $overtime = 0;
 
-        if ($presence === AttendancePresenceStatus::Hadir && $shift !== null && $checkIn !== null && $checkOut !== null) {
-            [$late, $early, $overtime] = $this->calculateMinutes($shift, $workDate, $checkIn->punched_at, $checkOut->punched_at);
-            $timing = $this->resolveTimingStatus($late, $early, $overtime);
+        if ($shift !== null && $checkIn !== null) {
+            [$late, $early, $overtime] = $this->calculateMinutes($shift, $workDate, $checkIn->punched_at, $checkOut?->punched_at);
+            if ($checkOut !== null && $presence === AttendancePresenceStatus::Hadir) {
+                $timing = $this->resolveTimingStatus($late, $early, $overtime);
+            }
         }
 
         return AttendanceDay::query()->updateOrCreate(
@@ -168,46 +164,46 @@ class AttendanceDayAggregator
         Shift $shift,
         CarbonImmutable $workDate,
         CarbonImmutable $checkInAt,
-        CarbonImmutable $checkOutAt,
+        ?CarbonImmutable $checkOutAt,
     ): array {
         [$shiftStart, $shiftEnd] = $this->workDateResolver->shiftBounds($shift, $workDate);
-        $graceEnd = $shiftStart->addMinutes($shift->grace_minutes);
 
-        $late = $checkInAt->greaterThan($graceEnd)
-            ? (int) $graceEnd->diffInMinutes($checkInAt)
+        $checkInAt = $checkInAt->timezone($this->timezone);
+        $late = $checkInAt->greaterThan($shiftStart)
+            ? (int) $shiftStart->diffInMinutes($checkInAt)
             : 0;
 
-        $early = $checkOutAt->lessThan($shiftEnd)
-            ? (int) $checkOutAt->diffInMinutes($shiftEnd)
-            : 0;
+        $early = 0;
+        $overtime = 0;
 
-        $overtime = $checkOutAt->greaterThan($shiftEnd)
-            ? (int) $shiftEnd->diffInMinutes($checkOutAt)
-            : 0;
+        if ($checkOutAt !== null) {
+            $checkOutAt = $checkOutAt->timezone($this->timezone);
+            $expectedDuration = (int) $shiftStart->diffInMinutes($shiftEnd);
+            $actualDuration = (int) $checkInAt->diffInMinutes($checkOutAt);
+
+            if ($actualDuration < $expectedDuration) {
+                $early = $expectedDuration - $actualDuration;
+            } elseif ($actualDuration > $expectedDuration) {
+                $overtime = $actualDuration - $expectedDuration;
+            }
+        }
 
         return [$late, $early, $overtime];
     }
 
     protected function resolveTimingStatus(int $late, int $early, int $overtime): AttendanceTimingStatus
     {
-        $flags = (int) ($late > 0) + (int) ($early > 0) + (int) ($overtime > 0);
-
-        if ($flags === 0) {
-            return AttendanceTimingStatus::OnTime;
-        }
-
-        if ($flags > 1) {
-            return AttendanceTimingStatus::Mixed;
-        }
-
-        if ($late > 0) {
-            return AttendanceTimingStatus::Late;
-        }
-
+        // Status Harian murni didasarkan pada total durasi kerja.
+        // Meskipun user memiliki $late > 0, jika durasinya pas, statusnya OnTime (Perfect Work).
+        
         if ($early > 0) {
             return AttendanceTimingStatus::EarlyLeave;
         }
 
-        return AttendanceTimingStatus::Overtime;
+        if ($overtime > 0) {
+            return AttendanceTimingStatus::Overtime;
+        }
+
+        return AttendanceTimingStatus::OnTime;
     }
 }

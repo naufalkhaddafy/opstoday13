@@ -35,11 +35,9 @@ class DatabaseSeeder extends Seeder
         $steadyPlaceholder = \App\Models\Shift::query()->where('code', 'steady')->first();
         $shiftPlaceholder = \App\Models\Shift::query()->where('code', 'shift')->first();
 
-        // 2. Supervisor (3 orang)
+        // 2. Supervisor (1 orang)
         $supervisors = [
-            ['employee_id' => 'SPV001', 'name' => 'Bayu (SPV)', 'email' => 'bayu@example.com', 'shift' => $shiftPlaceholder],
-            ['employee_id' => 'SPV002', 'name' => 'Adam (SPV)', 'email' => 'adam@example.com', 'shift' => $shiftPlaceholder],
-            ['employee_id' => 'SPV003', 'name' => 'Agung (SPV)', 'email' => 'agung@example.com', 'shift' => $shiftPlaceholder],
+            ['employee_id' => 'Z23123', 'name' => 'Bayu (SPV)', 'email' => 'bayu@example.com', 'shift' => $shiftPlaceholder],
         ];
 
         foreach ($supervisors as $emp) {
@@ -61,9 +59,9 @@ class DatabaseSeeder extends Seeder
 
         // 3. Engineer (3 orang)
         $engineers = [
-            ['employee_id' => 'ENG001', 'name' => 'Naufal (ENG)', 'email' => 'naufal@example.com', 'shift' => $steadyPlaceholder],
-            ['employee_id' => 'ENG002', 'name' => 'Burhanudin (ENG)', 'email' => 'burhanudin@example.com', 'shift' => $steadyPlaceholder],
-            ['employee_id' => 'ENG003', 'name' => 'Whyndi (ENG)', 'email' => 'whyndi@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z10001', 'name' => 'Naufal (ENG)', 'email' => 'naufal@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z10002', 'name' => 'Burhanudin (ENG)', 'email' => 'burhanudin@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z10003', 'name' => 'Whyndi (ENG)', 'email' => 'whyndi@example.com', 'shift' => $steadyPlaceholder],
         ];
 
         foreach ($engineers as $emp) {
