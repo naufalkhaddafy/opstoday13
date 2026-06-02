@@ -34,6 +34,8 @@ class UserAttendancePageResource extends JsonResource
             'total_late_minutes' => 0,
             'total_early_leave_days' => 0,
             'total_early_leave_minutes' => 0,
+            'total_overtime_days' => 0,
+            'total_overtime_minutes' => 0,
             'total_off_days' => 0,
             'total_cuti' => 0,
             'total_sakit' => 0,
@@ -112,6 +114,10 @@ class UserAttendancePageResource extends JsonResource
                 if ($earlyMinutes > 0) {
                     $summary['total_early_leave_days']++;
                     $summary['total_early_leave_minutes'] += $earlyMinutes;
+                }
+                if ($overtimeMinutes > 0) {
+                    $summary['total_overtime_days']++;
+                    $summary['total_overtime_minutes'] += $overtimeMinutes;
                 }
             } else {
                 // If no DB record exists

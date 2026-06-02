@@ -59,6 +59,8 @@ type Summary = {
     total_late_minutes: number;
     total_early_leave_days: number;
     total_early_leave_minutes: number;
+    total_overtime_days: number;
+    total_overtime_minutes: number;
     total_off_days: number;
     total_cuti: number;
     total_sakit: number;
@@ -399,7 +401,7 @@ export default function UserAttendance({ user, attendance_logs, summary, current
 
                 {/* Monthly Summary Statistics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    {/* Rate Kehadiran */}
+                    {/* Rate Kehadiran & Alpha */}
                     <Card className="hover:border-foreground/20 transition-colors">
                         <CardHeader className="pb-2">
                             <CardDescription className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center justify-between">
@@ -411,29 +413,17 @@ export default function UserAttendance({ user, attendance_logs, summary, current
                                 <span className="text-3xl font-bold tracking-tight text-foreground">{presenceRate}%</span>
                                 <span className="text-xs text-muted-foreground">({summary.total_present} / {summary.total_scheduled} Hari)</span>
                             </div>
-                            <div className="w-full bg-muted rounded-full h-1.5 mt-3 overflow-hidden">
+                            <div className="w-full bg-muted rounded-full h-1.5 mt-3 mb-2 overflow-hidden">
                                 <div
                                     className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500"
                                     style={{ width: `${presenceRate}%` }}
                                 ></div>
                             </div>
-                        </CardContent>
-                    </Card>
-                    {/* Mangkir / Alpha */}
-                    <Card className="hover:border-foreground/20 transition-colors">
-                        <CardHeader className="pb-2">
-                            <CardDescription className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center justify-between">
-                                Tidak Hadir (Alpha) <XCircle className="h-3.5 w-3.5 text-rose-500" />
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-bold tracking-tight text-rose-600 dark:text-rose-400">{summary.total_absent}</span>
-                                <span className="text-xs text-muted-foreground">Hari Kerja</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-2 flex items-center gap-1 font-medium">
-                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${summary.total_absent > 0 ? 'bg-rose-500' : 'bg-muted-foreground/30'}`}></span>
-                                {summary.total_absent > 0 ? 'Absen tanpa keterangan' : 'Karyawan nihil Alpha bulan ini!'}
+                            <div className="text-xs text-muted-foreground flex items-center justify-between font-medium">
+                                <span>Tidak Hadir (Alpha):</span>
+                                <span className={`font-bold ${summary.total_absent > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                    {summary.total_absent} Hari
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
@@ -483,6 +473,27 @@ export default function UserAttendance({ user, attendance_logs, summary, current
                                 <div className="flex items-center gap-1">
                                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-500/50"></span>
                                     Lupa Absen Out/In: {summary.total_incomplete} Hari
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Lembur / Extended Time */}
+                    <Card className="hover:border-foreground/20 transition-colors">
+                        <CardHeader className="pb-2">
+                            <CardDescription className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center justify-between">
+                                Lembur (Extended Time) <TrendingUp className="h-3.5 w-3.5 text-indigo-500" />
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-bold tracking-tight text-foreground">{summary.total_overtime_days}</span>
+                                <span className="text-xs text-muted-foreground font-medium">Hari</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-2 flex flex-col gap-1 font-medium">
+                                <div className="flex items-center gap-1">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                    Total Akumulasi: {summary.total_overtime_minutes} menit
                                 </div>
                             </div>
                         </CardContent>
