@@ -30,7 +30,7 @@ export default function CompanyEdit({ company }: CompanyFormProps) {
         <>
             <Head title={`Edit Perusahaan: ${company.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-3xl mx-auto w-full">
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-4xl mx-auto w-full">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <div>
@@ -71,7 +71,7 @@ export default function CompanyEdit({ company }: CompanyFormProps) {
                                 </div>
                             </div>
 
-                            <div className="flex justify-start pt-6 border-t mt-6">
+                            <div className="flex justify-end pt-6 border-t mt-6">
                                 <Button type="submit" disabled={processing}>
                                     <Save className="mr-2 h-4 w-4" /> Simpan Perubahan
                                 </Button>

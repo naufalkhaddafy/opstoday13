@@ -2,14 +2,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Search } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
-import type { BreadcrumbItem } from '@/types';
 import { Input } from '@/components/ui/input';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Pengajuan Cuti', href: '/leaves' },
-];
 
 export default function LeaveIndex({ leaves, filters }: any) {
     return (

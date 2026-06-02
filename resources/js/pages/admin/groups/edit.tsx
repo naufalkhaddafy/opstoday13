@@ -28,20 +28,18 @@ export default function GroupEdit({ group }: EditProps) {
         <>
             <Head title={`Edit Grup - ${group.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-2xl mx-auto w-full">
-                <div className="flex items-center gap-4 mb-4">
-                    <Button variant="outline" size="icon" asChild>
-                        <Link href={GroupController.index().url}>
-                            <ArrowLeft className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                    <h1 className="text-2xl font-bold tracking-tight">Edit Grup</h1>
-                </div>
-
+            <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-4xl mx-auto w-full">
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Informasi Grup</CardTitle>
-                        <CardDescription>Perbarui detail grup <strong>{group.name}</strong>.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                        <div>
+                            <CardTitle>Edit Grup</CardTitle>
+                            <CardDescription>Perbarui detail grup <strong>{group.name}</strong>.</CardDescription>
+                        </div>
+                        <Button variant="outline" asChild>
+                            <Link href={GroupController.index().url}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                            </Link>
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={submit} className="space-y-6">
@@ -59,10 +57,7 @@ export default function GroupEdit({ group }: EditProps) {
                                 <p className="text-xs text-muted-foreground">Slug akan diperbarui secara otomatis jika nama diubah.</p>
                             </div>
 
-                            <div className="flex justify-end gap-2 pt-4">
-                                <Button type="button" variant="outline" asChild>
-                                    <Link href={GroupController.index().url}>Batal</Link>
-                                </Button>
+                            <div className="flex justify-end pt-6 border-t mt-6">
                                 <Button type="submit" disabled={processing}>
                                     <Save className="mr-2 h-4 w-4" />
                                     Simpan Perubahan
