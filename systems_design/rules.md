@@ -222,7 +222,10 @@ app/
 - Tidak ada `map()`, `diffForHumans()`, atau shaping array manual — delegasikan ke Resource.
 
 ### Data & performa
-- Eager loading dan Redis cache di **Repository**.
+- **Eager loading** wajib diterapkan di tingkat **Repository** untuk menghindari problem N+1 query.
+- **Cache Optimization & Invalidation (Redis + Observer)**: Untuk data tabel referensi atau data yang sering dibaca namun jarang diubah, *wajib* mengimplementasikan optimasi cache dengan pola berikut:
+  1. **Penyimpanan**: Gunakan `Cache::rememberForever()` (atau durasi lain yang relevan) pada level Repository saat melakukan query data.
+  2. **Pembersihan Otomatis**: Buat *Laravel Observer* untuk model tersebut yang mendengarkan event `saved` dan `deleted` untuk melakukan `Cache::forget('kunci_cache')`. Daftarkan Observer di `AppServiceProvider`. Pola ini mencegah hit berlebih ke database sembari memastikan cache tidak pernah basi.
 - Standar RESTful atau konvensi rute Inertia yang rapi.
 
 ## General
