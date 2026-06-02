@@ -35,6 +35,11 @@ const rosterItems: NavItem[] = [
         href: RosterController.index().url,
         icon: CalendarRange,
     },
+    {
+        title: 'Pengajuan Cuti',
+        href: '/leaves',
+        icon: CalendarRange,
+    },
 ];
 
 const managementItems: NavItem[] = [

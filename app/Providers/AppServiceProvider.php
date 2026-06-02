@@ -43,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AttendanceSyncRunRepositoryInterface::class, AttendanceSyncRunRepository::class);
         $this->app->bind(FingerprintClientInterface::class, HttpFingerprintClient::class);
         $this->app->bind(\App\Repositories\Contracts\GroupRepositoryInterface::class, \App\Repositories\Eloquent\GroupRepository::class);
+        $this->app->bind(\App\Repositories\Contracts\UserLeaveRepositoryInterface::class, \App\Repositories\Eloquent\UserLeaveRepository::class);
     }
 
     /**

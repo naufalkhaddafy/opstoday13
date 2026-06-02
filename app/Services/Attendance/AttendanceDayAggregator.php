@@ -76,7 +76,7 @@ class AttendanceDayAggregator
 
         $hasAbsen = $logs->contains(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Absen);
 
-        $presence = $this->resolvePresence($logs, $checkIn, $checkOut, $hasAbsen, $workDate, $allowAbsentMarking);
+        $presence = $this->resolvePresence($user, $logs, $checkIn, $checkOut, $hasAbsen, $workDate, $allowAbsentMarking);
         $timing = null;
         $late = 0;
         $early = 0;
@@ -111,6 +111,7 @@ class AttendanceDayAggregator
      * @param  Collection<int, AttendanceLog>  $logs
      */
     protected function resolvePresence(
+        User $user,
         Collection $logs,
         ?AttendanceLog $checkIn,
         ?AttendanceLog $checkOut,
@@ -118,6 +119,20 @@ class AttendanceDayAggregator
         CarbonImmutable $workDate,
         bool $allowAbsentMarking,
     ): AttendancePresenceStatus {
+        $activeLeave = \App\Models\UserLeave::query()
+            ->where('user_id', $user->id)
+            ->approved()
+            ->activeOn($workDate->toDateString())
+            ->first();
+
+        if ($activeLeave !== null) {
+            return match ($activeLeave->type) {
+                'sakit' => AttendancePresenceStatus::Sakit,
+                'izin' => AttendancePresenceStatus::Izin,
+                default => AttendancePresenceStatus::Cuti,
+            };
+        }
+
         if ($hasAbsen) {
             return AttendancePresenceStatus::Absen;
         }
