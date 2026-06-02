@@ -40,14 +40,22 @@ class UserAttendancePageResource extends JsonResource
             'total_izin' => 0,
         ];
         
-        $activeLeaves = [];
-        if ($user->relationLoaded('leaves')) {
-            $activeLeaves = $user->leaves;
-        } else {
-            // Eager load it now just in case
-            $user->load(['leaves' => fn($q) => $q->approved()]);
-            $activeLeaves = $user->leaves;
+        $relationsToLoad = [];
+        if (! $user->relationLoaded('leaves')) {
+            $relationsToLoad['leaves'] = fn($q) => $q->approved();
         }
+        if (! $user->relationLoaded('shiftAssignments')) {
+            $relationsToLoad[] = 'shiftAssignments';
+        }
+        if (! $user->relationLoaded('exceptions')) {
+            $relationsToLoad[] = 'exceptions';
+        }
+
+        if (! empty($relationsToLoad)) {
+            $user->load($relationsToLoad);
+        }
+
+        $activeLeaves = $user->leaves;
 
         for ($day = 1; $day <= $totalDays; $day++) {
             $date = $startOfMonth->setDay($day);
