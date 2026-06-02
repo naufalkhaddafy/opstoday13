@@ -1,6 +1,6 @@
 <?php
 
-use App\Contracts\Fingerprint\FingerprintClientInterface;
+use App\Repositories\Contracts\FingerprintClientInterface;
 use App\Enums\AttendanceLogStatus;
 use App\Enums\AttendancePresenceStatus;
 use App\Enums\AttendanceTimingStatus;

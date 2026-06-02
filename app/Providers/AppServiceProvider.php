@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Contracts\Fingerprint\FingerprintClientInterface;
+use App\Repositories\Contracts\FingerprintClientInterface;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Group;

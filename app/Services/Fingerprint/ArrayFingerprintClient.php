@@ -2,7 +2,7 @@
 
 namespace App\Services\Fingerprint;
 
-use App\Contracts\Fingerprint\FingerprintClientInterface;
+use App\Repositories\Contracts\FingerprintClientInterface;
 use Carbon\CarbonImmutable;
 
 class ArrayFingerprintClient implements FingerprintClientInterface
@@ -17,11 +17,11 @@ class ArrayFingerprintClient implements FingerprintClientInterface
     /**
      * @return list<array{employee_id: string, status: string, punched_at: CarbonImmutable}>
      */
-    public function fetch(CarbonImmutable $from, CarbonImmutable $to): array
+    public function fetch(): array
     {
         return array_values(array_filter(
             $this->records,
-            fn (array $record): bool => $record['punched_at']->gte($from) && $record['punched_at']->lte($to),
+            fn (array $record): bool => $record['status'] !== AttendanceLogStatus::Absen->value,
         ));
     }
 }

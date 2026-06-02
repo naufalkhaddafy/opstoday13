@@ -35,6 +35,7 @@ class UpdateUserRequest extends FormRequest
             'shift_schedule.*' => ['nullable', 'integer', Rule::exists('shifts', 'id')],
             'shift_effective_from' => ['required_with:shift_schedule', 'date'],
             'shift_effective_to' => ['nullable', 'date', 'after_or_equal:shift_effective_from'],
+            'from' => ['nullable', 'string'],
         ];
     }
 }

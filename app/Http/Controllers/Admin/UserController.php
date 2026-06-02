@@ -128,6 +128,9 @@ class UserController extends Controller
         $role = RoleName::from($validated['role']);
         $isVerified = (bool) ($validated['is_verified'] ?? $user->is_verified);
 
+        $from = $validated['from'] ?? null;
+        unset($validated['from']);
+
         // Update field profil
         $profileData = collect($validated)
             ->except(['role', 'is_verified'])
@@ -150,7 +153,7 @@ class UserController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User berhasil diperbarui.']);
 
-        if ($request->input('from') === 'roster') {
+        if ($from === 'roster') {
             return to_route('admin.roster.index');
         }
 

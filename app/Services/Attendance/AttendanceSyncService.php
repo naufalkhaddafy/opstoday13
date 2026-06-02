@@ -2,7 +2,7 @@
 
 namespace App\Services\Attendance;
 
-use App\Contracts\Fingerprint\FingerprintClientInterface;
+use App\Repositories\Contracts\FingerprintClientInterface;
 use App\Enums\AttendanceSyncRunStatus;
 use App\Models\AttendanceSyncRun;
 use App\Models\User;
@@ -35,7 +35,7 @@ class AttendanceSyncService
         $run = $this->syncRunRepository->start($config['window_from'], $config['window_to']);
 
         try {
-            $records = $this->fingerprintClient->fetch($config['window_from'], $config['window_to']);
+            $records = $this->fingerprintClient->fetch();
             $fetched = count($records);
             $inserted = 0;
             $skipped = 0;

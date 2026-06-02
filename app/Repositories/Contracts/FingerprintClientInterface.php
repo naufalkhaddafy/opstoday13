@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Contracts\Fingerprint;
+namespace App\Repositories\Contracts;
 
 use Carbon\CarbonImmutable;
 
@@ -9,5 +9,5 @@ interface FingerprintClientInterface
     /**
      * @return list<array{employee_id: string, status: string, punched_at: CarbonImmutable}>
      */
-    public function fetch(CarbonImmutable $from, CarbonImmutable $to): array;
+    public function fetch(): array;
 }

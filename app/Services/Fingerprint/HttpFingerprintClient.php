@@ -2,7 +2,7 @@
 
 namespace App\Services\Fingerprint;
 
-use App\Contracts\Fingerprint\FingerprintClientInterface;
+use App\Repositories\Contracts\FingerprintClientInterface;
 use App\Enums\AttendanceLogStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
@@ -13,7 +13,7 @@ class HttpFingerprintClient implements FingerprintClientInterface
     /**
      * @return list<array{employee_id: string, status: string, punched_at: CarbonImmutable}>
      */
-    public function fetch(CarbonImmutable $from, CarbonImmutable $to): array
+    public function fetch(): array
     {
         $url = config('services.fingerprint.url');
 
@@ -39,18 +39,15 @@ class HttpFingerprintClient implements FingerprintClientInterface
         foreach ($response->json('data', $response->json()) ?? [] as $row) {
             $status = AttendanceLogStatus::tryFromApi($row['status1'] ?? null);
 
-            if ($status === null) {
+            if ($status === null || $status === AttendanceLogStatus::Absen) {
                 continue;
             }
 
             $cleanDate = substr(str_replace('T', ' ', $row['fdDate']), 0, 19);
             $punchedAt = CarbonImmutable::parse($cleanDate, $timezone);
 
-            // Filter in-memory to only include records within the requested range
-            if ($punchedAt->lt($from) || $punchedAt->gt($to)) {
-                continue;
-            }
-
+            // The API is state-based, so we consume everything it gives us.
+            // (Removed the $from / $to filtering here so any incoming data is processed)
             $records[] = [
                 'employee_id' => (string) $row['fsIdNo'],
                 'status' => $status->value,
