@@ -49,12 +49,27 @@ class HttpFingerprintClient implements FingerprintClientInterface
             // The API is state-based, so we consume everything it gives us.
             // (Removed the $from / $to filtering here so any incoming data is processed)
             $records[] = [
-                'employee_id' => (string) $row['fsIdNo'],
+                'employee_id' => $this->normalizeEmployeeId((string) $row['fsIdNo']),
                 'status' => $status->value,
                 'punched_at' => $punchedAt,
             ];
         }
 
         return $records;
+    }
+
+    private function normalizeEmployeeId(string $raw): string
+    {
+        $value = ltrim($raw, '0');
+
+        if ($value === '') {
+            return '0';
+        }
+
+        if ($value[0] === '8') {
+            $value = 'Z' . substr($value, 1);
+        }
+
+        return $value;
     }
 }
