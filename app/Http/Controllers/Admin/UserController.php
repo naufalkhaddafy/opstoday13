@@ -9,6 +9,8 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Http\Resources\Admin\UserFormResource;
 use App\Http\Resources\Admin\UserPageResource;
 use App\Http\Resources\Admin\UserAttendancePageResource;
+use App\Http\Resources\Admin\UserTicketsPageResource;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\UserShiftAssignmentRepositoryInterface;
@@ -327,6 +329,54 @@ class UserController extends Controller
                 'month' => $month,
                 'year' => $year,
                 'shift_resolver' => $shiftResolver,
+            ])->resolve()
+        );
+    }
+
+    /**
+     * Tampilkan report tiket IT yang ditangani user terpilih.
+     */
+    public function tickets(Request $request, User $user): Response
+    {
+        $timezone = config('app.timezone');
+
+        $status = $request->input('status');
+        $search = trim((string) $request->input('search', ''));
+        $year = (int) $request->input('year', now($timezone)->year);
+
+        $monthInput = $request->input('month', now($timezone)->month);
+        $showAllMonths = $monthInput === 'all';
+        $month = $showAllMonths ? null : (int) $monthInput;
+
+        $dateExpression = 'COALESCE(api_creation_date, first_seen_at, status_changed_at)';
+
+        $tickets = Ticket::query()
+            ->where('assigned_to_user_id', $user->id)
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('ticket_no', 'like', "%{$search}%")
+                        ->orWhere('title', 'like', "%{$search}%");
+                });
+            })
+            ->when(! $showAllMonths, function ($query) use ($dateExpression, $month, $year) {
+                $query->whereRaw("MONTH({$dateExpression}) = ?", [$month])
+                    ->whereRaw("YEAR({$dateExpression}) = ?", [$year]);
+            })
+            ->orderByRaw("CASE WHEN status = 'closed' THEN 1 ELSE 0 END")
+            ->orderByRaw('COALESCE(completed_date, status_changed_at) DESC')
+            ->orderByDesc('status_changed_at')
+            ->get();
+
+        return Inertia::render(
+            'admin/users/tickets',
+            UserTicketsPageResource::make([
+                'user' => $user,
+                'tickets' => $tickets,
+                'status' => $status,
+                'search' => $search !== '' ? $search : null,
+                'month' => $showAllMonths ? 'all' : $month,
+                'year' => $year,
             ])->resolve()
         );
     }

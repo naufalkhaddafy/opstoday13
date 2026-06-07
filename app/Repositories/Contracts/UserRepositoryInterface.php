@@ -26,4 +26,12 @@ interface UserRepositoryInterface
      * @return \Illuminate\Database\Eloquent\Collection<int, User>
      */
     public function getEmployeesForRoster(array $filters = []): \Illuminate\Database\Eloquent\Collection;
+
+    /**
+     * User aktif (non super-admin) beserta relasi yang dibutuhkan untuk
+     * ringkasan kehadiran pada tanggal tertentu.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, User>
+     */
+    public function activeForDashboard(string $date, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection;
 }

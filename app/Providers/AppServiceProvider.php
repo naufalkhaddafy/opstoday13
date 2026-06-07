@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Repositories\Contracts\FingerprintClientInterface;
 use App\Repositories\Contracts\SihepiTicketClientInterface;
+use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
 use App\Repositories\Contracts\TicketRepositoryInterface;
 use App\Repositories\Contracts\TicketSyncRunRepositoryInterface;
 use App\Models\User;
@@ -33,6 +34,7 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserShiftAssignmentRepository;
 use App\Repositories\Eloquent\GroupRepository;
 use App\Repositories\Eloquent\UserLeaveRepository;
+use App\Repositories\Eloquent\TicketDashboardRepository;
 use App\Repositories\Eloquent\TicketRepository;
 use App\Repositories\Eloquent\TicketSyncRunRepository;
 use App\Services\Fingerprint\HttpFingerprintClient;
@@ -64,6 +66,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserLeaveRepositoryInterface::class, UserLeaveRepository::class);
         $this->app->bind(SihepiTicketClientInterface::class, HttpSihepiTicketClient::class);
         $this->app->bind(TicketRepositoryInterface::class, TicketRepository::class);
+        $this->app->bind(TicketDashboardRepositoryInterface::class, TicketDashboardRepository::class);
         $this->app->bind(TicketSyncRunRepositoryInterface::class, TicketSyncRunRepository::class);
     }
 

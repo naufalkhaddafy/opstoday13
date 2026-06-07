@@ -20,6 +20,7 @@ import {
     TrendingDown
 } from 'lucide-react';
 import { useMemo } from 'react';
+import { BRAND_ICON_BOX, BRAND_PAGE_HEADER } from '@/lib/brand';
 
 type User = {
     id: number;
@@ -268,11 +269,11 @@ export default function UserAttendance({ user, attendance_logs, summary, current
 
                 {/* Upper Section: User details & Current Shift Card */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 flex flex-col justify-between p-6 rounded-xl border bg-card text-card-foreground shadow-sm bg-gradient-to-br from-indigo-50/40 via-transparent to-transparent dark:from-indigo-950/10">
+                    <div className={`lg:col-span-2 flex flex-col justify-between p-6 ${BRAND_PAGE_HEADER}`}>
                         <div>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-3 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                                    <div className={BRAND_ICON_BOX}>
                                         <UserIcon className="h-6 w-6" />
                                     </div>
                                     <div>

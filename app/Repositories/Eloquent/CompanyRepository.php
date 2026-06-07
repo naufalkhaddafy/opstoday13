@@ -52,8 +52,20 @@ class CompanyRepository implements CompanyRepositoryInterface
 
     public function all(): \Illuminate\Database\Eloquent\Collection
     {
-        return Cache::rememberForever('companies.all', function () {
-            return Company::query()->select('id', 'name')->orderBy('name')->get();
-        });
+        $rows = Cache::get('companies.all');
+
+        if (! is_array($rows)) {
+            $rows = Company::query()
+                ->select('id', 'name')
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Company $company) => $company->only(['id', 'name']))
+                ->values()
+                ->all();
+
+            Cache::forever('companies.all', $rows);
+        }
+
+        return Company::query()->hydrate($rows);
     }
 }

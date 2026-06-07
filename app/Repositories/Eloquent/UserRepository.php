@@ -80,6 +80,21 @@ class UserRepository implements UserRepositoryInterface
         $user->delete();
     }
 
+    public function activeForDashboard(string $date, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection
+    {
+        return User::query()
+            ->where('is_active', true)
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::SuperAdmin->value))
+            ->with([
+                'leaves' => fn ($q) => $q->approved()->activeOn($date),
+                'shiftAssignments',
+                'exceptions' => fn ($q) => $q->whereDate('date', $date),
+                'attendanceDays' => fn ($q) => $q->whereDate('work_date', $date),
+            ])
+            ->get();
+    }
+
     public function getEmployeesForRoster(array $filters = []): \Illuminate\Database\Eloquent\Collection
     {
         return User::query()

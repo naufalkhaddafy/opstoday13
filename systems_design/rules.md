@@ -166,6 +166,56 @@ export function useDebouncedSearch(initialValue: string, delay = 300) {
 | **Jangan Inline Style** | Gunakan kelas Tailwind. Hindari `style={{}}` kecuali untuk nilai dinamis (e.g. `width` dari kalkulasi). |
 | **Hindari Prop Drilling > 2 Level** | Gunakan context atau komposisi (`children`) daripada meneruskan props terlalu dalam. |
 
+### Brand Identity (b-hero)
+
+Semua halaman — publik maupun admin — **wajib** memakai palet warna b-hero yang sama. Jangan hardcode warna acak (indigo/violet/fuchsia) untuk elemen brand; impor dari `@/lib/brand`.
+
+#### Aset & Token Warna
+
+| Token | Hex | Penggunaan |
+|-------|-----|------------|
+| `BRAND.dark` | `#1B5E20` | Hijau tua — completed, sidebar primary (dark) |
+| `BRAND.mid` | `#2E7D32` | Hijau utama — primary, ikon section, CTA aktif |
+| `BRAND.light` | `#4CAF50` | Hijau terang — present, in progress |
+| `BRAND.yellow` | `#FDD835` | Kuning aksen — pending, highlight, badge subtitle |
+| `BRAND.black` | `#0a0a0a` | Hitam — awal gradient header |
+
+- Logo: `/public/icon/b-hero-icon.png` → gunakan `BRAND_LOGO_SRC` dari `@/lib/brand`.
+- CSS global (`resources/css/app.css`): `--primary`, `--ring`, `--chart-*`, `--sidebar-primary` sudah diset ke palet hijau b-hero.
+
+#### File Shared (wajib dipakai ulang)
+
+```
+resources/js/
+  lib/brand.ts                          # Token warna, status badge, chart colors
+  components/shared/brand-hero-header.tsx  # Header gradient + logo (publik & admin)
+```
+
+#### Kapan Pakai Apa
+
+| Kebutuhan | Import |
+|-----------|--------|
+| Warna hex chart / progress bar | `BRAND`, `TICKET_CHART_COLORS` dari `@/lib/brand` |
+| Badge status tiket | `TICKET_STATUS_STYLES` dari `@/lib/brand` |
+| Header halaman dashboard | `<BrandHeroHeader />` — prop `compact` untuk layout admin (sidebar) |
+| Header card halaman detail (user/tickets/attendance) | `BRAND_PAGE_HEADER` + `BRAND_ICON_BOX` |
+| Logo sidebar admin | Sudah di `AppLogo` — jangan ganti ke ikon lain |
+
+#### Mapping Status Tiket (chart & badge)
+
+| Status | Warna |
+|--------|-------|
+| Assigned | `BRAND.mid` (hijau) |
+| Pending / On Hold | `BRAND.yellow` (kuning) |
+| In Progress | `BRAND.light` (hijau terang) |
+| Closed / Completed | `BRAND.dark` (hijau tua) |
+
+#### Aturan
+
+- **Jangan** definisikan ulang `STATUS_STYLES` atau `BRAND` di file halaman — impor dari `@/lib/brand`.
+- Warna semantik non-brand (mis. `rose` untuk absent/error) boleh dipakai untuk status negatif.
+- Warna shift di roster (SFT/MLM) boleh berbeda karena bersifat kode shift, bukan elemen brand.
+
 ## Laravel
 
 ### Arsitektur lapisan

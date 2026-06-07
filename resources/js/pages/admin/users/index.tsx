@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, Search, FilterX, Calendar } from 'lucide-react';
+import { Pencil, Plus, Trash2, Search, FilterX, Calendar, Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -264,13 +264,24 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                                     <div className="flex justify-end gap-2">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-950/40" asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E7D32] hover:text-[#1B5E20] hover:bg-green-50 dark:text-[#4CAF50] dark:hover:text-green-300 dark:hover:bg-green-950/40" asChild>
                                                                     <Link href={UserController.attendance({ user: user.id }).url}>
                                                                         <Calendar className="h-4 w-4" />
                                                                     </Link>
                                                                 </Button>
                                                             </TooltipTrigger>
                                                             <TooltipContent>Lihat Absensi & KPI</TooltipContent>
+                                                        </Tooltip>
+
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-950/40" asChild>
+                                                                    <Link href={UserController.tickets({ user: user.id }).url}>
+                                                                        <Ticket className="h-4 w-4" />
+                                                                    </Link>
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>Report Tiket</TooltipContent>
                                                         </Tooltip>
 
                                                         <Tooltip>
