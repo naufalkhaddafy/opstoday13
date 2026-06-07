@@ -59,9 +59,9 @@ class DatabaseSeeder extends Seeder
 
         // 3. Engineer (3 orang)
         $engineers = [
-            ['employee_id' => 'Z10001', 'name' => 'Naufal (ENG)', 'email' => 'naufal@example.com', 'shift' => $steadyPlaceholder],
-            ['employee_id' => 'Z10002', 'name' => 'Burhanudin (ENG)', 'email' => 'burhanudin@example.com', 'shift' => $steadyPlaceholder],
-            ['employee_id' => 'Z10003', 'name' => 'Whyndi (ENG)', 'email' => 'whyndi@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z100101', 'name' => 'Naufal (DSO - IT)', 'email' => 'naufal@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z109553', 'name' => 'Burhanudin (DSO-IT)', 'email' => 'burhanudin@example.com', 'shift' => $steadyPlaceholder],
+            ['employee_id' => 'Z129984', 'name' => 'Koko Yuadi (DSO - IT)', 'email' => 'koko@example.com', 'shift' => $steadyPlaceholder],
         ];
 
         foreach ($engineers as $emp) {

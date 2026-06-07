@@ -39,4 +39,10 @@ return [
         'url' => env('FINGERPRINT_API_URL'),
     ],
 
+    'sihepi' => [
+        'base_url' => env('SIHEPI_API_URL'),
+        'verify_ssl' => env('SIHEPI_VERIFY_SSL', false),
+        'timeout' => (int) env('SIHEPI_TIMEOUT', 15),
+    ],
+
 ];

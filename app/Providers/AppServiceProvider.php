@@ -3,13 +3,18 @@
 namespace App\Providers;
 
 use App\Repositories\Contracts\FingerprintClientInterface;
+use App\Repositories\Contracts\SihepiTicketClientInterface;
+use App\Repositories\Contracts\TicketRepositoryInterface;
+use App\Repositories\Contracts\TicketSyncRunRepositoryInterface;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Group;
 use App\Models\Shift;
+use App\Models\Ticket;
 use App\Observers\CompanyObserver;
 use App\Observers\GroupObserver;
 use App\Observers\ShiftObserver;
+use App\Observers\TicketObserver;
 use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
 use App\Repositories\Contracts\AttendanceLogRepositoryInterface;
 use App\Repositories\Contracts\AttendanceSyncRunRepositoryInterface;
@@ -28,7 +33,10 @@ use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Eloquent\UserShiftAssignmentRepository;
 use App\Repositories\Eloquent\GroupRepository;
 use App\Repositories\Eloquent\UserLeaveRepository;
+use App\Repositories\Eloquent\TicketRepository;
+use App\Repositories\Eloquent\TicketSyncRunRepository;
 use App\Services\Fingerprint\HttpFingerprintClient;
+use App\Services\Sihepi\HttpSihepiTicketClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
@@ -54,6 +62,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FingerprintClientInterface::class, HttpFingerprintClient::class);
         $this->app->bind(GroupRepositoryInterface::class, GroupRepository::class);
         $this->app->bind(UserLeaveRepositoryInterface::class, UserLeaveRepository::class);
+        $this->app->bind(SihepiTicketClientInterface::class, HttpSihepiTicketClient::class);
+        $this->app->bind(TicketRepositoryInterface::class, TicketRepository::class);
+        $this->app->bind(TicketSyncRunRepositoryInterface::class, TicketSyncRunRepository::class);
     }
 
     /**
@@ -67,6 +78,7 @@ class AppServiceProvider extends ServiceProvider
         Company::observe(CompanyObserver::class);
         Group::observe(GroupObserver::class);
         Shift::observe(ShiftObserver::class);
+        Ticket::observe(TicketObserver::class);
     }
 
     protected function configureLastActiveTracking(): void
