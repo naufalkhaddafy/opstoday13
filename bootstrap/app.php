@@ -35,9 +35,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('attendance:sync')->dailyAt('09:00')->timezone(config('app.timezone'));
-        $schedule->command('attendance:sync')->dailyAt('18:00')->timezone(config('app.timezone'));
-        $schedule->command('attendance:sync')->dailyAt('23:30')->timezone(config('app.timezone'));
+        $schedule->command('attendance:sync')
+            ->everyMinute()
+            ->withoutOverlapping(10)
+            ->runInBackground()
+            ->timezone(config('app.timezone'));
 
         $schedule->command('tickets:sync-open')
             ->everyMinute()

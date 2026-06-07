@@ -174,12 +174,13 @@ test('sync command imports records and rebuilds attendance days', function () {
     CarbonImmutable::setTestNow();
 });
 
-test('schedule registers attendance sync three times daily', function () {
+test('schedule registers attendance sync every minute', function () {
     $events = app(Schedule::class)->events();
 
     $attendanceEvents = collect($events)->filter(
         fn ($event) => str_contains($event->command ?? '', 'attendance:sync'),
     );
 
-    expect($attendanceEvents)->toHaveCount(3);
+    expect($attendanceEvents)->toHaveCount(1)
+        ->and($attendanceEvents->first()->expression)->toBe('* * * * *');
 });
