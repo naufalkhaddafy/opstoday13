@@ -14,9 +14,9 @@ export const BRAND = {
 export const BRAND_LOGO_SRC = '/icon/b-hero-icon.png';
 
 export const BRAND_HEADER_GRADIENT =
-    'bg-gradient-to-r from-[#0a0a0a] via-[#1B5E20] to-[#2E7D32]';
+    'bg-gradient-to-r from-[#0d1f12] via-[#1a4a1f] to-[#236b2a]';
 
-export const BRAND_HEADER_BORDER = 'border-[#2E7D32]/40';
+export const BRAND_HEADER_BORDER = 'border-[#3a8f42]/30';
 
 export const TICKET_STATUS_STYLES: Record<string, string> = {
     assigned:

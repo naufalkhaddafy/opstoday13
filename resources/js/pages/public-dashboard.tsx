@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { BRAND, TICKET_CHART_COLORS, TICKET_STATUS_STYLES } from '@/lib/brand';
 import {
     UserCheck,
@@ -22,8 +23,10 @@ import {
     Users,
     Building2,
     Download,
+    SlidersHorizontal,
+    X,
 } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 type AttendanceStats = {
     total_users: number;
@@ -226,69 +229,165 @@ function DashboardHeaderFilters({
     onApply: (next: Partial<DashboardFilters>) => void;
     onExport: () => void;
 }) {
+    const [open, setOpen] = useState(false);
+
+    const isFiltered =
+        filters.company_id !== filters.defaults.company_id ||
+        filters.date_from !== filters.defaults.date_from ||
+        filters.date_to !== filters.defaults.date_to;
+
+    const btnClasses =
+        'h-9 gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold shadow-sm backdrop-blur-sm transition-all';
+
+    const handleReset = () => {
+        onApply({
+            company_id: filters.defaults.company_id,
+            date_from: filters.defaults.date_from,
+            date_to: filters.defaults.date_to,
+        });
+        setOpen(false);
+    };
+
     return (
-        <div className="flex w-full flex-col gap-2 rounded-lg border border-white/20 bg-white/10 p-2 backdrop-blur-sm lg:w-auto lg:flex-row lg:items-end lg:gap-3">
-            <div className="space-y-2">
-                <Label htmlFor="company-filter" className="mb-0 block text-[10px] font-medium uppercase tracking-wide text-white/70">
-                    <span className="flex items-center gap-1">
-                        <Building2 className="h-2.5 w-2.5" /> Company
-                    </span>
-                </Label>
-                <Select
-                    value={filters.company_id ? String(filters.company_id) : 'all'}
-                    onValueChange={(value) => onApply({ company_id: value === 'all' ? null : Number(value) })}
-                >
-                    <SelectTrigger id="company-filter" className="h-8 w-full min-w-[120px] border-white/30 bg-white px-2.5 text-xs text-foreground lg:w-[132px]">
-                        <SelectValue placeholder="All companies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All companies</SelectItem>
-                        {companies.map((company) => (
-                            <SelectItem key={company.id} value={String(company.id)}>
-                                {company.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="date-from" className="mb-0 block text-[10px] font-medium uppercase tracking-wide text-white/70">From</Label>
-                <Input
-                    id="date-from"
-                    type="date"
-                    className="h-8 w-full border-white/30 bg-white px-2.5 text-xs text-foreground lg:w-[124px]"
-                    value={filters.date_from}
-                    onChange={(e) => onApply({ date_from: e.target.value })}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="date-to" className="mb-0 block text-[10px] font-medium uppercase tracking-wide text-white/70">To</Label>
-                <Input
-                    id="date-to"
-                    type="date"
-                    className="h-8 w-full border-white/30 bg-white px-2.5 text-xs text-foreground lg:w-[124px]"
-                    value={filters.date_to}
-                    onChange={(e) => onApply({ date_to: e.target.value })}
-                />
-            </div>
-            <div className="hidden self-stretch lg:my-0.5 lg:block lg:w-px lg:bg-white/20" />
-            <div className="space-y-2">
-                <Label className="mb-0 block text-[10px] font-medium uppercase tracking-wide text-white/70">
-                    <span className="flex items-center gap-1">
-                        <Download className="h-2.5 w-2.5" /> Export
-                    </span>
-                </Label>
+        <>
+            <div className="flex items-center gap-2">
                 <Button
                     type="button"
                     variant="outline"
                     onClick={onExport}
-                    className="h-8 w-full gap-1.5 border-white/30 bg-white px-2.5 text-xs font-medium text-[#1B5E20] shadow-none hover:bg-white/90 lg:w-[92px]"
+                    className={`${btnClasses} bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md`}
                 >
                     <Download className="h-3.5 w-3.5 text-[#2E7D32]" />
                     Export
                 </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setOpen(true)}
+                    className={`${btnClasses} ${
+                        isFiltered
+                            ? 'border-[#FDD835]/40 bg-[#FDD835]/20 text-[#FDD835] hover:bg-[#FDD835]/30'
+                            : 'bg-white/10 text-white/80 hover:bg-white/20'
+                    }`}
+                >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    {isFiltered ? 'Filtered' : 'Filters'}
+                </Button>
+                {isFiltered && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleReset}
+                        className="h-9 px-2 text-xs text-white/60 hover:bg-white/10 hover:text-white"
+                    >
+                        <X className="h-3.5 w-3.5" />
+                        Reset
+                    </Button>
+                )}
             </div>
-        </div>
+
+            <Sheet open={open} onOpenChange={setOpen}>
+                <SheetContent side="right" className="w-[340px] sm:max-w-[380px]">
+                    <SheetHeader className="border-b pb-4">
+                        <SheetTitle className="flex items-center gap-2 text-lg">
+                            <SlidersHorizontal className="h-5 w-5 text-[#2E7D32]" />
+                            Dashboard Filters
+                        </SheetTitle>
+                        <SheetDescription>
+                            Filter data by company and date range.
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4">
+                        {/* Company */}
+                        <div className="space-y-2">
+                            <Label htmlFor="company-filter" className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <Building2 className="h-4 w-4 text-[#2E7D32]" /> Company
+                            </Label>
+                            <Select
+                                value={filters.company_id ? String(filters.company_id) : 'all'}
+                                onValueChange={(value) => onApply({ company_id: value === 'all' ? null : Number(value) })}
+                            >
+                                <SelectTrigger id="company-filter" className="h-10 w-full">
+                                    <SelectValue placeholder="All companies" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All companies</SelectItem>
+                                    {companies.map((company) => (
+                                        <SelectItem key={company.id} value={String(company.id)}>
+                                            {company.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Date range */}
+                        <div className="space-y-4">
+                            <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <CalendarClock className="h-4 w-4 text-[#2E7D32]" /> Date Range
+                            </Label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="filter-date-from" className="text-xs text-muted-foreground">From</Label>
+                                    <Input
+                                        id="filter-date-from"
+                                        type="date"
+                                        className="h-10"
+                                        value={filters.date_from}
+                                        onChange={(e) => onApply({ date_from: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="filter-date-to" className="text-xs text-muted-foreground">To</Label>
+                                    <Input
+                                        id="filter-date-to"
+                                        type="date"
+                                        className="h-10"
+                                        value={filters.date_to}
+                                        onChange={(e) => onApply({ date_to: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Active filter indicator */}
+                        {isFiltered && (
+                            <div className="rounded-lg border border-[#FDD835]/30 bg-[#FDD835]/5 p-3">
+                                <p className="text-xs text-muted-foreground">
+                                    Filters are active. Data is filtered
+                                    {filters.company_id ? ' by company' : ''}
+                                    {filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to
+                                        ? ` for ${filters.date_from} – ${filters.date_to}`
+                                        : ''}.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <SheetFooter className="border-t pt-4">
+                        {isFiltered && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleReset}
+                                className="w-full gap-2"
+                            >
+                                <X className="h-4 w-4" />
+                                Reset to Today
+                            </Button>
+                        )}
+                        <Button
+                            type="button"
+                            onClick={() => setOpen(false)}
+                            className="w-full gap-2 bg-[#2E7D32] text-white hover:bg-[#1B5E20]"
+                        >
+                            Done
+                        </Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
+        </>
     );
 }
 
@@ -437,10 +536,23 @@ export default function PublicDashboard({
     const applyFilters = useCallback(
         (next: Partial<DashboardFilters>) => {
             const companyId = next.company_id !== undefined ? next.company_id : filters.company_id;
+            const dateFrom = next.date_from ?? filters.date_from;
+            const dateTo = next.date_to ?? filters.date_to;
+
+            // If all filters match defaults, navigate to clean URL '/'
+            const isDefault =
+                !companyId &&
+                dateFrom === filters.defaults.date_from &&
+                dateTo === filters.defaults.date_to;
+
+            if (isDefault) {
+                router.get('/', {}, { preserveState: true, preserveScroll: true, replace: true });
+                return;
+            }
 
             const params: Record<string, string> = {
-                date_from: next.date_from ?? filters.date_from,
-                date_to: next.date_to ?? filters.date_to,
+                date_from: dateFrom,
+                date_to: dateTo,
             };
             if (companyId) {
                 params.company_id = String(companyId);

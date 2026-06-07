@@ -13,29 +13,31 @@ type BrandHeroHeaderProps = {
 
 export function BrandHeroHeader({ title, subtitle, badge, date, compact = false, actions }: BrandHeroHeaderProps) {
     return (
-        <div className={`border-b ${BRAND_HEADER_BORDER} ${BRAND_HEADER_GRADIENT} text-white ${compact ? 'rounded-xl' : ''}`}>
+        <div className={`relative overflow-hidden border-b ${BRAND_HEADER_BORDER} ${BRAND_HEADER_GRADIENT} text-white ${compact ? 'rounded-xl' : ''}`}>
+            {/* Subtle radial glow for depth */}
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_70%_50%,rgba(76,175,80,0.12),transparent_70%)]" />
             <div
-                className={`mx-auto flex max-w-7xl flex-col gap-4 px-4 md:px-6 ${compact ? 'py-4' : 'py-6 md:py-8'} ${actions ? 'lg:flex-row lg:items-center lg:justify-between' : ''}`}
+                className={`relative mx-auto flex max-w-7xl flex-col gap-4 px-4 md:px-6 ${compact ? 'py-4' : 'py-6 md:py-8'} ${actions ? 'lg:flex-row lg:items-center lg:justify-between' : ''}`}
             >
                 <div className="flex items-center gap-4">
                     <img
                         src={BRAND_LOGO_SRC}
                         alt="b-hero"
-                        className={`shrink-0 object-contain ${compact ? 'h-10 w-10' : 'h-14 w-14 md:h-16 md:w-16'}`}
+                        className={`shrink-0 object-contain drop-shadow-lg ${compact ? 'h-10 w-10' : 'h-14 w-14 md:h-16 md:w-16'}`}
                     />
                     <div className="flex min-w-0 flex-col gap-1">
                         {badge && (
-                            <span className="text-xs font-semibold uppercase tracking-widest text-[#FDD835]">
+                            <span className="w-fit rounded-full bg-[#FDD835]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#FDD835]">
                                 {badge}
                             </span>
                         )}
                         <h1 className={`font-bold tracking-tight ${compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'}`}>
                             {title}
                         </h1>
-                        {subtitle && <p className="text-sm text-white/80">{subtitle}</p>}
+                        {subtitle && <p className="text-sm text-white/75">{subtitle}</p>}
                         {date && (
-                            <p className="flex items-center gap-2 text-sm text-white/80">
-                                <CalendarClock className="h-4 w-4 text-[#FDD835]" /> {date}
+                            <p className="flex items-center gap-2 text-sm text-white/75">
+                                <CalendarClock className="h-4 w-4 text-[#FDD835]/80" /> {date}
                             </p>
                         )}
                     </div>

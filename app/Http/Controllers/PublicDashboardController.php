@@ -8,7 +8,7 @@ use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\RedirectResponse;
+
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,23 +24,13 @@ class PublicDashboardController extends Controller
     /**
      * Dashboard publik (tanpa login): ringkasan kehadiran & operasional tiket IT.
      */
-    public function index(Request $request, ShiftAssignmentResolver $shiftResolver): Response|RedirectResponse
+    public function index(Request $request, ShiftAssignmentResolver $shiftResolver): Response
     {
         $timezone = config('app.timezone');
         $today = CarbonImmutable::now($timezone)->startOfDay();
 
-        if (! $request->has('date_from') && ! $request->has('date_to')) {
-            $params = [
-                'date_from' => $today->toDateString(),
-                'date_to' => $today->toDateString(),
-            ];
+        // No redirect needed – defaults are resolved inline so the URL stays clean as '/'.
 
-            if ($request->filled('company_id') && $request->input('company_id') !== 'all') {
-                $params['company_id'] = $request->input('company_id');
-            }
-
-            return redirect()->route('home', $params);
-        }
 
         $dateFrom = CarbonImmutable::parse(
             $request->input('date_from', $today->toDateString()),
