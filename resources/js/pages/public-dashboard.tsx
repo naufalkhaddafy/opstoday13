@@ -28,686 +28,25 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    Trophy,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-type AttendanceStats = {
-    total_users: number;
-    total_scheduled: number;
-    total_present: number;
-    total_leave: number;
-    total_absent: number;
-    total_late: number;
-    total_early_leave: number;
-};
+import { DashboardProps, DashboardFilters, Segment } from '@/types/dashboard';
+import { formatDate, formatPeriodLabel } from '@/components/dashboard/helpers';
 
-type EmployeeStatus = {
-    id: number;
-    name: string;
-    shift_name: string;
-    shift_time: string;
-    status: string;
-    check_in: string | null;
-    check_out: string | null;
-    late_minutes: number;
-    early_leave_minutes: number;
-    extended_minutes: number;
-    leave_description: string | null;
-};
-
-type TicketStats = {
-    assigned: number;
-    pending: number;
-    in_progress: number;
-    open_total: number;
-    completed_today: number;
-    created_today: number;
-};
-
-type EngineerSummary = {
-    id: number;
-    name: string;
-    employee_id: string | null;
-    assigned: number;
-    pending: number;
-    in_progress: number;
-    completed_today: number;
-    total: number;
-    avg_response_time_seconds: number | null;
-    avg_response_time_label: string | null;
-    avg_resolution_time_hours: number | null;
-    avg_resolution_time_label: string | null;
-};
-
-type TicketRow = {
-    id: number;
-    ticket_no: string;
-    title: string | null;
-    category: string | null;
-    status: 'assigned' | 'pending_on_hold' | 'in_progress' | 'closed' | null;
-    status_label: string | null;
-    assigned_to_name: string | null;
-    assigned_user: { id: number; name: string } | null;
-    requested_for: string | null;
-    created_date: string | null;
-    completed_date: string | null;
-    response_time_label: string | null;
-    resolution_time_label: string | null;
-    updated_at: string | null;
-};
-
-type PaginationLink = { url: string | null; label: string; active: boolean };
-
-type CompanyOption = { id: number; name: string };
-
-type DashboardFilters = {
-    company_id: number | null;
-    date_from: string;
-    date_to: string;
-    search: string | null;
-    sort_by: string | null;
-    sort_dir: string;
-    status: string | null;
-    defaults: {
-        company_id: number | null;
-        date_from: string;
-        date_to: string;
-        search: string | null;
-        sort_by: string | null;
-        sort_dir: string;
-        status: string | null;
-    };
-};
-
-type DashboardProps = {
-    date: string;
-    attendance?: { stats: AttendanceStats; employees: EmployeeStatus[] };
-    ticket_stats?: TicketStats;
-    companies: CompanyOption[];
-    filters: DashboardFilters;
-    engineers?: EngineerSummary[];
-    tickets?: {
-        data: TicketRow[];
-        meta: { current_page: number; last_page: number; per_page: number; total: number; from: number | null; to: number | null };
-        links: PaginationLink[];
-    };
-};
-
-const ATTENDANCE_LABELS: Record<string, string> = {
-    hadir: 'Present',
-    tidak_lengkap: 'Incomplete',
-    sakit: 'Sick Leave',
-    izin: 'Permission',
-    cuti: 'Leave',
-    absen: 'Absent',
-    tidak_hadir: 'Absent',
-    off_day: 'Day Off',
-    on_duty: 'On Duty',
-};
-
-function attendanceBadge(attendance: EmployeeStatus) {
-    const status = attendance.status;
-    const isOnDuty = attendance.check_in && !attendance.check_out;
-
-    if (isOnDuty && (status === 'hadir' || status === 'tidak_lengkap')) {
-        return <Badge className="border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{ATTENDANCE_LABELS.on_duty}</Badge>;
-    }
-
-    switch (status) {
-        case 'hadir':
-        case 'tidak_lengkap':
-            return <Badge className="border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{ATTENDANCE_LABELS[status]}</Badge>;
-        case 'sakit':
-        case 'izin':
-        case 'cuti':
-            return <Badge className="border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{ATTENDANCE_LABELS[status]}</Badge>;
-        case 'absen':
-        case 'tidak_hadir':
-            return <Badge className="border-rose-200 bg-rose-100 text-rose-700 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-400">{ATTENDANCE_LABELS[status]}</Badge>;
-        default:
-            return <Badge variant="outline" className="bg-muted/50 text-muted-foreground">{ATTENDANCE_LABELS.off_day}</Badge>;
-    }
-}
-
-function formatDate(value: string | null): string {
-    if (!value) return '-';
-    return new Date(value).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function formatShiftName(name: string): string {
-    return name === 'Libur' ? 'Day Off' : name;
-}
-
-function formatPeriodLabel(dateFrom: string, dateTo: string): string {
-    const from = new Date(`${dateFrom}T00:00:00`);
-    const to = new Date(`${dateTo}T00:00:00`);
-    const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short', year: 'numeric' };
-    if (dateFrom === dateTo) {
-        return from.toLocaleDateString('en-US', opts);
-    }
-    return `${from.toLocaleDateString('en-US', opts)} – ${to.toLocaleDateString('en-US', opts)}`;
-}
-
-type Segment = { label: string; value: number; color: string };
-
-function DonutChart({ segments, centerLabel, centerValue }: { segments: Segment[]; centerLabel: string; centerValue: number }) {
-    const total = segments.reduce((sum, s) => sum + s.value, 0);
-    const radius = 42;
-    const circumference = 2 * Math.PI * radius;
-    let offset = 0;
-
-    return (
-        <div className="flex items-center gap-5">
-            <div className="relative h-32 w-32 shrink-0">
-                <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-                    <circle cx="50" cy="50" r={radius} fill="none" stroke="currentColor" strokeWidth="10" className="text-muted/40" />
-                    {total > 0 &&
-                        segments.map((seg, i) => {
-                            const length = (seg.value / total) * circumference;
-                            const dash = `${length} ${circumference - length}`;
-                            const circle = (
-                                <circle
-                                    key={i}
-                                    cx="50"
-                                    cy="50"
-                                    r={radius}
-                                    fill="none"
-                                    stroke={seg.color}
-                                    strokeWidth="10"
-                                    strokeDasharray={dash}
-                                    strokeDashoffset={-offset}
-                                    strokeLinecap="butt"
-                                />
-                            );
-                            offset += length;
-                            return circle;
-                        })}
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold leading-none text-foreground">{centerValue}</span>
-                    <span className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">{centerLabel}</span>
-                </div>
-            </div>
-            <div className="flex flex-col gap-2">
-                {segments.map((seg, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                        <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: seg.color }} />
-                        <span className="text-muted-foreground">{seg.label}</span>
-                        <span className="ml-auto font-semibold text-foreground">{seg.value}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function DashboardHeaderFilters({
-    companies,
-    filters,
-    onApply,
-    onExport,
-    light = false,
-}: {
-    companies: CompanyOption[];
-    filters: DashboardFilters;
-    onApply: (next: Partial<DashboardFilters>) => void;
-    onExport: () => void;
-    light?: boolean;
-}) {
-    const [open, setOpen] = useState(false);
-
-    const isFiltered =
-        filters.company_id !== filters.defaults.company_id ||
-        filters.date_from !== filters.defaults.date_from ||
-        filters.date_to !== filters.defaults.date_to ||
-        filters.search !== filters.defaults.search ||
-        filters.sort_by !== filters.defaults.sort_by ||
-        filters.sort_dir !== filters.defaults.sort_dir ||
-        filters.status !== filters.defaults.status;
-
-    const btnClasses = light
-        ? 'h-9 gap-2 rounded-md border border-[#1B5E20]/20 px-3 text-xs font-semibold shadow-sm transition-all cursor-pointer'
-        : 'h-9 gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold shadow-sm backdrop-blur-sm transition-all cursor-pointer';
-
-    const handleReset = () => {
-        onApply({
-            company_id: null,
-            date_from: filters.defaults.date_from,
-            date_to: filters.defaults.date_to,
-            search: null,
-            sort_by: null,
-            sort_dir: filters.defaults.sort_dir,
-            status: null,
-        });
-        setOpen(false);
-    };
-
-    return (
-        <>
-            <div className="flex items-center gap-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onExport}
-                    className={`${btnClasses} ${light ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md' : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md'}`}
-                >
-                    <Download className="h-3.5 w-3.5 text-[#2E7D32]" />
-                    Export
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setOpen(true)}
-                    className={`${btnClasses} ${isFiltered
-                        ? light
-                            ? 'border-[#B8860B]/40 bg-[#FDD835]/20 text-[#7B6C00] hover:bg-[#FDD835]/30'
-                            : 'border-[#FDD835]/40 bg-[#FDD835]/20 text-[#FDD835] hover:bg-[#FDD835]/30'
-                        : light
-                            ? 'bg-[#1B5E20]/10 text-[#1B5E20] hover:bg-[#1B5E20]/20'
-                            : 'bg-white/10 text-white/80 hover:bg-white/20'
-                        }`}
-                >
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                    {isFiltered ? 'Filtered' : 'Filters'}
-                </Button>
-                {isFiltered && (
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={handleReset}
-                        className={`h-9 px-2 text-xs cursor-pointer ${light ? 'text-rose-500 hover:bg-rose-50 hover:text-rose-700' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
-                    >
-                        <X className="h-3.5 w-3.5" />
-                        Reset
-                    </Button>
-                )}
-            </div>
-
-            <Sheet open={open} onOpenChange={setOpen}>
-                <SheetContent side="right" className="w-[340px] sm:max-w-[380px]">
-                    <SheetHeader className="border-b pb-4">
-                        <SheetTitle className="flex items-center gap-2 text-lg">
-                            <SlidersHorizontal className="h-5 w-5 text-[#2E7D32]" />
-                            Dashboard Filters
-                        </SheetTitle>
-                        <SheetDescription>
-                            Filter data by company and date range.
-                        </SheetDescription>
-                    </SheetHeader>
-
-                    <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-4">
-                        {/* Company */}
-                        <div className="space-y-2">
-                            <Label htmlFor="company-filter" className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                <Building2 className="h-4 w-4 text-[#2E7D32]" /> Company
-                            </Label>
-                            <Select
-                                value={filters.company_id ? String(filters.company_id) : 'all'}
-                                onValueChange={(value) => onApply({ company_id: value === 'all' ? null : Number(value) })}
-                            >
-                                <SelectTrigger id="company-filter" className="h-10 w-full">
-                                    <SelectValue placeholder="All companies" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All companies</SelectItem>
-                                    {companies.map((company) => (
-                                        <SelectItem key={company.id} value={String(company.id)}>
-                                            {company.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Date range */}
-                        <div className="space-y-4">
-                            <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                <CalendarClock className="h-4 w-4 text-[#2E7D32]" /> Date Range
-                            </Label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="filter-date-from" className="text-xs text-muted-foreground">From</Label>
-                                    <Input
-                                        id="filter-date-from"
-                                        type="date"
-                                        className="h-10"
-                                        value={filters.date_from}
-                                        onChange={(e) => onApply({ date_from: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="filter-date-to" className="text-xs text-muted-foreground">To</Label>
-                                    <Input
-                                        id="filter-date-to"
-                                        type="date"
-                                        className="h-10"
-                                        value={filters.date_to}
-                                        onChange={(e) => onApply({ date_to: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Ticket Filtering */}
-                        <div className="space-y-4">
-                            <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                                <TicketIcon className="h-4 w-4 text-[#2E7D32]" /> Ticket Filters
-                            </Label>
-                            <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs text-muted-foreground">Sort By</Label>
-                                    <Select
-                                        value={filters.sort_by ? `${filters.sort_by}:${filters.sort_dir}` : 'default'}
-                                        onValueChange={(value) => {
-                                            if (value === 'default') {
-                                                onApply({ sort_by: null, sort_dir: 'desc' });
-                                            } else {
-                                                const [sortBy, sortDir] = value.split(':');
-                                                onApply({ sort_by: sortBy, sort_dir: sortDir });
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger className="h-10 w-full">
-                                            <SelectValue placeholder="Sort By" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="default">Sort: Default</SelectItem>
-                                            <SelectItem value="response_time:asc">Resp. Time (Fastest)</SelectItem>
-                                            <SelectItem value="response_time:desc">Resp. Time (Slowest)</SelectItem>
-                                            <SelectItem value="resolution_time:asc">Res. Time (Fastest)</SelectItem>
-                                            <SelectItem value="resolution_time:desc">Res. Time (Slowest)</SelectItem>
-                                            <SelectItem value="created_date:asc">Created (Asc)</SelectItem>
-                                            <SelectItem value="created_date:desc">Created (Desc)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs text-muted-foreground">Status</Label>
-                                    <Select
-                                        value={filters.status ?? 'all'}
-                                        onValueChange={(value) => onApply({ status: value === 'all' ? null : value })}
-                                    >
-                                        <SelectTrigger className="h-10 w-full">
-                                            <SelectValue placeholder="Status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Status</SelectItem>
-                                            <SelectItem value="assigned">Assigned</SelectItem>
-                                            <SelectItem value="in_progress">In Progress</SelectItem>
-                                            <SelectItem value="pending_on_hold">Pending/On Hold</SelectItem>
-                                            <SelectItem value="closed">Closed</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Active filter indicator */}
-                        {isFiltered && (
-                            <div className="rounded-lg border border-[#FDD835]/30 bg-[#FDD835]/5 p-3">
-                                <p className="text-xs text-muted-foreground">
-                                    Filters are active. Data is filtered
-                                    {filters.company_id ? ' by company' : ''}
-                                    {filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to
-                                        ? ` for ${filters.date_from} – ${filters.date_to}`
-                                        : ''}
-                                    {filters.search || filters.sort_by || filters.status ? ' and ticket filters' : ''}.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-
-                    <SheetFooter className="border-t pt-4">
-                        {isFiltered && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleReset}
-                                className="w-full gap-2"
-                            >
-                                <X className="h-4 w-4" />
-                                Reset to Today
-                            </Button>
-                        )}
-                        <Button
-                            type="button"
-                            onClick={() => setOpen(false)}
-                            className="w-full gap-2 bg-[#2E7D32] text-white hover:bg-[#1B5E20]"
-                        >
-                            Done
-                        </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
-        </>
-    );
-}
-
-function StatCard({
-    label,
-    value,
-    icon,
-    accent,
-    hint,
-}: {
-    label: string;
-    value: number;
-    icon: React.ReactNode;
-    accent: string;
-    hint?: string;
-}) {
-    return (
-        <Card className="overflow-hidden border-border/60 shadow-sm">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">{label}</span>
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${accent}`}>{icon}</span>
-                </div>
-                <div className="mt-3 text-2xl font-bold tracking-tight text-foreground">{value}</div>
-                {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
-            </CardContent>
-        </Card>
-    );
-}
-
-function EngineerCard({ engineer, attendance }: { engineer: EngineerSummary; attendance?: EmployeeStatus | null }) {
-    const initials = engineer.name
-        .split(' ')
-        .slice(0, 2)
-        .map((p) => p[0])
-        .join('')
-        .toUpperCase();
-
-    const max = Math.max(engineer.assigned, engineer.pending, engineer.in_progress, engineer.completed_today, 1);
-    const bars = [
-        { label: 'Assigned', value: engineer.assigned, color: TICKET_CHART_COLORS.assigned },
-        { label: 'Pending', value: engineer.pending, color: TICKET_CHART_COLORS.pending },
-        { label: 'In Progress', value: engineer.in_progress, color: TICKET_CHART_COLORS.inProgress },
-        { label: 'Completed', value: engineer.completed_today, color: TICKET_CHART_COLORS.completed },
-    ];
-
-    return (
-        <Card className="border-border/60 shadow-sm">
-            <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1B5E20] to-[#4CAF50] text-sm font-semibold text-white">
-                        {initials}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                                <p className="truncate font-semibold text-foreground">{engineer.name}</p>
-                                <p className="text-xs text-muted-foreground">{engineer.employee_id ?? '-'}</p>
-                            </div>
-                            {attendance ? attendanceBadge(attendance) : (
-                                <Badge variant="outline" className="shrink-0 bg-muted/50 text-muted-foreground">No data</Badge>
-                            )}
-                        </div>
-
-                        {attendance && (
-                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <CalendarClock className="h-3 w-3 text-[#2E7D32]" />
-                                    {formatShiftName(attendance.shift_name)} · {attendance.shift_time}
-                                </span>
-                                {(attendance.check_in || attendance.check_out) && (
-                                    <span className="font-mono">
-                                        {attendance.check_in ? `In ${attendance.check_in}` : ''}
-                                        {attendance.check_in && attendance.check_out ? ' · ' : ''}
-                                        {attendance.check_out ? `Out ${attendance.check_out}` : ''}
-                                    </span>
-                                )}
-                                {attendance.late_minutes > 0 && (
-                                    <span className="font-medium text-rose-600">Late {attendance.late_minutes}m</span>
-                                )}
-                                {attendance.early_leave_minutes > 0 && (
-                                    <span className="font-medium text-[#F9A825]">Early {attendance.early_leave_minutes}m</span>
-                                )}
-                                {attendance.extended_minutes > 0 && (
-                                    <span className="font-medium text-[#2E7D32]">Extended {attendance.extended_minutes}m</span>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="mt-4 border-t pt-3">
-                    <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tickets in Period</span>
-                        <span className="text-lg font-bold text-foreground">{engineer.total}</span>
-                    </div>
-                    <div className="space-y-2">
-                        {bars.map((bar) => (
-                            <div key={bar.label} className="flex items-center gap-2">
-                                <span className="w-20 shrink-0 text-[11px] text-muted-foreground">{bar.label}</span>
-                                <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                                    <div
-                                        className="h-full rounded-full transition-all"
-                                        style={{ width: `${(bar.value / max) * 100}%`, backgroundColor: bar.color }}
-                                    />
-                                </div>
-                                <span className="w-5 text-right text-xs font-semibold text-foreground">{bar.value}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3">
-                        <div className="rounded-lg border border-green-200/60 bg-green-50/50 p-2.5 dark:border-green-900/40 dark:bg-green-950/20">
-                            <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                <Timer className="h-3 w-3 text-[#2E7D32]" />
-                                Avg Response
-                            </div>
-                            <p className="mt-1 text-sm font-semibold text-foreground">
-                                {engineer.avg_response_time_label ?? 'No data'}
-                            </p>
-                        </div>
-                        <div className="rounded-lg border border-yellow-200/60 bg-yellow-50/50 p-2.5 dark:border-yellow-900/40 dark:bg-yellow-950/20">
-                            <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                <CheckCircle2 className="h-3 w-3 text-[#F9A825]" />
-                                Avg Resolution
-                            </div>
-                            <p className="mt-1 text-sm font-semibold text-foreground">
-                                {engineer.avg_resolution_time_label ?? 'No data'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function StatCardSkeleton() {
-    return (
-        <Card className="overflow-hidden border-border/60 shadow-sm animate-pulse">
-            <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                    <div className="h-3 w-20 rounded bg-muted"></div>
-                    <div className="h-8 w-8 rounded-lg bg-muted"></div>
-                </div>
-                <div className="mt-3 h-8 w-16 rounded bg-muted"></div>
-                <div className="mt-2 h-2 w-24 rounded bg-muted"></div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function EngineerCardSkeleton() {
-    return (
-        <Card className="border-border/60 shadow-sm animate-pulse">
-            <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 shrink-0 rounded-full bg-muted"></div>
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-2">
-                                <div className="h-4 w-32 rounded bg-muted"></div>
-                                <div className="h-3 w-20 rounded bg-muted"></div>
-                            </div>
-                            <div className="h-5 w-16 rounded-full bg-muted"></div>
-                        </div>
-                        <div className="mt-2 flex gap-2">
-                            <div className="h-3 w-24 rounded bg-muted"></div>
-                            <div className="h-3 w-16 rounded bg-muted"></div>
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-4 border-t pt-3">
-                    <div className="mb-2 flex justify-between">
-                        <div className="h-3 w-24 rounded bg-muted"></div>
-                        <div className="h-4 w-8 rounded bg-muted"></div>
-                    </div>
-                    <div className="space-y-2">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="flex items-center gap-2">
-                                <div className="h-3 w-20 rounded bg-muted"></div>
-                                <div className="h-2 flex-1 rounded-full bg-muted"></div>
-                                <div className="h-3 w-5 rounded bg-muted"></div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3">
-                        <div className="h-12 rounded-lg bg-muted"></div>
-                        <div className="h-12 rounded-lg bg-muted"></div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function TableSkeleton() {
-    return (
-        <Card className="border-border/60 shadow-sm animate-pulse">
-            <CardContent className="p-0">
-                <table className="w-full text-sm">
-                    <thead>
-                        <tr className="border-b bg-muted/40 text-left">
-                            {[1, 2, 3, 4, 5, 6].map(i => <th key={i} className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted"></div></th>)}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[1, 2, 3, 4].map(i => (
-                            <tr key={i} className="border-b last:border-0">
-                                <td className="px-4 py-3"><div className="h-3 w-24 rounded bg-muted mb-1"></div><div className="h-4 w-32 rounded bg-muted"></div></td>
-                                <td className="px-4 py-3"><div className="h-3 w-20 rounded bg-muted"></div></td>
-                                <td className="px-4 py-3"><div className="h-3 w-24 rounded bg-muted"></div></td>
-                                <td className="px-4 py-3"><div className="h-5 w-20 rounded-full bg-muted"></div></td>
-                                <td className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted"></div></td>
-                                <td className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted"></div></td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </CardContent>
-        </Card>
-    );
-}
+import { DonutChart } from '@/components/dashboard/DonutChart';
+import { DashboardHeaderFilters } from '@/components/dashboard/DashboardHeaderFilters';
+import { StatCard, KpiCard, LeaderboardCard, MiniStat } from '@/components/dashboard/MetricCards';
+import { EngineerCard } from '@/components/dashboard/EngineerCard';
+import { StatCardSkeleton, EngineerCardSkeleton, TableSkeleton } from '@/components/dashboard/Skeletons';
+import { TicketStatusBadge } from '@/components/shared/TicketStatusBadge';
 
 export default function PublicDashboard({
     date,
     attendance,
     ticket_stats,
+    kpi_stats,
     companies,
     filters,
     engineers,
@@ -978,6 +317,63 @@ export default function PublicDashboard({
                         </Deferred>
                     </section>
 
+                    {/* Section: Team KPI & Performance */}
+                    <section className="flex flex-col gap-4">
+                        <h2 className="flex items-center gap-2 text-lg font-semibold">
+                            <ArrowUp className="h-5 w-5 text-[#2E7D32]" /> Team KPI & Performance
+                        </h2>
+                        <p className="-mt-2 text-sm text-muted-foreground">
+                            Global performance metrics and SLAs for {isSingleDay ? 'the selected date' : formatPeriodLabel(filters.date_from, filters.date_to)}.
+                        </p>
+                        <Deferred data={["kpi_stats", "engineers"]} fallback={
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
+                            </div>
+                        }>
+                            {kpi_stats && engineers && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                    <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <KpiCard
+                                            title="Response SLA"
+                                            value={kpi_stats.current.response_sla_percent}
+                                            isPercentage
+                                            trendCurrent={kpi_stats.current.response_sla_percent}
+                                            trendPrevious={kpi_stats.previous.response_sla_percent}
+                                            subtitle={`Target: < ${kpi_stats.targets.response_sla_seconds / 60} mins`}
+                                        />
+                                        <KpiCard
+                                            title="Resolution SLA"
+                                            value={kpi_stats.current.resolution_sla_percent}
+                                            isPercentage
+                                            trendCurrent={kpi_stats.current.resolution_sla_percent}
+                                            trendPrevious={kpi_stats.previous.resolution_sla_percent}
+                                            subtitle={`Target: < ${kpi_stats.targets.resolution_sla_hours} hours`}
+                                        />
+                                        <KpiCard
+                                            title="Avg Response"
+                                            value={kpi_stats.current.avg_response_label ?? '-'}
+                                            trendCurrent={kpi_stats.current.avg_response_seconds}
+                                            trendPrevious={kpi_stats.previous.avg_response_seconds}
+                                            inverse
+                                            subtitle="Global average"
+                                        />
+                                        <KpiCard
+                                            title="Avg Resolution"
+                                            value={kpi_stats.current.avg_resolution_label ?? '-'}
+                                            trendCurrent={kpi_stats.current.avg_resolution_hours}
+                                            trendPrevious={kpi_stats.previous.avg_resolution_hours}
+                                            inverse
+                                            subtitle="Global average"
+                                        />
+                                    </div>
+                                    <div className="lg:col-span-1">
+                                        <LeaderboardCard engineers={engineers} />
+                                    </div>
+                                </div>
+                            )}
+                        </Deferred>
+                    </section>
+
                     {/* Section: Team overview (attendance + tickets) */}
                     <section className="flex flex-col gap-4">
                         <div>
@@ -1113,9 +509,7 @@ export default function PublicDashboard({
                                                                     <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
                                                                     <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
                                                                     <td className="px-4 py-3 align-top">
-                                                                        <Badge variant="outline" className={ticket.status ? TICKET_STATUS_STYLES[ticket.status] : ''}>
-                                                                            {ticket.status_label ?? ticket.status?.replace(/_/g, ' ').toUpperCase() ?? '-'}
-                                                                        </Badge>
+                                                                        <TicketStatusBadge status={ticket.status} label={ticket.status_label} />
                                                                     </td>
                                                                     <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
                                                                     <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
@@ -1168,17 +562,5 @@ export default function PublicDashboard({
                 </div>
             </div>
         </>
-    );
-}
-
-function MiniStat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-    return (
-        <div className="flex items-center gap-2 rounded-lg border bg-card/60 p-3">
-            {icon}
-            <div>
-                <div className="text-lg font-bold leading-none text-foreground">{value}</div>
-                <div className="text-[11px] text-muted-foreground">{label}</div>
-            </div>
-        </div>
     );
 }

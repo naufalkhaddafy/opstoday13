@@ -35,6 +35,8 @@ class PublicDashboardPageResource extends JsonResource
         $engineersClosure = $this->resource['engineers'];
         /** @var \Closure $ticketStatsClosure */
         $ticketStatsClosure = $this->resource['ticketStats'];
+        /** @var \Closure $kpiStatsClosure */
+        $kpiStatsClosure = $this->resource['kpiStats'];
         /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Company> $companies */
         $companies = $this->resource['companies'];
         /** @var array{company_id: int|null, date_from: string, date_to: string} $filters */
@@ -56,6 +58,24 @@ class PublicDashboardPageResource extends JsonResource
                 ];
             }),
             'ticket_stats' => \Inertia\Inertia::defer(fn() => $ticketStatsClosure()),
+            'kpi_stats' => \Inertia\Inertia::defer(function () use ($kpiStatsClosure) {
+                $stats = $kpiStatsClosure();
+                
+                // Format times for display
+                if ($stats['current']['avg_response_seconds'] !== null) {
+                    $stats['current']['avg_response_label'] = $this->formatDuration($stats['current']['avg_response_seconds']);
+                } else {
+                    $stats['current']['avg_response_label'] = null;
+                }
+
+                if ($stats['current']['avg_resolution_hours'] !== null) {
+                    $stats['current']['avg_resolution_label'] = $this->formatHours($stats['current']['avg_resolution_hours']);
+                } else {
+                    $stats['current']['avg_resolution_label'] = null;
+                }
+
+                return $stats;
+            }),
             'companies' => $companies->map(fn ($company) => [
                 'id' => $company->id,
                 'name' => $company->name,

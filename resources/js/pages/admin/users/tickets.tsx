@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { TicketStatusBadge } from '@/components/shared/TicketStatusBadge';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import {
     ArrowLeft,
@@ -388,12 +389,7 @@ export default function UserTickets({ user, tickets, summary, filters, status_op
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3 align-top">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={ticket.status ? TICKET_STATUS_STYLES[ticket.status] : ''}
-                                                    >
-                                                        {ticket.status_label ?? '-'}
-                                                    </Badge>
+                                                    <TicketStatusBadge status={ticket.status} label={ticket.status_label} />
                                                 </td>
                                                 <td className="px-4 py-3 align-top text-xs text-muted-foreground">
                                                     {ticket.api_creation_date

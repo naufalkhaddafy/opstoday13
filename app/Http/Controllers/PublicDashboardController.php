@@ -64,6 +64,7 @@ class PublicDashboardController extends Controller
                 'tickets' => fn () => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10, $search, $sortBy, $sortDir, $status),
                 'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId),
                 'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId),
+                'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId),
                 'companies' => $this->companies->all(),
                 'filters' => [
                     'company_id' => $companyId,

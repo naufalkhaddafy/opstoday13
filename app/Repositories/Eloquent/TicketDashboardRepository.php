@@ -163,4 +163,72 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 $dateTo->toDateString(),
             ]);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function kpiStats(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+        int $responseSlaSeconds = 900,
+        float $resolutionSlaHours = 4.0,
+    ): array {
+        $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $responseSlaSeconds, $resolutionSlaHours) {
+            $baseQuery = $this->scopedTicketQuery($start, $end, $companyId);
+
+            // Response SLA
+            $responseStats = (clone $baseQuery)
+                ->whereNotNull('response_time_seconds')
+                ->selectRaw('
+                    COUNT(*) as total_responded,
+                    SUM(CASE WHEN response_time_seconds <= ? THEN 1 ELSE 0 END) as met_response_sla,
+                    AVG(response_time_seconds) as avg_response_seconds
+                ', [$responseSlaSeconds])
+                ->first();
+
+            // Resolution SLA
+            $resolutionStats = (clone $baseQuery)
+                ->where('status', TicketStatus::Closed->value)
+                ->whereNotNull('resolution_time')
+                ->whereRaw('CAST(resolution_time AS DECIMAL(10,2)) > 0')
+                ->selectRaw('
+                    COUNT(*) as total_resolved,
+                    SUM(CASE WHEN CAST(resolution_time AS DECIMAL(10,2)) <= ? THEN 1 ELSE 0 END) as met_resolution_sla,
+                    AVG(CAST(resolution_time AS DECIMAL(10,2))) as avg_resolution_hours
+                ', [$resolutionSlaHours])
+                ->first();
+
+            $totalResponded = (int) ($responseStats->total_responded ?? 0);
+            $metResponseSla = (int) ($responseStats->met_response_sla ?? 0);
+            
+            $totalResolved = (int) ($resolutionStats->total_resolved ?? 0);
+            $metResolutionSla = (int) ($resolutionStats->met_resolution_sla ?? 0);
+
+            return [
+                'response_sla_percent' => $totalResponded > 0 ? round(($metResponseSla / $totalResponded) * 100, 1) : null,
+                'resolution_sla_percent' => $totalResolved > 0 ? round(($metResolutionSla / $totalResolved) * 100, 1) : null,
+                'avg_response_seconds' => $responseStats->avg_response_seconds ? (float) $responseStats->avg_response_seconds : null,
+                'avg_resolution_hours' => $resolutionStats->avg_resolution_hours ? (float) $resolutionStats->avg_resolution_hours : null,
+                'total_resolved' => $totalResolved,
+            ];
+        };
+
+        $current = $calculateForPeriod($dateFrom, $dateTo);
+
+        // Calculate previous period
+        $daysDiff = $dateFrom->diffInDays($dateTo);
+        $prevDateTo = $dateFrom->subDay();
+        $prevDateFrom = $prevDateTo->subDays($daysDiff);
+        $previous = $calculateForPeriod($prevDateFrom, $prevDateTo);
+
+        return [
+            'current' => $current,
+            'previous' => $previous,
+            'targets' => [
+                'response_sla_seconds' => $responseSlaSeconds,
+                'resolution_sla_hours' => $resolutionSlaHours,
+            ],
+        ];
+    }
 }
