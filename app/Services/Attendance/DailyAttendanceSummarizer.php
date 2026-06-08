@@ -47,6 +47,8 @@ class DailyAttendanceSummarizer
             $checkIn = null;
             $checkOut = null;
             $lateMinutes = 0;
+            $earlyLeaveMinutes = 0;
+            $overtimeMinutes = 0;
             $leaveDesc = null;
 
             if ($activeLeave) {
@@ -61,13 +63,15 @@ class DailyAttendanceSummarizer
                     $checkIn = $attendanceDay->check_in_at ? Carbon::parse($attendanceDay->check_in_at)->timezone($timezone)->format('H:i') : null;
                     $checkOut = $attendanceDay->check_out_at ? Carbon::parse($attendanceDay->check_out_at)->timezone($timezone)->format('H:i') : null;
                     $lateMinutes = $attendanceDay->late_minutes ?? 0;
+                    $earlyLeaveMinutes = $attendanceDay->early_leave_minutes ?? 0;
+                    $overtimeMinutes = $attendanceDay->overtime_minutes ?? 0;
 
                     if (in_array($status, ['hadir', 'tidak_lengkap'])) {
                         $stats['total_present']++;
                         if ($lateMinutes > 0) {
                             $stats['total_late']++;
                         }
-                        if (($attendanceDay->early_leave_minutes ?? 0) > 0) {
+                        if ($earlyLeaveMinutes > 0) {
                             $stats['total_early_leave']++;
                         }
                     } elseif (in_array($status, ['absen', 'tidak_hadir'])) {
@@ -88,6 +92,8 @@ class DailyAttendanceSummarizer
                 'check_in' => $checkIn,
                 'check_out' => $checkOut,
                 'late_minutes' => $lateMinutes,
+                'early_leave_minutes' => $earlyLeaveMinutes,
+                'extended_minutes' => $overtimeMinutes,
                 'leave_description' => $leaveDesc,
             ];
         }

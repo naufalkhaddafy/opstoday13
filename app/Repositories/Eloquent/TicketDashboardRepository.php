@@ -44,8 +44,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
         $direction = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
-        if ($sortBy === 'ticket_no') {
-            $query->orderBy('ticket_no', $direction);
+        if ($sortBy === 'created_date') {
+            $query->orderBy('api_creation_date', $direction);
         } elseif ($sortBy === 'response_time') {
             $query->orderBy('response_time_seconds', $direction);
         } elseif ($sortBy === 'resolution_time') {

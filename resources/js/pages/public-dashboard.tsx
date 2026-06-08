@@ -50,6 +50,8 @@ type EmployeeStatus = {
     check_in: string | null;
     check_out: string | null;
     late_minutes: number;
+    early_leave_minutes: number;
+    extended_minutes: number;
     leave_description: string | null;
 };
 
@@ -257,7 +259,11 @@ function DashboardHeaderFilters({
     const isFiltered =
         filters.company_id !== filters.defaults.company_id ||
         filters.date_from !== filters.defaults.date_from ||
-        filters.date_to !== filters.defaults.date_to;
+        filters.date_to !== filters.defaults.date_to ||
+        filters.search !== filters.defaults.search ||
+        filters.sort_by !== filters.defaults.sort_by ||
+        filters.sort_dir !== filters.defaults.sort_dir ||
+        filters.status !== filters.defaults.status;
 
     const btnClasses = light
         ? 'h-9 gap-2 rounded-md border border-[#1B5E20]/20 px-3 text-xs font-semibold shadow-sm transition-all cursor-pointer'
@@ -265,9 +271,13 @@ function DashboardHeaderFilters({
 
     const handleReset = () => {
         onApply({
-            company_id: filters.defaults.company_id,
+            company_id: null,
             date_from: filters.defaults.date_from,
             date_to: filters.defaults.date_to,
+            search: null,
+            sort_by: null,
+            sort_dir: filters.defaults.sort_dir,
+            status: null,
         });
         setOpen(false);
     };
@@ -378,6 +388,60 @@ function DashboardHeaderFilters({
                             </div>
                         </div>
 
+                        {/* Ticket Filtering */}
+                        <div className="space-y-4">
+                            <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <TicketIcon className="h-4 w-4 text-[#2E7D32]" /> Ticket Filters
+                            </Label>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Sort By</Label>
+                                    <Select
+                                        value={filters.sort_by ? `${filters.sort_by}:${filters.sort_dir}` : 'default'}
+                                        onValueChange={(value) => {
+                                            if (value === 'default') {
+                                                onApply({ sort_by: null, sort_dir: 'desc' });
+                                            } else {
+                                                const [sortBy, sortDir] = value.split(':');
+                                                onApply({ sort_by: sortBy, sort_dir: sortDir });
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-10 w-full">
+                                            <SelectValue placeholder="Sort By" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="default">Sort: Default</SelectItem>
+                                            <SelectItem value="response_time:asc">Resp. Time (Fastest)</SelectItem>
+                                            <SelectItem value="response_time:desc">Resp. Time (Slowest)</SelectItem>
+                                            <SelectItem value="resolution_time:asc">Res. Time (Fastest)</SelectItem>
+                                            <SelectItem value="resolution_time:desc">Res. Time (Slowest)</SelectItem>
+                                            <SelectItem value="created_date:asc">Created (Asc)</SelectItem>
+                                            <SelectItem value="created_date:desc">Created (Desc)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Status</Label>
+                                    <Select
+                                        value={filters.status ?? 'all'}
+                                        onValueChange={(value) => onApply({ status: value === 'all' ? null : value })}
+                                    >
+                                        <SelectTrigger className="h-10 w-full">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Status</SelectItem>
+                                            <SelectItem value="assigned">Assigned</SelectItem>
+                                            <SelectItem value="in_progress">In Progress</SelectItem>
+                                            <SelectItem value="pending_on_hold">Pending/On Hold</SelectItem>
+                                            <SelectItem value="closed">Closed</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Active filter indicator */}
                         {isFiltered && (
                             <div className="rounded-lg border border-[#FDD835]/30 bg-[#FDD835]/5 p-3">
@@ -386,7 +450,8 @@ function DashboardHeaderFilters({
                                     {filters.company_id ? ' by company' : ''}
                                     {filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to
                                         ? ` for ${filters.date_from} – ${filters.date_to}`
-                                        : ''}.
+                                        : ''}
+                                    {filters.search || filters.sort_by || filters.status ? ' and ticket filters' : ''}.
                                 </p>
                             </div>
                         )}
@@ -494,6 +559,12 @@ function EngineerCard({ engineer, attendance }: { engineer: EngineerSummary; att
                                 )}
                                 {attendance.late_minutes > 0 && (
                                     <span className="font-medium text-rose-600">Late {attendance.late_minutes}m</span>
+                                )}
+                                {attendance.early_leave_minutes > 0 && (
+                                    <span className="font-medium text-[#F9A825]">Early {attendance.early_leave_minutes}m</span>
+                                )}
+                                {attendance.extended_minutes > 0 && (
+                                    <span className="font-medium text-[#2E7D32]">Extended {attendance.extended_minutes}m</span>
                                 )}
                             </div>
                         )}
@@ -650,7 +721,15 @@ export default function PublicDashboard({
 
     const headerRef = useRef<HTMLDivElement>(null);
     const [showStickyBar, setShowStickyBar] = useState(false);
+    const [isTicketsLoading, setIsTicketsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState(filters.search ?? '');
+
+    const isTicketFiltersActive = !!filters.search || !!filters.sort_by || !!filters.status;
+
+    const handleTicketFiltersReset = () => {
+        setSearchQuery('');
+        applyFilters({ search: null, sort_by: null, sort_dir: filters.defaults.sort_dir, status: null });
+    };
 
     useEffect(() => {
         const el = headerRef.current;
@@ -683,8 +762,26 @@ export default function PublicDashboard({
                 sortDir === filters.defaults.sort_dir &&
                 !status;
 
+            const isTicketOnlyChange =
+                (next.search !== undefined || next.sort_by !== undefined || next.sort_dir !== undefined || next.status !== undefined) &&
+                next.company_id === undefined &&
+                next.date_from === undefined &&
+                next.date_to === undefined;
+
+            const routerOptions: any = {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                onStart: () => setIsTicketsLoading(true),
+                onFinish: () => setIsTicketsLoading(false),
+            };
+
+            if (isTicketOnlyChange) {
+                routerOptions.only = ['tickets', 'filters'];
+            }
+
             if (isDefault) {
-                router.get('/', {}, { preserveState: true, preserveScroll: true, replace: true });
+                router.get('/', {}, routerOptions);
                 return;
             }
 
@@ -706,7 +803,7 @@ export default function PublicDashboard({
                 params.status = status;
             }
 
-            router.get('/', params, { preserveState: true, preserveScroll: true, replace: true });
+            router.get('/', params, routerOptions);
         },
         [filters],
     );
@@ -942,8 +1039,8 @@ export default function PublicDashboard({
                                         <SelectItem value="response_time:desc">Resp. Time (Slowest)</SelectItem>
                                         <SelectItem value="resolution_time:asc">Res. Time (Fastest)</SelectItem>
                                         <SelectItem value="resolution_time:desc">Res. Time (Slowest)</SelectItem>
-                                        <SelectItem value="ticket_no:asc">Ticket No (Asc)</SelectItem>
-                                        <SelectItem value="ticket_no:desc">Ticket No (Desc)</SelectItem>
+                                        <SelectItem value="created_date:asc">Created (Asc)</SelectItem>
+                                        <SelectItem value="created_date:desc">Created (Desc)</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <Select
@@ -961,93 +1058,106 @@ export default function PublicDashboard({
                                         <SelectItem value="closed">Closed</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                {isTicketFiltersActive && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={handleTicketFiltersReset}
+                                        className="h-9 px-2 text-xs cursor-pointer text-rose-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50"
+                                    >
+                                        <X className="h-3.5 w-3.5 mr-1" />
+                                        Reset
+                                    </Button>
+                                )}
                             </div>
                         </div>
                         <Deferred data="tickets" fallback={<TableSkeleton />}>
                             {tickets && (
-                                <Card className="border-border/60 shadow-sm">
-                                    <CardContent className="p-0">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-sm">
-                                                <thead>
-                                                    <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                                                        <th className="px-4 py-3 font-medium">Ticket</th>
-                                                        <th className="px-4 py-3 font-medium">Category</th>
-                                                        <th className="px-4 py-3 font-medium">Engineer</th>
-                                                        <th className="px-4 py-3 font-medium">Resp. Time</th>
-                                                        <th className="px-4 py-3 font-medium">Res. Time</th>
-                                                        <th className="px-4 py-3 font-medium">Status</th>
-                                                        <th className="px-4 py-3 font-medium">Created</th>
-                                                        <th className="px-4 py-3 font-medium">Completed</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {tickets.data.length === 0 ? (
-                                                        <tr>
-                                                            <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
-                                                                <TicketIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                                                                No tickets yet.
-                                                            </td>
+                                isTicketsLoading ? <TableSkeleton /> : (
+                                    <Card className="border-border/60 shadow-sm">
+                                        <CardContent className="p-0">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                                                            <th className="px-4 py-3 font-medium">Ticket</th>
+                                                            <th className="px-4 py-3 font-medium">Category</th>
+                                                            <th className="px-4 py-3 font-medium">Engineer</th>
+                                                            <th className="px-4 py-3 font-medium">Resp. Time</th>
+                                                            <th className="px-4 py-3 font-medium">Res. Time</th>
+                                                            <th className="px-4 py-3 font-medium">Status</th>
+                                                            <th className="px-4 py-3 font-medium">Created</th>
+                                                            <th className="px-4 py-3 font-medium">Completed</th>
                                                         </tr>
-                                                    ) : (
-                                                        tickets.data.map((ticket) => (
-                                                            <tr key={ticket.id} className="border-b last:border-0 hover:bg-muted/30">
-                                                                <td className="px-4 py-3 align-top">
-                                                                    <div className="font-mono text-xs text-muted-foreground">#{ticket.ticket_no}</div>
-                                                                    <div className="font-medium text-foreground">{ticket.title ?? '-'}</div>
-                                                                    {ticket.requested_for && (
-                                                                        <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
-                                                                    )}
+                                                    </thead>
+                                                    <tbody>
+                                                        {tickets.data.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                                                                    <TicketIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                                                                    No tickets yet.
                                                                 </td>
-                                                                <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
-                                                                <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
-                                                                <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
-                                                                <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
-                                                                <td className="px-4 py-3 align-top">
-                                                                    <Badge variant="outline" className={ticket.status ? TICKET_STATUS_STYLES[ticket.status] : ''}>
-                                                                        {ticket.status_label ?? '-'}
-                                                                    </Badge>
-                                                                </td>
-                                                                <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
-                                                                <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
                                                             </tr>
-                                                        ))
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {tickets.meta.last_page > 1 && (
-                                            <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
-                                                <p className="text-xs text-muted-foreground">
-                                                    Showing {tickets.meta.from ?? 0}-{tickets.meta.to ?? 0} of {tickets.meta.total} tickets
-                                                </p>
-                                                <div className="flex flex-wrap items-center gap-1">
-                                                    {tickets.links.map((link, i) =>
-                                                        link.url ? (
-                                                            <Link
-                                                                key={i}
-                                                                href={link.url}
-                                                                preserveScroll
-                                                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
-                                                                    ? 'bg-[#2E7D32] text-white'
-                                                                    : 'border bg-background text-foreground hover:bg-muted'
-                                                                    }`}
-                                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                                            />
                                                         ) : (
-                                                            <span
-                                                                key={i}
-                                                                className="rounded-md px-3 py-1.5 text-xs text-muted-foreground/40"
-                                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                                            />
-                                                        ),
-                                                    )}
-                                                </div>
+                                                            tickets.data.map((ticket, i) => (
+                                                                <tr key={i} className="group hover:bg-muted/30 transition-colors">
+                                                                    <td className="px-4 py-3 align-top">
+                                                                        <div className="font-semibold text-foreground">{ticket.ticket_no}</div>
+                                                                        <div className="text-muted-foreground truncate max-w-[200px]" title={ticket.title ?? undefined}>{ticket.title}</div>
+                                                                        {ticket.requested_for && (
+                                                                            <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
+                                                                    <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
+                                                                    <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
+                                                                    <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
+                                                                    <td className="px-4 py-3 align-top">
+                                                                        <Badge variant="outline" className={ticket.status ? TICKET_STATUS_STYLES[ticket.status] : ''}>
+                                                                            {ticket.status_label ?? ticket.status?.replace(/_/g, ' ').toUpperCase() ?? '-'}
+                                                                        </Badge>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
+                                                                    <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
                                             </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
+
+                                            {tickets.meta.last_page > 1 && (
+                                                <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Showing {tickets.meta.from ?? 0}-{tickets.meta.to ?? 0} of {tickets.meta.total} tickets
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center gap-1">
+                                                        {tickets.links.map((link, i) =>
+                                                            link.url ? (
+                                                                <Link
+                                                                    key={i}
+                                                                    href={link.url}
+                                                                    preserveScroll
+                                                                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
+                                                                        ? 'bg-[#2E7D32] text-white'
+                                                                        : 'border bg-background text-foreground hover:bg-muted'
+                                                                        }`}
+                                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                                />
+                                                            ) : (
+                                                                <span
+                                                                    key={i}
+                                                                    className="rounded-md px-3 py-1.5 text-xs text-muted-foreground/40"
+                                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                                />
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                )
                             )}
                         </Deferred>
                     </section>
