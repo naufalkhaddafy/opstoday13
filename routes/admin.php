@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\RosterController;
 use App\Http\Controllers\Admin\RosterExceptionController;
 use App\Http\Controllers\Admin\RosterExportController;
+use App\Http\Controllers\Admin\ScheduleLogController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -22,4 +23,5 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::resource('companies', CompanyController::class);
         Route::resource('groups', \App\Http\Controllers\Admin\GroupController::class);
         Route::resource('shifts', ShiftController::class);
+        Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
     });

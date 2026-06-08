@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ScheduleLog;
 use App\Services\Attendance\AttendanceSyncService;
 use Illuminate\Console\Command;
 
@@ -13,7 +14,15 @@ class SyncAttendanceCommand extends Command
 
     public function handle(AttendanceSyncService $syncService): int
     {
+        $startTime = microtime(true);
+        $startedAt = now();
         $this->info('Starting attendance sync...');
+        
+        $log = ScheduleLog::create([
+            'command' => 'attendance:sync',
+            'status' => 'running',
+            'started_at' => $startedAt,
+        ]);
 
         $dateOption = $this->option('date');
         $now = null;
@@ -23,15 +32,41 @@ class SyncAttendanceCommand extends Command
             $this->info("Syncing with simulated time: {$now->toDateTimeString()}");
         }
 
-        $run = $syncService->sync($now);
+        try {
+            $run = $syncService->sync($now);
 
-        $this->info(sprintf(
-            'Sync complete. Fetched: %d, Inserted: %d, Skipped (duplicate): %d',
-            $run->fetched_count,
-            $run->inserted_count,
-            $run->skipped_duplicate_count,
-        ));
+            $outputMsg = sprintf(
+                'Sync complete. Fetched: %d, Inserted: %d, Skipped (duplicate): %d',
+                $run->fetched_count,
+                $run->inserted_count,
+                $run->skipped_duplicate_count,
+            );
+            $this->info($outputMsg);
 
-        return self::SUCCESS;
+            $log->update([
+                'status' => $run->status === \App\Enums\AttendanceSyncRunStatus::Success ? 'success' : 'failed',
+                'finished_at' => now(),
+                'duration' => round((microtime(true) - $startTime) * 1000),
+                'output' => $outputMsg,
+                'metadata' => [
+                    'fetched' => $run->fetched_count,
+                    'inserted' => $run->inserted_count,
+                    'skipped' => $run->skipped_duplicate_count,
+                    'error_message' => $run->error_message,
+                ],
+            ]);
+
+            return self::SUCCESS;
+        } catch (\Throwable $e) {
+            $log->update([
+                'status' => 'failed',
+                'finished_at' => now(),
+                'duration' => round((microtime(true) - $startTime) * 1000),
+                'output' => "Error: " . $e->getMessage() . "\n" . $e->getTraceAsString(),
+            ]);
+            
+            $this->error($e->getMessage());
+            return self::FAILURE;
+        }
     }
 }
