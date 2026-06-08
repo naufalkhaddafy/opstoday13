@@ -20,11 +20,13 @@ export function BrandHeroHeader({ title, subtitle, badge, date, compact = false,
                 className={`relative mx-auto flex max-w-7xl flex-col gap-4 px-4 md:px-6 ${compact ? 'py-4' : 'py-6 md:py-8'} ${actions ? 'lg:flex-row lg:items-center lg:justify-between' : ''}`}
             >
                 <div className="flex items-center gap-4">
-                    <img
-                        src={BRAND_LOGO_SRC}
-                        alt="b-hero"
-                        className={`shrink-0 object-contain drop-shadow-lg ${compact ? 'h-10 w-10' : 'h-14 w-14 md:h-16 md:w-16'}`}
-                    />
+                    <div className={`flex shrink-0 items-center justify-center rounded-2xl bg-white p-3 shadow-xl ring-1 ring-white/60 ${compact ? 'h-16 w-16' : 'h-24 w-24 md:h-32 md:w-32'}`}>
+                        <img
+                            src={BRAND_LOGO_SRC}
+                            alt="b-hero"
+                            className="h-full w-full object-contain drop-shadow-2xl"
+                        />
+                    </div>
                     <div className="flex min-w-0 flex-col gap-1">
                         {badge && (
                             <span className="w-fit rounded-full bg-[#FDD835]/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#FDD835]">

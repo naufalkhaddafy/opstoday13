@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { BRAND, TICKET_CHART_COLORS, TICKET_STATUS_STYLES } from '@/lib/brand';
+import { BRAND, BRAND_LOGO_SRC, TICKET_CHART_COLORS, TICKET_STATUS_STYLES } from '@/lib/brand';
 import {
     UserCheck,
     UserX,
@@ -26,7 +26,7 @@ import {
     SlidersHorizontal,
     X,
 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type AttendanceStats = {
     total_users: number;
@@ -223,11 +223,13 @@ function DashboardHeaderFilters({
     filters,
     onApply,
     onExport,
+    light = false,
 }: {
     companies: CompanyOption[];
     filters: DashboardFilters;
     onApply: (next: Partial<DashboardFilters>) => void;
     onExport: () => void;
+    light?: boolean;
 }) {
     const [open, setOpen] = useState(false);
 
@@ -236,8 +238,9 @@ function DashboardHeaderFilters({
         filters.date_from !== filters.defaults.date_from ||
         filters.date_to !== filters.defaults.date_to;
 
-    const btnClasses =
-        'h-9 gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold shadow-sm backdrop-blur-sm transition-all';
+    const btnClasses = light
+        ? 'h-9 gap-2 rounded-md border border-[#1B5E20]/20 px-3 text-xs font-semibold shadow-sm transition-all cursor-pointer'
+        : 'h-9 gap-2 rounded-md border border-white/20 px-3 text-xs font-semibold shadow-sm backdrop-blur-sm transition-all cursor-pointer';
 
     const handleReset = () => {
         onApply({
@@ -255,7 +258,7 @@ function DashboardHeaderFilters({
                     type="button"
                     variant="outline"
                     onClick={onExport}
-                    className={`${btnClasses} bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md`}
+                    className={`${btnClasses} ${light ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md' : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md'}`}
                 >
                     <Download className="h-3.5 w-3.5 text-[#2E7D32]" />
                     Export
@@ -264,11 +267,14 @@ function DashboardHeaderFilters({
                     type="button"
                     variant="outline"
                     onClick={() => setOpen(true)}
-                    className={`${btnClasses} ${
-                        isFiltered
-                            ? 'border-[#FDD835]/40 bg-[#FDD835]/20 text-[#FDD835] hover:bg-[#FDD835]/30'
+                    className={`${btnClasses} ${isFiltered
+                        ? light
+                            ? 'border-[#B8860B]/40 bg-[#FDD835]/20 text-[#7B6C00] hover:bg-[#FDD835]/30'
+                            : 'border-[#FDD835]/40 bg-[#FDD835]/20 text-[#FDD835] hover:bg-[#FDD835]/30'
+                        : light
+                            ? 'bg-[#1B5E20]/10 text-[#1B5E20] hover:bg-[#1B5E20]/20'
                             : 'bg-white/10 text-white/80 hover:bg-white/20'
-                    }`}
+                        }`}
                 >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     {isFiltered ? 'Filtered' : 'Filters'}
@@ -278,7 +284,7 @@ function DashboardHeaderFilters({
                         type="button"
                         variant="ghost"
                         onClick={handleReset}
-                        className="h-9 px-2 text-xs text-white/60 hover:bg-white/10 hover:text-white"
+                        className={`h-9 px-2 text-xs cursor-pointer ${light ? 'text-rose-500 hover:bg-rose-50 hover:text-rose-700' : 'text-white/60 hover:bg-white/10 hover:text-white'}`}
                     >
                         <X className="h-3.5 w-3.5" />
                         Reset
@@ -533,6 +539,20 @@ export default function PublicDashboard({
 
     const attendanceByUserId = new Map(employees.map((emp) => [emp.id, emp]));
 
+    const headerRef = useRef<HTMLDivElement>(null);
+    const [showStickyBar, setShowStickyBar] = useState(false);
+
+    useEffect(() => {
+        const el = headerRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => setShowStickyBar(!entry.isIntersecting),
+            { threshold: 0 },
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
     const applyFilters = useCallback(
         (next: Partial<DashboardFilters>) => {
             const companyId = next.company_id !== undefined ? next.company_id : filters.company_id;
@@ -584,19 +604,60 @@ export default function PublicDashboard({
             <Head title="Operations Dashboard" />
 
             <div className="min-h-screen bg-gradient-to-b from-green-50/40 to-white text-foreground dark:from-[#0a0a0a] dark:to-[#0a0a0a]">
-                <BrandHeroHeader
-                    badge="Live Operations Board"
-                    title="Computer Operations Dashboard"
-                    date={date}
-                    actions={
-                        <DashboardHeaderFilters
-                            companies={companies}
-                            filters={filters}
-                            onApply={applyFilters}
-                            onExport={handleExport}
-                        />
-                    }
-                />
+                <div ref={headerRef}>
+                    <BrandHeroHeader
+                        badge="Live Operations Board"
+                        title="Computer Operations Dashboard"
+                        date={date}
+                        actions={
+                            <div className="flex items-center gap-2">
+                                <DashboardHeaderFilters
+                                    companies={companies}
+                                    filters={filters}
+                                    onApply={applyFilters}
+                                    onExport={handleExport}
+                                />
+                                <Link
+                                    href="/login"
+                                    className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-[#FDD835]/50 bg-[#FDD835] px-4 text-xs font-semibold text-[#1B5E20] shadow-sm transition-all hover:bg-[#FFEB3B] hover:shadow-md"
+                                >
+                                    Login
+                                </Link>
+                            </div>
+                        }
+                    />
+                </div>
+
+                {/* Sticky filter bar — only visible when header is scrolled out of view */}
+                <div
+                    className={`sticky top-0 z-30 border-b border-[#1B5E20]/20 bg-white/80 backdrop-blur-lg shadow-sm dark:bg-[#0a0a0a]/80 dark:border-white/10 ${
+                        showStickyBar ? 'visible opacity-100 transition-opacity duration-300' : 'invisible opacity-0'
+                    }`}
+                >
+                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:px-8">
+                        <div className="hidden items-center gap-2.5 sm:flex">
+                            <img src={BRAND_LOGO_SRC} alt="b-hero" className="h-8 w-8 object-contain" />
+                            <p className="text-sm font-semibold text-[#1B5E20] dark:text-emerald-400">
+                                {isSingleDay ? date : formatPeriodLabel(filters.date_from, filters.date_to)}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <DashboardHeaderFilters
+                                companies={companies}
+                                filters={filters}
+                                onApply={applyFilters}
+                                onExport={handleExport}
+                                light
+                            />
+                            <Link
+                                href="/login"
+                                className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-[#FDD835]/50 bg-[#FDD835] px-4 text-xs font-semibold text-[#1B5E20] shadow-sm transition-all hover:bg-[#FFEB3B] hover:shadow-md"
+                            >
+                                Login
+                            </Link>
+                        </div>
+                    </div>
+                </div>
 
                 <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-8">
                     {/* Section: Tickets overview */}
@@ -746,11 +807,10 @@ export default function PublicDashboard({
                                                         key={i}
                                                         href={link.url}
                                                         preserveScroll
-                                                        className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                                                            link.active
-                                                                ? 'bg-[#2E7D32] text-white'
-                                                                : 'border bg-background text-foreground hover:bg-muted'
-                                                        }`}
+                                                        className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
+                                                            ? 'bg-[#2E7D32] text-white'
+                                                            : 'border bg-background text-foreground hover:bg-muted'
+                                                            }`}
                                                         dangerouslySetInnerHTML={{ __html: link.label }}
                                                     />
                                                 ) : (
@@ -769,7 +829,7 @@ export default function PublicDashboard({
                     </section>
 
                     <footer className="pb-8 pt-2 text-center text-xs text-muted-foreground">
-                        © 2026, developed by IT Computer Operations
+                        © 2026, Developed by <a href='#' className='text-red-700 font-bold'>IT Computer Operations</a>
                     </footer>
                 </div>
             </div>
