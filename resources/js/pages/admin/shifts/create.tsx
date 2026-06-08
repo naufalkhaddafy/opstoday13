@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/shared/FormField';
 import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
 
 
@@ -58,8 +58,7 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Informasi Dasar</h3>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="code">Kode Shift <span className="text-destructive">*</span></Label>
+                                    <FormField label="Kode Shift" htmlFor="code" required error={errors.code}>
                                         <Input
                                             id="code"
                                             value={data.code}
@@ -67,11 +66,9 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                             required
                                             placeholder="Misal: SFT-PAGI"
                                         />
-                                        <InputError message={errors.code} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Nama Shift <span className="text-destructive">*</span></Label>
+                                    <FormField label="Nama Shift" htmlFor="name" required error={errors.name}>
                                         <Input
                                             id="name"
                                             value={data.name}
@@ -79,11 +76,9 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                             required
                                             placeholder="Misal: Shift Pagi Reguler"
                                         />
-                                        <InputError message={errors.name} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="type">Tipe Shift <span className="text-destructive">*</span></Label>
+                                    <FormField label="Tipe Shift" htmlFor="type" required error={errors.type}>
                                         <Select 
                                             value={data.type} 
                                             onValueChange={(value) => setData('type', value)}
@@ -100,8 +95,7 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <InputError message={errors.type} />
-                                    </div>
+                                    </FormField>
                                 </div>
 
                                 {/* Right Column: Time Rules */}
@@ -109,8 +103,7 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                     <h3 className="text-sm font-medium border-b pb-2">Aturan Waktu</h3>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="start_time">Jam Masuk <span className="text-destructive">*</span></Label>
+                                        <FormField label="Jam Masuk" htmlFor="start_time" required error={errors.start_time}>
                                             <Input
                                                 id="start_time"
                                                 type="time"
@@ -118,11 +111,9 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                                 onChange={(e) => setData('start_time', e.target.value)}
                                                 required
                                             />
-                                            <InputError message={errors.start_time} />
-                                        </div>
+                                        </FormField>
 
-                                        <div className="space-y-2">
-                                            <Label htmlFor="end_time">Jam Pulang <span className="text-destructive">*</span></Label>
+                                        <FormField label="Jam Pulang" htmlFor="end_time" required error={errors.end_time}>
                                             <Input
                                                 id="end_time"
                                                 type="time"
@@ -130,26 +121,23 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                                 onChange={(e) => setData('end_time', e.target.value)}
                                                 required
                                             />
-                                            <InputError message={errors.end_time} />
-                                        </div>
+                                        </FormField>
                                     </div>
 
-                                    <div className="space-y-2 pt-2">
-                                        <div className="flex items-center space-x-2">
+                                    <FormField label="Shift Lintas Hari (Overnight / Night Shift)" htmlFor="is_overnight" error={errors.is_overnight}>
+                                        <div className="flex items-center space-x-2 pt-1">
                                             <Checkbox 
                                                 id="is_overnight" 
                                                 checked={data.is_overnight}
                                                 onCheckedChange={(checked) => setData('is_overnight', checked as boolean)}
                                             />
                                             <Label htmlFor="is_overnight" className="cursor-pointer font-normal">
-                                                Shift Lintas Hari (Overnight / Night Shift)
+                                                Aktif
                                             </Label>
                                         </div>
-                                        <InputError message={errors.is_overnight} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="work_date_rule">Aturan Tanggal Kerja <span className="text-destructive">*</span></Label>
+                                    <FormField label="Aturan Tanggal Kerja" htmlFor="work_date_rule" required error={errors.work_date_rule} description="Penentuan tanggal rekaman absensi. 'Calendar Day' untuk hari yang sama dengan jam masuk. 'Next Day' bila shift dimulai malam dan dihitung sebagai kerja esok hari.">
                                         <Select 
                                             value={data.work_date_rule} 
                                             onValueChange={(value) => setData('work_date_rule', value)}
@@ -166,14 +154,9 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <InputError message={errors.work_date_rule} />
-                                        <p className="text-xs text-muted-foreground">
-                                            Penentuan tanggal rekaman absensi. "Calendar Day" untuk hari yang sama dengan jam masuk. "Next Day" bila shift dimulai malam dan dihitung sebagai kerja esok hari.
-                                        </p>
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="grace_minutes">Toleransi Keterlambatan (Menit)</Label>
+                                    <FormField label="Toleransi Keterlambatan (Menit)" htmlFor="grace_minutes" error={errors.grace_minutes}>
                                         <Input
                                             id="grace_minutes"
                                             type="number"
@@ -181,8 +164,7 @@ export default function ShiftCreate({ enums }: CreateProps) {
                                             value={data.grace_minutes}
                                             onChange={(e) => setData('grace_minutes', parseInt(e.target.value) || 0)}
                                         />
-                                        <InputError message={errors.grace_minutes} />
-                                    </div>
+                                    </FormField>
                                 </div>
                             </div>
 

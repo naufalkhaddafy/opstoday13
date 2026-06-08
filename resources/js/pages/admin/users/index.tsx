@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import { useState, useCallback, useEffect } from 'react';
 import type { PaginatedUsers, AdminCompany } from '@/types';
+import { Pagination } from '@/components/shared/Pagination';
 
 type IndexProps = {
     users: PaginatedUsers;
@@ -32,6 +33,17 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
     
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState<{ id: number; name: string } | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Global loading state listener
+    useEffect(() => {
+        const unbindStart = router.on('start', () => setIsLoading(true));
+        const unbindFinish = router.on('finish', () => setIsLoading(false));
+        return () => {
+            unbindStart();
+            unbindFinish();
+        };
+    }, []);
 
     // Apply filters
     const applyFilters = useCallback(
@@ -143,17 +155,17 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                     </CardHeader>
                     <CardContent>
                         {/* Filters */}
-                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-                            <div className="relative flex-1">
+                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="relative w-full sm:max-w-sm">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Cari nama, email, atau ID karyawan..."
-                                    className="pl-8"
+                                    className="pl-8 w-full"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <div className="flex flex-1 gap-2 sm:max-w-md">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <Select value={roleFilter} onValueChange={handleRoleChange}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Pilih Role" />
@@ -205,7 +217,7 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                         </div>
 
                         {/* Data Table */}
-                        <div className="rounded-md border overflow-x-auto">
+                        <div className="rounded-md border overflow-x-auto relative">
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-muted/50 text-muted-foreground font-medium">
                                     <tr>
@@ -218,7 +230,7 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                         <th className="px-4 py-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className={`divide-y ${isLoading ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
                                     {users.data.length > 0 ? (
                                         users.data.map((user) => (
                                             <tr key={user.id} className="border-b transition-colors hover:bg-muted/50 last:border-0">
@@ -324,31 +336,7 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                         </div>
 
                         {/* Pagination */}
-                        {users.meta.last_page > 1 && (
-                            <div className="flex items-center justify-between mt-4">
-                                <div className="text-sm text-muted-foreground">
-                                    Menampilkan {users.meta.from || 0} hingga {users.meta.to || 0} dari {users.meta.total} hasil
-                                </div>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={!users.links.prev}
-                                        onClick={() => users.links.prev && router.get(users.links.prev)}
-                                    >
-                                        Sebelumnya
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={!users.links.next}
-                                        onClick={() => users.links.next && router.get(users.links.next)}
-                                    >
-                                        Selanjutnya
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        <Pagination links={users.links} meta={users.meta} />
                     </CardContent>
                 </Card>
             </div>

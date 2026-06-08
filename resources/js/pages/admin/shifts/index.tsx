@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
 import { useState, useCallback, useEffect } from 'react';
 import type { PaginatedShifts } from '@/types';
+import { Pagination } from '@/components/shared/Pagination';
 
 type IndexProps = {
     shifts: PaginatedShifts;
@@ -22,6 +23,17 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [shiftToDelete, setShiftToDelete] = useState<{ id: number; name: string; code: string } | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Global loading state listener
+    useEffect(() => {
+        const unbindStart = router.on('start', () => setIsLoading(true));
+        const unbindFinish = router.on('finish', () => setIsLoading(false));
+        return () => {
+            unbindStart();
+            unbindFinish();
+        };
+    }, []);
 
     // Apply filters
     const applyFilters = useCallback(
@@ -86,17 +98,17 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                     </CardHeader>
                     <CardContent>
                         {/* Filters */}
-                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-                            <div className="relative flex-1 sm:max-w-md">
+                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="relative w-full sm:max-w-sm">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Cari kode atau nama shift..."
-                                    className="pl-8"
+                                    className="pl-8 w-full"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <div className="flex flex-1 gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 {filters.search && (
                                     <Button variant="ghost" size="icon" onClick={clearFilters} title="Hapus Filter">
                                         <FilterX className="h-4 w-4" />
@@ -106,7 +118,7 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                         </div>
 
                         {/* Data Table */}
-                        <div className="rounded-md border overflow-x-auto">
+                        <div className="rounded-md border overflow-x-auto relative">
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-muted/50 text-muted-foreground font-medium">
                                     <tr>
@@ -117,7 +129,7 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                                         <th className="px-4 py-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className={`divide-y ${isLoading ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
                                     {shifts.data.length > 0 ? (
                                         shifts.data.map((shift) => (
                                             <tr key={shift.id} className="border-b transition-colors hover:bg-muted/50 last:border-0">
@@ -176,7 +188,7 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={6} className="h-24 text-center text-muted-foreground">
+                                            <td colSpan={5} className="h-24 text-center text-muted-foreground">
                                                 Tidak ada data shift yang ditemukan.
                                             </td>
                                         </tr>
@@ -186,31 +198,7 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                         </div>
 
                         {/* Pagination */}
-                        {shifts.meta.last_page > 1 && (
-                            <div className="flex items-center justify-between mt-4">
-                                <div className="text-sm text-muted-foreground">
-                                    Menampilkan {shifts.meta.from || 0} hingga {shifts.meta.to || 0} dari {shifts.meta.total} hasil
-                                </div>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={!shifts.links.prev}
-                                        onClick={() => shifts.links.prev && router.get(shifts.links.prev)}
-                                    >
-                                        Sebelumnya
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={!shifts.links.next}
-                                        onClick={() => shifts.links.next && router.get(shifts.links.next)}
-                                    >
-                                        Selanjutnya
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        <Pagination links={shifts.links} meta={shifts.meta} />
                     </CardContent>
                 </Card>
             </div>

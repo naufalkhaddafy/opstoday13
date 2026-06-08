@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import GroupController from '@/actions/App/Http/Controllers/Admin/GroupController';
 import { useState, useCallback, useEffect } from 'react';
 import type { PaginatedGroups } from '@/types';
+import { Pagination } from '@/components/shared/Pagination';
 
 type IndexProps = {
     groups: PaginatedGroups;
@@ -19,9 +20,19 @@ type IndexProps = {
 
 export default function GroupIndex({ groups, filters }: IndexProps) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [groupToDelete, setGroupToDelete] = useState<{ id: number; name: string } | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Global loading state listener
+    useEffect(() => {
+        const unbindStart = router.on('start', () => setIsLoading(true));
+        const unbindFinish = router.on('finish', () => setIsLoading(false));
+        return () => {
+            unbindStart();
+            unbindFinish();
+        };
+    }, []);
 
     // Apply filters
     const applyFilters = useCallback(
@@ -30,7 +41,6 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
             
             const searchVal = newSearch !== undefined ? newSearch : searchTerm;
             if (searchVal) query.search = searchVal;
-            
             router.get(GroupController.index().url, query, { preserveState: true, preserveScroll: true, replace: true });
         },
         [searchTerm]
@@ -86,17 +96,17 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
                     </CardHeader>
                     <CardContent>
                         {/* Filters */}
-                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-                            <div className="relative flex-1 sm:max-w-md">
+                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="relative w-full sm:max-w-sm">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Cari nama atau slug grup..."
-                                    className="pl-8"
+                                    placeholder="Cari nama grup..."
+                                    className="pl-8 w-full"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            <div className="flex flex-1 gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 {filters.search && (
                                     <Button variant="ghost" size="icon" onClick={clearFilters} title="Hapus Filter">
                                         <FilterX className="h-4 w-4" />
@@ -106,7 +116,7 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
                         </div>
 
                         {/* Data Table */}
-                        <div className="rounded-md border overflow-x-auto">
+                        <div className="rounded-md border overflow-x-auto relative">
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-muted/50 text-muted-foreground font-medium">
                                     <tr>
@@ -115,7 +125,7 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
                                         <th className="px-4 py-3 text-right">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className={`divide-y ${isLoading ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
                                     {groups.data.length > 0 ? (
                                         groups.data.map((group) => (
                                             <tr key={group.id} className="border-b transition-colors hover:bg-muted/50 last:border-0">
@@ -171,31 +181,7 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
                         </div>
 
                         {/* Pagination */}
-                        {groups.meta.last_page > 1 && (
-                            <div className="flex items-center justify-between mt-4">
-                                <div className="text-sm text-muted-foreground">
-                                    Menampilkan {groups.meta.from || 0} hingga {groups.meta.to || 0} dari {groups.meta.total} hasil
-                                </div>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={!groups.links.prev}
-                                        onClick={() => groups.links.prev && router.get(groups.links.prev)}
-                                    >
-                                        Sebelumnya
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={!groups.links.next}
-                                        onClick={() => groups.links.next && router.get(groups.links.next)}
-                                    >
-                                        Selanjutnya
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        <Pagination links={groups.links} meta={groups.meta} />
                     </CardContent>
                 </Card>
             </div>

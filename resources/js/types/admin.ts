@@ -62,6 +62,8 @@ export type PaginationMeta = {
     total: number;
     from: number | null;
     to: number | null;
+    links?: { url: string | null; label: string; active: boolean }[];
+    path?: string;
 };
 
 export type PaginationLinks = {

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import InputError from '@/components/input-error';
+import { FormField } from '@/components/shared/FormField';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
 import type { AdminCompany, User } from '@/types';
@@ -138,19 +138,16 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Informasi Profil</h3>
                                     
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Nama Lengkap <span className="text-destructive">*</span></Label>
+                                    <FormField label="Nama Lengkap" htmlFor="name" required error={errors.name}>
                                         <Input
                                             id="name"
                                             value={data.name}
                                             onChange={(e) => setData('name', e.target.value)}
                                             required
                                         />
-                                        <InputError message={errors.name} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Alamat Email <span className="text-destructive">*</span></Label>
+                                    <FormField label="Alamat Email" htmlFor="email" required error={errors.email}>
                                         <Input
                                             id="email"
                                             type="email"
@@ -158,18 +155,15 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                             onChange={(e) => setData('email', e.target.value)}
                                             required
                                         />
-                                        <InputError message={errors.email} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="employee_id">Employee ID (Opsional)</Label>
+                                    <FormField label="Employee ID (Opsional)" htmlFor="employee_id" error={errors.employee_id}>
                                         <Input
                                             id="employee_id"
                                             value={data.employee_id}
                                             onChange={(e) => setData('employee_id', e.target.value)}
                                         />
-                                        <InputError message={errors.employee_id} />
-                                    </div>
+                                    </FormField>
                                     
                                     <div className="pt-2 text-sm text-muted-foreground border-t mt-4 pt-4">
                                         <p>Info: Ubah password hanya dapat dilakukan oleh pengguna langsung dari halaman Profil akun mereka.</p>
@@ -180,8 +174,7 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Akses & Perusahaan</h3>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="role">Role / Peran <span className="text-destructive">*</span></Label>
+                                    <FormField label="Role / Peran" htmlFor="role" required error={errors.role}>
                                         <Select 
                                             value={data.role} 
                                             onValueChange={(value) => setData('role', value)}
@@ -198,11 +191,9 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <InputError message={errors.role} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="company_id">Perusahaan (Opsional)</Label>
+                                    <FormField label="Perusahaan (Opsional)" htmlFor="company_id" error={errors.company_id}>
                                         <Select 
                                             value={data.company_id} 
                                             onValueChange={(value) => setData('company_id', value)}
@@ -219,11 +210,9 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <InputError message={errors.company_id} />
-                                    </div>
+                                    </FormField>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="group_id">Grup / Divisi (Opsional)</Label>
+                                    <FormField label="Grup / Divisi (Opsional)" htmlFor="group_id" error={errors.group_id}>
                                         <Select 
                                             value={data.group_id} 
                                             onValueChange={(value) => setData('group_id', value)}
@@ -240,33 +229,34 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <InputError message={errors.group_id} />
-                                    </div>
+                                    </FormField>
 
                                     <div className="space-y-4 pt-4">
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id="is_active" 
-                                                checked={data.is_active}
-                                                onCheckedChange={(checked) => setData('is_active', checked as boolean)}
-                                            />
-                                            <Label htmlFor="is_active" className="cursor-pointer font-normal">
-                                                User Aktif (Dapat login ke sistem)
-                                            </Label>
-                                        </div>
-                                        <InputError message={errors.is_active} />
+                                        <FormField label="User Aktif (Dapat login ke sistem)" htmlFor="is_active" error={errors.is_active}>
+                                            <div className="flex items-center space-x-2 pt-1">
+                                                <Checkbox 
+                                                    id="is_active" 
+                                                    checked={data.is_active}
+                                                    onCheckedChange={(checked) => setData('is_active', checked as boolean)}
+                                                />
+                                                <Label htmlFor="is_active" className="cursor-pointer font-normal">
+                                                    Aktif
+                                                </Label>
+                                            </div>
+                                        </FormField>
 
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox 
-                                                id="is_verified" 
-                                                checked={data.is_verified}
-                                                onCheckedChange={(checked) => setData('is_verified', checked as boolean)}
-                                            />
-                                            <Label htmlFor="is_verified" className="cursor-pointer font-normal">
-                                                Email Terverifikasi
-                                            </Label>
-                                        </div>
-                                        <InputError message={errors.is_verified} />
+                                        <FormField label="Email Terverifikasi" htmlFor="is_verified" error={errors.is_verified}>
+                                            <div className="flex items-center space-x-2 pt-1">
+                                                <Checkbox 
+                                                    id="is_verified" 
+                                                    checked={data.is_verified}
+                                                    onCheckedChange={(checked) => setData('is_verified', checked as boolean)}
+                                                />
+                                                <Label htmlFor="is_verified" className="cursor-pointer font-normal">
+                                                    Terverifikasi
+                                                </Label>
+                                            </div>
+                                        </FormField>
                                     </div>
                                 </div>
                             </div>
@@ -308,12 +298,11 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                             );
                                         })}
                                     </div>
-                                    <InputError message={errors.shift_schedule} />
+                                    {errors.shift_schedule && <p className="text-[0.8rem] font-medium text-destructive">{errors.shift_schedule}</p>}
 
                                     {/* Rentang Masa Berlaku */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shift_effective_from">Mulai Berlaku</Label>
+                                        <FormField label="Mulai Berlaku" htmlFor="shift_effective_from" error={errors.shift_effective_from}>
                                             <Input
                                                 id="shift_effective_from"
                                                 type="date"
@@ -321,10 +310,8 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                                 onChange={(e) => setData('shift_effective_from', e.target.value)}
                                                 disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
                                             />
-                                            <InputError message={errors.shift_effective_from} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="shift_effective_to">Berakhir (Opsional)</Label>
+                                        </FormField>
+                                        <FormField label="Berakhir (Opsional)" htmlFor="shift_effective_to" error={errors.shift_effective_to}>
                                             <Input
                                                 id="shift_effective_to"
                                                 type="date"
@@ -332,8 +319,7 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                                 onChange={(e) => setData('shift_effective_to', e.target.value)}
                                                 disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
                                             />
-                                            <InputError message={errors.shift_effective_to} />
-                                        </div>
+                                        </FormField>
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                         Jika jadwal diganti, sistem akan menutup penugasan lama dan membuat penugasan baru secara otomatis.

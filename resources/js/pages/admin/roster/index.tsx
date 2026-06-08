@@ -1,18 +1,16 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Search, FilterX, ChevronLeft, ChevronRight, Calendar, Building, HelpCircle, Download, Edit2, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { Head, router, useForm } from '@inertiajs/react';
+import { Calendar, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
 import RosterExportController from '@/actions/App/Http/Controllers/Admin/RosterExportController';
 import RosterExceptionController from '@/actions/App/Http/Controllers/Admin/RosterExceptionController';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useState, useCallback, useEffect, useMemo } from 'react';
+
+import { RosterFilters } from '@/components/admin/roster/RosterFilters';
+import { RosterGrid } from '@/components/admin/roster/RosterGrid';
+import { RosterLegend } from '@/components/admin/roster/RosterLegend';
+import { RosterExceptionModal } from '@/components/admin/roster/RosterExceptionModal';
 
 type Shift = {
     id: number;
@@ -63,21 +61,6 @@ type RosterProps = {
     };
 };
 
-const MONTH_OPTIONS = [
-    { value: 1, label: 'Januari' },
-    { value: 2, label: 'Februari' },
-    { value: 3, label: 'Maret' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'Mei' },
-    { value: 6, label: 'Juni' },
-    { value: 7, label: 'Juli' },
-    { value: 8, label: 'Agustus' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'Oktober' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'Desember' },
-];
-
 export default function RosterIndex({
     roster,
     month_days,
@@ -92,6 +75,22 @@ export default function RosterIndex({
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [companyFilter, setCompanyFilter] = useState(filters.company_id || 'all');
     const [groupFilter, setGroupFilter] = useState(filters.group_id || 'all');
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Stop loading when new roster data arrives
+    useEffect(() => {
+        setIsLoading(false);
+    }, [roster]);
+
+    // Cleanup loading when inertia starts/finishes manually just in case
+    useEffect(() => {
+        const unbindStart = router.on('start', () => setIsLoading(true));
+        const unbindFinish = router.on('finish', () => setIsLoading(false));
+        return () => {
+            unbindStart();
+            unbindFinish();
+        };
+    }, []);
 
     // Exception Modal State
     const [exceptionModal, setExceptionModal] = useState<{
@@ -171,6 +170,7 @@ export default function RosterIndex({
     const navigate = useCallback(
         (overrides: Record<string, string | number | undefined> = {}) => {
             const query = buildQuery(overrides);
+            setIsLoading(true);
             router.get(RosterController.index().url, query, {
                 preserveState: true,
                 preserveScroll: true,
@@ -225,6 +225,7 @@ export default function RosterIndex({
         setSearchTerm('');
         setCompanyFilter('all');
         setGroupFilter('all');
+        setIsLoading(true);
         router.get(RosterController.index().url, { month: String(month), year: String(year) });
     };
 
@@ -232,115 +233,6 @@ export default function RosterIndex({
         const query = buildQuery();
         const params = new URLSearchParams(query).toString();
         window.location.href = RosterExportController.url() + '?' + params;
-    };
-
-    const isToday = (dateString: string) => {
-        const todayStr = new Date().toLocaleDateString('sv');
-        return dateString === todayStr;
-    };
-
-    // Generate year options: current year ± 3
-    const yearOptions = useMemo(() => {
-        const currentYear = new Date().getFullYear();
-        const years = [];
-        for (let y = currentYear - 3; y <= currentYear + 1; y++) {
-            years.push(y);
-        }
-        return years;
-    }, []);
-
-    // Get compact badge for monthly grid
-    const getShiftBadge = (day: RosterDay) => {
-        const shift = day.shift;
-        const dateStr = day.date;
-        const today = isToday(dateStr);
-        const leave = day.leave;
-
-        if (leave) {
-            let bgClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'; // Default Cuti
-            let displayCode = 'CTI';
-            let tooltipText = 'Cuti';
-            
-            if (leave.type === 'sakit') {
-                bgClass = 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
-                displayCode = 'SKT';
-                tooltipText = 'Sakit';
-            } else if (leave.type === 'izin') {
-                bgClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800/60 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
-                displayCode = 'IZN';
-                tooltipText = 'Izin';
-            }
-
-            return (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div className={`relative flex items-center justify-center h-7 rounded text-[9px] font-bold tracking-wide cursor-help transition-all hover:scale-105 ${bgClass} ${today ? 'ring-2 ring-indigo-500 shadow-sm' : ''}`}>
-                            {displayCode}
-                        </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px]">
-                        <div className="text-xs space-y-0.5">
-                            <p className="font-bold text-foreground">{tooltipText}</p>
-                            <p className="text-muted-foreground">{leave.description || 'Tidak ada keterangan'}</p>
-                            {shift && <p className="text-[10px] text-muted-foreground mt-1 line-through opacity-70">Jadwal asli: {shift.name}</p>}
-                        </div>
-                    </TooltipContent>
-                </Tooltip>
-            );
-        }
-
-        if (!shift) {
-            return (
-                <div className={`relative flex items-center justify-center h-7 text-[9px] font-medium text-muted-foreground/50 select-none ${today ? 'ring-1 ring-indigo-400 rounded' : ''} ${day.is_exception ? 'bg-amber-50/50 dark:bg-amber-950/20 rounded border border-dashed border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400' : ''}`}>
-                    L
-                    {day.is_exception && <AlertCircle className="absolute -top-1 -right-1 h-2.5 w-2.5 text-amber-500" />}
-                </div>
-            );
-        }
-
-        const code = shift.code.toLowerCase();
-        let bgClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300';
-
-        if (code.includes('pagi-') || code === 'office' || code === 'steady') {
-            bgClass = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
-        } else if (code === 'shift') {
-            bgClass = 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300';
-        } else if (code.includes('sore')) {
-            bgClass = 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
-        } else if (code.includes('malam')) {
-            bgClass = 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300';
-        }
-
-        // Compact display codes for narrow columns
-        const codeMap: Record<string, string> = {
-            'steady': 'STD',
-            'shift': 'SFT',
-            'pagi-7': 'P7',
-            'pagi-8': 'P8',
-            'pagi-9': 'P9',
-            'sore': 'SRE',
-            'malam': 'MLM',
-        };
-        const displayCode = codeMap[code] || shift.code.toUpperCase();
-
-        return (
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className={`relative flex items-center justify-center h-7 rounded text-[9px] font-bold tracking-wide cursor-help transition-all hover:scale-105 ${bgClass} ${today ? 'ring-2 ring-indigo-500 shadow-sm' : ''}`}>
-                        {displayCode}
-                        {day.is_exception && <AlertCircle className="absolute -top-1 -right-1 h-2.5 w-2.5 text-amber-500" />}
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px]">
-                    <div className="text-xs space-y-0.5">
-                        <p className="font-bold">{shift.name}</p>
-                        <p className="text-muted-foreground">{shift.start_time} – {shift.end_time}</p>
-                        <p className="text-[10px] text-muted-foreground">Tipe: {shift.type === 'steady' ? 'Steady Day' : 'Shift Rotating'}</p>
-                        {day.is_exception && <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-1">Jadwal Khusus (Override)</p>}
-                    </div>
-                </TooltipContent>
-            </Tooltip>
-        );
     };
 
     return (
@@ -366,316 +258,56 @@ export default function RosterIndex({
                     </CardHeader>
                     <CardContent>
                         {/* Control Bar */}
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-
-                            {/* Month/Year Navigation */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => navigateMonth(-1)}
-                                    title="Bulan Sebelumnya"
-                                    className="h-8 w-8"
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-
-                                <Select value={String(month)} onValueChange={handleMonthChange}>
-                                    <SelectTrigger className="w-[130px] h-8 text-sm">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {MONTH_OPTIONS.map((m) => (
-                                            <SelectItem key={m.value} value={String(m.value)}>
-                                                {m.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Select value={String(year)} onValueChange={handleYearChange}>
-                                    <SelectTrigger className="w-[90px] h-8 text-sm">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {yearOptions.map((y) => (
-                                            <SelectItem key={y} value={String(y)}>
-                                                {y}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => navigateMonth(1)}
-                                    title="Bulan Selanjutnya"
-                                    className="h-8 w-8"
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={goToCurrentMonth}
-                                    className="h-8 text-xs"
-                                >
-                                    Bulan Ini
-                                </Button>
-                            </div>
-
-                            {/* Search & Company Filter */}
-                            <div className="flex flex-wrap items-center gap-3">
-                                <div className="relative w-full sm:w-[220px]">
-                                    <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Cari karyawan..."
-                                        className="pl-8 h-8 text-sm"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
-
-                                <Select value={companyFilter} onValueChange={handleCompanyChange}>
-                                    <SelectTrigger className="w-full sm:w-[160px] h-8 text-sm">
-                                        <SelectValue placeholder="Perusahaan" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Perusahaan</SelectItem>
-                                        {companies.map((c) => (
-                                            <SelectItem key={c.id} value={c.id.toString()}>
-                                                {c.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Select value={groupFilter} onValueChange={handleGroupChange}>
-                                    <SelectTrigger className="w-full sm:w-[160px] h-8 text-sm">
-                                        <SelectValue placeholder="Grup / Divisi" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Semua Grup</SelectItem>
-                                        {groups?.map((g) => (
-                                            <SelectItem key={g.id} value={g.id.toString()}>
-                                                {g.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                {(filters.search || (filters.company_id && filters.company_id !== 'all') || (filters.group_id && filters.group_id !== 'all')) && (
-                                    <Button variant="ghost" size="sm" onClick={resetFilters} title="Reset Filter" className="h-8 px-2">
-                                        <FilterX className="h-4 w-4 mr-1" /> Reset
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
+                        <RosterFilters
+                            month={month}
+                            year={year}
+                            searchTerm={searchTerm}
+                            companyFilter={companyFilter}
+                            groupFilter={groupFilter}
+                            companies={companies}
+                            groups={groups}
+                            filters={filters}
+                            setSearchTerm={setSearchTerm}
+                            handleCompanyChange={handleCompanyChange}
+                            handleGroupChange={handleGroupChange}
+                            handleMonthChange={handleMonthChange}
+                            handleYearChange={handleYearChange}
+                            navigateMonth={navigateMonth}
+                            goToCurrentMonth={goToCurrentMonth}
+                            resetFilters={resetFilters}
+                        />
 
                         {/* Roster Monthly Grid Table */}
-                        <div className="rounded-md border overflow-x-auto bg-card">
-                            <table className="w-full text-sm text-left border-collapse" style={{ minWidth: `${180 + month_days.length * 46 + 64}px` }}>
-                                <thead>
-                                    <tr className="bg-muted/50 text-muted-foreground border-b font-medium">
-                                        <th className="px-3 py-2.5 min-w-[180px] border-r sticky left-0 bg-muted/50 z-20 text-xs">
-                                            Karyawan
-                                        </th>
-                                        {month_days.map((day) => {
-                                            const today = isToday(day.date);
-                                            return (
-                                                <th
-                                                    key={day.date}
-                                                    className={`px-0.5 py-2 text-center border-r last:border-0 w-[44px] min-w-[44px] ${
-                                                        day.is_weekend
-                                                            ? 'bg-rose-50/50 dark:bg-rose-950/10'
-                                                            : ''
-                                                    } ${
-                                                        today
-                                                            ? 'bg-indigo-50/60 dark:bg-indigo-950/20'
-                                                            : ''
-                                                    }`}
-                                                >
-                                                    <div className="flex flex-col items-center gap-0">
-                                                        <span className={`text-[9px] uppercase tracking-wider ${day.is_weekend ? 'text-rose-500 dark:text-rose-400' : ''} ${today ? 'text-indigo-600 font-bold dark:text-indigo-300' : ''}`}>
-                                                            {day.day_name_short}
-                                                        </span>
-                                                        <span className={`text-[11px] font-semibold ${today ? 'bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center' : ''}`}>
-                                                            {day.day}
-                                                        </span>
-                                                    </div>
-                                                </th>
-                                            );
-                                        })}
-                                        <th className="px-2 py-2.5 text-center min-w-[56px] text-xs">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {roster.length > 0 ? (
-                                        roster.map((emp) => (
-                                            <tr key={emp.id} className="transition-colors hover:bg-muted/30">
-                                                <td className="px-3 py-2 border-r sticky left-0 bg-card z-10">
-                                                    <div className="font-semibold text-foreground text-xs leading-tight">{emp.name}</div>
-                                                    <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-col gap-0">
-                                                        {emp.employee_id && <span>ID: {emp.employee_id}</span>}
-                                                        {emp.company && (
-                                                            <span className="flex items-center gap-0.5">
-                                                                <Building className="h-2.5 w-2.5 inline" /> {emp.company.name}
-                                                            </span>
-                                                        )}
-                                                        {emp.group && (
-                                                            <span className="ml-3 text-[9px]">{emp.group.name}</span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                {emp.schedule.map((day, idx) => {
-                                                    const dayMeta = month_days[idx];
-                                                    const today = isToday(day.date);
-                                                    return (
-                                                        <td
-                                                            key={day.date}
-                                                            onClick={() => openExceptionModal(emp.id, emp.name, day.date, day.shift)}
-                                                            className={`px-0.5 py-1.5 text-center border-r last:border-0 cursor-pointer transition-colors hover:bg-muted/80 ${
-                                                                dayMeta?.is_weekend
-                                                                    ? 'bg-rose-50/30 dark:bg-rose-950/5'
-                                                                    : ''
-                                                            } ${
-                                                                today ? 'bg-indigo-50/20 dark:bg-indigo-950/10' : ''
-                                                            }`}
-                                                        >
-                                                            {getShiftBadge(day)}
-                                                        </td>
-                                                    );
-                                                })}
-                                                <td className="px-2 py-2 text-center">
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                                                                <Link href={UserController.edit({ user: emp.id }).url + '?from=roster'}>
-                                                                    <Edit2 className="h-3 w-3" />
-                                                                </Link>
-                                                            </Button>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>Edit Jadwal</TooltipContent>
-                                                    </Tooltip>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan={month_days.length + 2} className="h-32 text-center text-muted-foreground">
-                                                Tidak ada data roster karyawan yang ditemukan.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <RosterGrid
+                            roster={roster}
+                            month_days={month_days}
+                            isLoading={isLoading}
+                            openExceptionModal={openExceptionModal}
+                        />
 
                         {/* Legend */}
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 mt-5 p-3 rounded-lg border bg-muted/20 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                                <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                                Keterangan:
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-emerald-100 dark:bg-emerald-900/30 inline-flex items-center justify-center text-[8px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">STD</span>
-                                <span>Steady Day</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-violet-100 dark:bg-violet-900/30 inline-flex items-center justify-center text-[8px] font-bold text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800">SFT</span>
-                                <span>Shift (Rotating)</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-emerald-100 dark:bg-emerald-900/30 inline-flex items-center justify-center text-[8px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">P7</span>
-                                <span>Pagi 07:00</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-amber-100 dark:bg-amber-900/30 inline-flex items-center justify-center text-[8px] font-bold text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">SRE</span>
-                                <span>Shift Sore</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-indigo-100 dark:bg-indigo-900/30 inline-flex items-center justify-center text-[8px] font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">MLM</span>
-                                <span>Shift Malam</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-muted-foreground/50 font-bold text-[10px]">L</span>
-                                <span>Libur</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 ml-4">
-                                <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
-                                <span>Jadwal Khusus (Override)</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 ml-4">
-                                <span className="h-4 w-7 rounded bg-blue-100 dark:bg-blue-900/40 inline-flex items-center justify-center text-[8px] font-bold text-blue-700 dark:text-blue-300">CTI</span>
-                                <span>Cuti</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-rose-100 dark:bg-rose-900/40 border border-rose-200 dark:border-rose-800 inline-flex items-center justify-center text-[8px] font-bold text-rose-700 dark:text-rose-300">SKT</span>
-                                <span>Sakit</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="h-4 w-7 rounded bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 inline-flex items-center justify-center text-[8px] font-bold text-slate-700 dark:text-slate-300">IZN</span>
-                                <span>Izin</span>
-                            </div>
-                        </div>
+                        <RosterLegend />
                     </CardContent>
                 </Card>
             </div>
 
             {/* Exception Modal */}
-            <Dialog open={exceptionModal.isOpen} onOpenChange={(open) => !open && closeExceptionModal()}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <form onSubmit={submitException}>
-                        <DialogHeader>
-                            <DialogTitle>Kustomisasi Jadwal Harian</DialogTitle>
-                            <DialogDescription>
-                                Ubah jadwal untuk <strong>{exceptionModal.userName}</strong> pada tanggal <strong>{new Date(exceptionModal.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</strong>.
-                            </DialogDescription>
-                        </DialogHeader>
-                        
-                        <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="shift">Pilih Shift</Label>
-                                <Select 
-                                    value={exceptionData.shift_id} 
-                                    onValueChange={(val) => setExceptionData('shift_id', val)}
-                                >
-                                    <SelectTrigger id="shift">
-                                        <SelectValue placeholder="Pilih shift..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none" className="text-rose-600 font-medium">Libur (Off)</SelectItem>
-                                        {shifts.map((s) => (
-                                            <SelectItem key={s.id} value={s.id.toString()}>
-                                                {s.name} ({s.code.toUpperCase()})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-[11px] text-muted-foreground mt-1">
-                                    Pengecualian ini akan menimpa jadwal mingguan karyawan hanya untuk tanggal ini saja.
-                                </p>
-                            </div>
-                        </div>
-
-                        <DialogFooter className="gap-2 sm:gap-0">
-                            <Button 
-                                type="button" 
-                                variant="destructive" 
-                                onClick={removeException}
-                                disabled={processingException}
-                            >
-                                Hapus Pengecualian
-                            </Button>
-                            <Button type="submit" disabled={processingException}>
-                                Simpan Jadwal
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <RosterExceptionModal
+                isOpen={exceptionModal.isOpen}
+                userName={exceptionModal.userName}
+                date={exceptionModal.date}
+                shifts={shifts}
+                exceptionData={{
+                    user_id: exceptionData.user_id,
+                    date: exceptionData.date,
+                    shift_id: exceptionData.shift_id,
+                }}
+                processingException={processingException}
+                setExceptionData={(key, value) => setExceptionData(key, value)}
+                closeExceptionModal={closeExceptionModal}
+                submitException={submitException}
+                removeException={removeException}
+            />
         </>
     );
 }
