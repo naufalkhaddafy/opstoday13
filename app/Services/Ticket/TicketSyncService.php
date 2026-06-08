@@ -52,6 +52,33 @@ class TicketSyncService
 
                     $seen[] = $record['ticket_no'];
 
+                    $cachedTicket = null;
+                    try {
+                        $cachedTicket = \Illuminate\Support\Facades\Cache::store('redis')->get('ticket:' . $record['ticket_no']);
+                    } catch (\Throwable $e) {
+                        // Jika Redis mati, abaikan error dan anggap cache tidak ada (bypass ke DB)
+                    }
+
+                    if (is_array($cachedTicket)) {
+                        $cachedStatus = $cachedTicket['status'] instanceof \App\Enums\TicketStatus
+                            ? $cachedTicket['status']->value
+                            : $cachedTicket['status'];
+                            
+                        $incomingStatus = $record['status'] instanceof \App\Enums\TicketStatus 
+                            ? $record['status']->value 
+                            : $record['status'];
+                            
+                        $isUnchanged = 
+                            $cachedStatus === $incomingStatus &&
+                            ($cachedTicket['assigned_to_id'] ?? null) === ($record['assigned_to_id'] ?? null) &&
+                            ($cachedTicket['title'] ?? null) === ($record['title'] ?? null);
+
+                        if ($isUnchanged) {
+                            $skipped++;
+                            continue;
+                        }
+                    }
+
                     if ($this->ticketRepository->upsertOpen($record, $employeeId, $run)) {
                         $inserted++;
                     } else {
