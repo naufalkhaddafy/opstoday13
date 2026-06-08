@@ -21,26 +21,24 @@ class PublicDashboardPageResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, User> $users */
-        $users = $this->resource['users'];
+        /** @var \Closure $usersClosure */
+        $usersClosure = $this->resource['users'];
         /** @var CarbonImmutable $attendanceDate */
         $attendanceDate = $this->resource['attendanceDate'];
         /** @var CarbonImmutable $today */
         $today = $this->resource['today'];
         /** @var ShiftAssignmentResolver $shiftResolver */
         $shiftResolver = $this->resource['shiftResolver'];
-        /** @var LengthAwarePaginator $tickets */
-        $tickets = $this->resource['tickets'];
-        /** @var Collection<int, array<string, mixed>> $engineers */
-        $engineers = $this->resource['engineers'];
-        /** @var array<string, int> $ticketStats */
-        $ticketStats = $this->resource['ticketStats'];
+        /** @var \Closure $ticketsClosure */
+        $ticketsClosure = $this->resource['tickets'];
+        /** @var \Closure $engineersClosure */
+        $engineersClosure = $this->resource['engineers'];
+        /** @var \Closure $ticketStatsClosure */
+        $ticketStatsClosure = $this->resource['ticketStats'];
         /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Company> $companies */
         $companies = $this->resource['companies'];
         /** @var array{company_id: int|null, date_from: string, date_to: string} $filters */
         $filters = $this->resource['filters'];
-
-        $attendance = (new DailyAttendanceSummarizer())->summarize($users, $attendanceDate, $shiftResolver);
 
         $dateFrom = CarbonImmutable::parse($filters['date_from']);
         $dateTo = CarbonImmutable::parse($filters['date_to']);
@@ -49,33 +47,42 @@ class PublicDashboardPageResource extends JsonResource
             'date' => $dateFrom->eq($dateTo)
                 ? $dateFrom->locale('en')->translatedFormat('l, d F Y')
                 : $dateFrom->locale('en')->translatedFormat('d M Y').' – '.$dateTo->locale('en')->translatedFormat('d M Y'),
-            'attendance' => [
-                'stats' => $attendance['stats'],
-                'employees' => $attendance['employees'],
-            ],
-            'ticket_stats' => $ticketStats,
+            'attendance' => \Inertia\Inertia::defer(function () use ($usersClosure, $attendanceDate, $shiftResolver) {
+                $users = $usersClosure();
+                $attendance = (new DailyAttendanceSummarizer())->summarize($users, $attendanceDate, $shiftResolver);
+                return [
+                    'stats' => $attendance['stats'],
+                    'employees' => $attendance['employees'],
+                ];
+            }),
+            'ticket_stats' => \Inertia\Inertia::defer(fn() => $ticketStatsClosure()),
             'companies' => $companies->map(fn ($company) => [
                 'id' => $company->id,
                 'name' => $company->name,
             ])->values()->all(),
             'filters' => $filters,
-            'engineers' => $engineers
-                ->map(fn (array $engineer) => $this->transformEngineer($engineer))
-                ->all(),
-            'tickets' => [
-                'data' => collect($tickets->items())
-                    ->map(fn (Ticket $ticket) => $this->transformTicket($ticket))
-                    ->all(),
-                'meta' => [
-                    'current_page' => $tickets->currentPage(),
-                    'last_page' => $tickets->lastPage(),
-                    'per_page' => $tickets->perPage(),
-                    'total' => $tickets->total(),
-                    'from' => $tickets->firstItem(),
-                    'to' => $tickets->lastItem(),
-                ],
-                'links' => $tickets->linkCollection()->toArray(),
-            ],
+            'engineers' => \Inertia\Inertia::defer(function () use ($engineersClosure) {
+                return $engineersClosure()
+                    ->map(fn (array $engineer) => $this->transformEngineer($engineer))
+                    ->all();
+            }),
+            'tickets' => \Inertia\Inertia::defer(function () use ($ticketsClosure) {
+                $tickets = $ticketsClosure();
+                return [
+                    'data' => collect($tickets->items())
+                        ->map(fn (Ticket $ticket) => $this->transformTicket($ticket))
+                        ->all(),
+                    'meta' => [
+                        'current_page' => $tickets->currentPage(),
+                        'last_page' => $tickets->lastPage(),
+                        'per_page' => $tickets->perPage(),
+                        'total' => $tickets->total(),
+                        'from' => $tickets->firstItem(),
+                        'to' => $tickets->lastItem(),
+                    ],
+                    'links' => $tickets->linkCollection()->toArray(),
+                ];
+            }),
         ];
     }
 
@@ -100,6 +107,12 @@ class PublicDashboardPageResource extends JsonResource
             'created_date' => $ticket->api_creation_date?->toDateString()
                 ?? $ticket->first_seen_at?->toDateString(),
             'completed_date' => $ticket->completed_date?->toDateString(),
+            'response_time_label' => $ticket->response_time_seconds !== null
+                ? $this->formatDuration($ticket->response_time_seconds)
+                : null,
+            'resolution_time_label' => $ticket->resolution_time !== null && is_numeric($ticket->resolution_time)
+                ? $this->formatHours((float) $ticket->resolution_time)
+                : null,
             'updated_at' => optional($ticket->status_changed_at ?? $ticket->last_synced_at)
                 ? Carbon::parse($ticket->status_changed_at ?? $ticket->last_synced_at)->toIso8601String()
                 : null,

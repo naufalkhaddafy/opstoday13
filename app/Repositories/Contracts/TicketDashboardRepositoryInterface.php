@@ -16,6 +16,10 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         int $perPage = 10,
+        ?string $search = null,
+        ?string $sortBy = null,
+        ?string $sortDir = 'desc',
+        ?string $status = null,
     ): LengthAwarePaginator;
 
     /**

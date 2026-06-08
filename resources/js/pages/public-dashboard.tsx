@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, Deferred } from '@inertiajs/react';
 import { BrandHeroHeader } from '@/components/shared/brand-hero-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,9 @@ import {
     Download,
     SlidersHorizontal,
     X,
+    ArrowDown,
+    ArrowUp,
+    ArrowUpDown,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -86,6 +89,8 @@ type TicketRow = {
     requested_for: string | null;
     created_date: string | null;
     completed_date: string | null;
+    response_time_label: string | null;
+    resolution_time_label: string | null;
     updated_at: string | null;
 };
 
@@ -97,21 +102,29 @@ type DashboardFilters = {
     company_id: number | null;
     date_from: string;
     date_to: string;
+    search: string | null;
+    sort_by: string | null;
+    sort_dir: string;
+    status: string | null;
     defaults: {
         company_id: number | null;
         date_from: string;
         date_to: string;
+        search: string | null;
+        sort_by: string | null;
+        sort_dir: string;
+        status: string | null;
     };
 };
 
 type DashboardProps = {
     date: string;
-    attendance: { stats: AttendanceStats; employees: EmployeeStatus[] };
-    ticket_stats: TicketStats;
+    attendance?: { stats: AttendanceStats; employees: EmployeeStatus[] };
+    ticket_stats?: TicketStats;
     companies: CompanyOption[];
     filters: DashboardFilters;
-    engineers: EngineerSummary[];
-    tickets: {
+    engineers?: EngineerSummary[];
+    tickets?: {
         data: TicketRow[];
         meta: { current_page: number; last_page: number; per_page: number; total: number; from: number | null; to: number | null };
         links: PaginationLink[];
@@ -127,9 +140,17 @@ const ATTENDANCE_LABELS: Record<string, string> = {
     absen: 'Absent',
     tidak_hadir: 'Absent',
     off_day: 'Day Off',
+    on_duty: 'On Duty',
 };
 
-function attendanceBadge(status: string) {
+function attendanceBadge(attendance: EmployeeStatus) {
+    const status = attendance.status;
+    const isOnDuty = attendance.check_in && !attendance.check_out;
+
+    if (isOnDuty && (status === 'hadir' || status === 'tidak_lengkap')) {
+        return <Badge className="border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">{ATTENDANCE_LABELS.on_duty}</Badge>;
+    }
+
     switch (status) {
         case 'hadir':
         case 'tidak_lengkap':
@@ -453,7 +474,7 @@ function EngineerCard({ engineer, attendance }: { engineer: EngineerSummary; att
                                 <p className="truncate font-semibold text-foreground">{engineer.name}</p>
                                 <p className="text-xs text-muted-foreground">{engineer.employee_id ?? '-'}</p>
                             </div>
-                            {attendance ? attendanceBadge(attendance.status) : (
+                            {attendance ? attendanceBadge(attendance) : (
                                 <Badge variant="outline" className="shrink-0 bg-muted/50 text-muted-foreground">No data</Badge>
                             )}
                         </div>
@@ -525,6 +546,93 @@ function EngineerCard({ engineer, attendance }: { engineer: EngineerSummary; att
     );
 }
 
+function StatCardSkeleton() {
+    return (
+        <Card className="overflow-hidden border-border/60 shadow-sm animate-pulse">
+            <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                    <div className="h-3 w-20 rounded bg-muted"></div>
+                    <div className="h-8 w-8 rounded-lg bg-muted"></div>
+                </div>
+                <div className="mt-3 h-8 w-16 rounded bg-muted"></div>
+                <div className="mt-2 h-2 w-24 rounded bg-muted"></div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function EngineerCardSkeleton() {
+    return (
+        <Card className="border-border/60 shadow-sm animate-pulse">
+            <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 shrink-0 rounded-full bg-muted"></div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-2">
+                                <div className="h-4 w-32 rounded bg-muted"></div>
+                                <div className="h-3 w-20 rounded bg-muted"></div>
+                            </div>
+                            <div className="h-5 w-16 rounded-full bg-muted"></div>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                            <div className="h-3 w-24 rounded bg-muted"></div>
+                            <div className="h-3 w-16 rounded bg-muted"></div>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-4 border-t pt-3">
+                    <div className="mb-2 flex justify-between">
+                        <div className="h-3 w-24 rounded bg-muted"></div>
+                        <div className="h-4 w-8 rounded bg-muted"></div>
+                    </div>
+                    <div className="space-y-2">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="flex items-center gap-2">
+                                <div className="h-3 w-20 rounded bg-muted"></div>
+                                <div className="h-2 flex-1 rounded-full bg-muted"></div>
+                                <div className="h-3 w-5 rounded bg-muted"></div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t pt-3">
+                        <div className="h-12 rounded-lg bg-muted"></div>
+                        <div className="h-12 rounded-lg bg-muted"></div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function TableSkeleton() {
+    return (
+        <Card className="border-border/60 shadow-sm animate-pulse">
+            <CardContent className="p-0">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b bg-muted/40 text-left">
+                            {[1, 2, 3, 4, 5, 6].map(i => <th key={i} className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted"></div></th>)}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {[1, 2, 3, 4].map(i => (
+                            <tr key={i} className="border-b last:border-0">
+                                <td className="px-4 py-3"><div className="h-3 w-24 rounded bg-muted mb-1"></div><div className="h-4 w-32 rounded bg-muted"></div></td>
+                                <td className="px-4 py-3"><div className="h-3 w-20 rounded bg-muted"></div></td>
+                                <td className="px-4 py-3"><div className="h-3 w-24 rounded bg-muted"></div></td>
+                                <td className="px-4 py-3"><div className="h-5 w-20 rounded-full bg-muted"></div></td>
+                                <td className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted"></div></td>
+                                <td className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted"></div></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function PublicDashboard({
     date,
     attendance,
@@ -534,13 +642,15 @@ export default function PublicDashboard({
     engineers,
     tickets,
 }: DashboardProps) {
-    const { stats, employees } = attendance;
+    const stats = attendance?.stats ?? { total_scheduled: 0, total_present: 0, total_absent: 0, total_leave: 0, total_late: 0, total_users: 0, total_early_leave: 0 };
+    const employees = attendance?.employees ?? [];
     const isSingleDay = filters.date_from === filters.date_to;
 
     const attendanceByUserId = new Map(employees.map((emp) => [emp.id, emp]));
 
     const headerRef = useRef<HTMLDivElement>(null);
     const [showStickyBar, setShowStickyBar] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(filters.search ?? '');
 
     useEffect(() => {
         const el = headerRef.current;
@@ -558,12 +668,20 @@ export default function PublicDashboard({
             const companyId = next.company_id !== undefined ? next.company_id : filters.company_id;
             const dateFrom = next.date_from ?? filters.date_from;
             const dateTo = next.date_to ?? filters.date_to;
+            const search = next.search !== undefined ? next.search : filters.search;
+            const sortBy = next.sort_by !== undefined ? next.sort_by : filters.sort_by;
+            const sortDir = next.sort_dir !== undefined ? next.sort_dir : filters.sort_dir;
+            const status = next.status !== undefined ? next.status : filters.status;
 
             // If all filters match defaults, navigate to clean URL '/'
             const isDefault =
                 !companyId &&
                 dateFrom === filters.defaults.date_from &&
-                dateTo === filters.defaults.date_to;
+                dateTo === filters.defaults.date_to &&
+                !search &&
+                !sortBy &&
+                sortDir === filters.defaults.sort_dir &&
+                !status;
 
             if (isDefault) {
                 router.get('/', {}, { preserveState: true, preserveScroll: true, replace: true });
@@ -577,21 +695,54 @@ export default function PublicDashboard({
             if (companyId) {
                 params.company_id = String(companyId);
             }
+            if (search) {
+                params.search = search;
+            }
+            if (sortBy) {
+                params.sort_by = sortBy;
+                params.sort_dir = sortDir;
+            }
+            if (status) {
+                params.status = status;
+            }
 
             router.get('/', params, { preserveState: true, preserveScroll: true, replace: true });
         },
         [filters],
     );
 
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (searchQuery !== (filters.search ?? '')) {
+                applyFilters({ search: searchQuery || null });
+            }
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchQuery, filters.search, applyFilters]);
+
+    const handleSortChange = (value: string) => {
+        if (value === 'default') {
+            applyFilters({ sort_by: null, sort_dir: 'desc' });
+            return;
+        }
+
+        const [sortBy, sortDir] = value.split(':');
+        applyFilters({ sort_by: sortBy, sort_dir: sortDir });
+    };
+
+    const handleStatusChange = (value: string) => {
+        applyFilters({ status: value === 'all' ? null : value });
+    };
+
     const handleExport = useCallback(() => {
         // TODO: export dashboard data based on current filters
     }, []);
 
-    const ticketSegments: Segment[] = [
+    const ticketSegments: Segment[] = ticket_stats ? [
         { label: 'Assigned', value: ticket_stats.assigned, color: TICKET_CHART_COLORS.assigned },
         { label: 'Pending', value: ticket_stats.pending, color: TICKET_CHART_COLORS.pending },
         { label: 'In Progress', value: ticket_stats.in_progress, color: TICKET_CHART_COLORS.inProgress },
-    ];
+    ] : [];
 
     const attendanceSegments: Segment[] = [
         { label: 'Present', value: stats.total_present, color: BRAND.light },
@@ -630,9 +781,8 @@ export default function PublicDashboard({
 
                 {/* Sticky filter bar — only visible when header is scrolled out of view */}
                 <div
-                    className={`sticky top-0 z-30 border-b border-[#1B5E20]/20 bg-white/80 backdrop-blur-lg shadow-sm dark:bg-[#0a0a0a]/80 dark:border-white/10 ${
-                        showStickyBar ? 'visible opacity-100 transition-opacity duration-300' : 'invisible opacity-0'
-                    }`}
+                    className={`sticky top-0 z-30 border-b border-[#1B5E20]/20 bg-white/80 backdrop-blur-lg shadow-sm dark:bg-[#0a0a0a]/80 dark:border-white/10 ${showStickyBar ? 'visible opacity-100 transition-opacity duration-300' : 'invisible opacity-0'
+                        }`}
                 >
                     <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:px-8">
                         <div className="hidden items-center gap-2.5 sm:flex">
@@ -670,49 +820,65 @@ export default function PublicDashboard({
                         </p>
 
                         <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-                            <StatCard label="Open Tickets" value={ticket_stats.open_total} icon={<Inbox className="h-4 w-4 text-[#2E7D32]" />} accent="bg-green-50 dark:bg-green-950/40" hint="In period" />
-                            <StatCard label="Assigned" value={ticket_stats.assigned} icon={<TicketIcon className="h-4 w-4 text-[#1B5E20]" />} accent="bg-green-50 dark:bg-green-950/40" />
-                            <StatCard label="Pending" value={ticket_stats.pending} icon={<PauseCircle className="h-4 w-4 text-[#F9A825]" />} accent="bg-yellow-50 dark:bg-yellow-950/40" />
-                            <StatCard label="In Progress" value={ticket_stats.in_progress} icon={<Loader2 className="h-4 w-4 text-[#4CAF50]" />} accent="bg-emerald-50 dark:bg-emerald-950/40" />
-                            <StatCard label="Completed" value={ticket_stats.completed_today} icon={<CheckCircle2 className="h-4 w-4 text-[#2E7D32]" />} accent="bg-green-50 dark:bg-green-950/40" />
-                            <StatCard label="Total Tickets" value={ticket_stats.created_today} icon={<Sparkles className="h-4 w-4 text-[#FDD835]" />} accent="bg-yellow-50 dark:bg-yellow-950/40" />
+                            <Deferred data="ticket_stats" fallback={<><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>}>
+                                {ticket_stats && (
+                                    <>
+                                        <StatCard label="Open Tickets" value={ticket_stats.open_total} icon={<Inbox className="h-4 w-4 text-[#2E7D32]" />} accent="bg-green-50 dark:bg-green-950/40" hint="In period" />
+                                        <StatCard label="Assigned" value={ticket_stats.assigned} icon={<TicketIcon className="h-4 w-4 text-[#1B5E20]" />} accent="bg-green-50 dark:bg-green-950/40" />
+                                        <StatCard label="Pending" value={ticket_stats.pending} icon={<PauseCircle className="h-4 w-4 text-[#F9A825]" />} accent="bg-yellow-50 dark:bg-yellow-950/40" />
+                                        <StatCard label="In Progress" value={ticket_stats.in_progress} icon={<Loader2 className="h-4 w-4 text-[#4CAF50]" />} accent="bg-emerald-50 dark:bg-emerald-950/40" />
+                                        <StatCard label="Completed" value={ticket_stats.completed_today} icon={<CheckCircle2 className="h-4 w-4 text-[#2E7D32]" />} accent="bg-green-50 dark:bg-green-950/40" />
+                                        <StatCard label="Total Tickets" value={ticket_stats.created_today} icon={<Sparkles className="h-4 w-4 text-[#FDD835]" />} accent="bg-yellow-50 dark:bg-yellow-950/40" />
+                                    </>
+                                )}
+                            </Deferred>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                            <Card className="border-border/60 shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} />
-                                </CardContent>
-                            </Card>
+                        <Deferred data={["ticket_stats", "attendance"]} fallback={
+                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
+                                <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
+                                <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
+                            </div>
+                        }>
+                            {ticket_stats && attendance && (
+                                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                    <Card className="border-border/60 shadow-sm">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} />
+                                        </CardContent>
+                                    </Card>
 
-                            <Card className="border-border/60 shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                                        {isSingleDay ? 'Attendance' : `Attendance · ${formatPeriodLabel(filters.date_to, filters.date_to)}`}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <DonutChart segments={attendanceSegments} centerLabel="Scheduled" centerValue={stats.total_scheduled} />
-                                </CardContent>
-                            </Card>
+                                    <Card className="border-border/60 shadow-sm">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                                {isSingleDay ? 'Attendance' : `Attendance · ${formatPeriodLabel(filters.date_to, filters.date_to)}`}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <DonutChart segments={attendanceSegments} centerLabel="Scheduled" centerValue={stats.total_scheduled} />
+                                        </CardContent>
+                                    </Card>
 
-                            <Card className="border-border/60 shadow-sm">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                                        <Users className="h-4 w-4" /> Team Attendance
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="grid grid-cols-2 gap-3">
-                                    <MiniStat label="Present" value={stats.total_present} icon={<UserCheck className="h-4 w-4 text-[#4CAF50]" />} />
-                                    <MiniStat label="Absent" value={stats.total_absent} icon={<UserX className="h-4 w-4 text-rose-500" />} />
-                                    <MiniStat label="Late" value={stats.total_late} icon={<Clock className="h-4 w-4 text-[#FDD835]" />} />
-                                    <MiniStat label="On Leave" value={stats.total_leave} icon={<CalendarClock className="h-4 w-4 text-[#2E7D32]" />} />
-                                </CardContent>
-                            </Card>
-                        </div>
+                                    <Card className="border-border/60 shadow-sm">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                                                <Users className="h-4 w-4" /> Team Attendance
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="grid grid-cols-2 gap-3">
+                                            <MiniStat label="Present" value={stats.total_present} icon={<UserCheck className="h-4 w-4 text-[#4CAF50]" />} />
+                                            <MiniStat label="Absent" value={stats.total_absent} icon={<UserX className="h-4 w-4 text-rose-500" />} />
+                                            <MiniStat label="Late" value={stats.total_late} icon={<Clock className="h-4 w-4 text-[#FDD835]" />} />
+                                            <MiniStat label="On Leave" value={stats.total_leave} icon={<CalendarClock className="h-4 w-4 text-[#2E7D32]" />} />
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+                        </Deferred>
                     </section>
 
                     {/* Section: Team overview (attendance + tickets) */}
@@ -725,107 +891,165 @@ export default function PublicDashboard({
                                 Engineer attendance and ticket workload for the selected filters.
                             </p>
                         </div>
-                        {engineers.length > 0 ? (
+                        <Deferred data={["engineers", "attendance"]} fallback={
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                {engineers.map((engineer) => (
-                                    <EngineerCard
-                                        key={engineer.id}
-                                        engineer={engineer}
-                                        attendance={attendanceByUserId.get(engineer.id) ?? null}
-                                    />
-                                ))}
+                                <EngineerCardSkeleton /><EngineerCardSkeleton /><EngineerCardSkeleton />
                             </div>
-                        ) : (
-                            <Card className="border-border/60 shadow-sm">
-                                <CardContent className="p-8 text-center text-muted-foreground">No engineers registered yet.</CardContent>
-                            </Card>
-                        )}
+                        }>
+                            {engineers && attendance && (
+                                engineers.length > 0 ? (
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                                        {engineers.map((engineer) => (
+                                            <EngineerCard
+                                                key={engineer.id}
+                                                engineer={engineer}
+                                                attendance={attendanceByUserId.get(engineer.id) ?? null}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <Card className="border-border/60 shadow-sm">
+                                        <CardContent className="p-8 text-center text-muted-foreground">No engineers registered yet.</CardContent>
+                                    </Card>
+                                )
+                            )}
+                        </Deferred>
                     </section>
 
                     {/* Section: Latest tickets table */}
                     <section className="flex flex-col gap-4">
-                        <h2 className="flex items-center gap-2 text-lg font-semibold">
-                            <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Tickets in Period
-                        </h2>
-                        <Card className="border-border/60 shadow-sm">
-                            <CardContent className="p-0">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                                                <th className="px-4 py-3 font-medium">Ticket</th>
-                                                <th className="px-4 py-3 font-medium">Category</th>
-                                                <th className="px-4 py-3 font-medium">Engineer</th>
-                                                <th className="px-4 py-3 font-medium">Status</th>
-                                                <th className="px-4 py-3 font-medium">Created</th>
-                                                <th className="px-4 py-3 font-medium">Completed</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {tickets.data.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                                                        <TicketIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                                                        No tickets yet.
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                tickets.data.map((ticket) => (
-                                                    <tr key={ticket.id} className="border-b last:border-0 hover:bg-muted/30">
-                                                        <td className="px-4 py-3 align-top">
-                                                            <div className="font-mono text-xs text-muted-foreground">#{ticket.ticket_no}</div>
-                                                            <div className="font-medium text-foreground">{ticket.title ?? '-'}</div>
-                                                            {ticket.requested_for && (
-                                                                <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
-                                                        <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
-                                                        <td className="px-4 py-3 align-top">
-                                                            <Badge variant="outline" className={ticket.status ? TICKET_STATUS_STYLES[ticket.status] : ''}>
-                                                                {ticket.status_label ?? '-'}
-                                                            </Badge>
-                                                        </td>
-                                                        <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
-                                                        <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <h2 className="flex items-center gap-2 text-lg font-semibold">
+                                <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Tickets in Period
+                            </h2>
+                            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                                <Input
+                                    placeholder="Search ticket or engineer..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-9 w-full bg-white dark:bg-black sm:w-64"
+                                />
+                                <Select
+                                    value={filters.sort_by ? `${filters.sort_by}:${filters.sort_dir}` : 'default'}
+                                    onValueChange={handleSortChange}
+                                >
+                                    <SelectTrigger className="h-9 w-full bg-white dark:bg-black sm:w-44">
+                                        <SelectValue placeholder="Sort By" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="default">Sort: Default</SelectItem>
+                                        <SelectItem value="response_time:asc">Resp. Time (Fastest)</SelectItem>
+                                        <SelectItem value="response_time:desc">Resp. Time (Slowest)</SelectItem>
+                                        <SelectItem value="resolution_time:asc">Res. Time (Fastest)</SelectItem>
+                                        <SelectItem value="resolution_time:desc">Res. Time (Slowest)</SelectItem>
+                                        <SelectItem value="ticket_no:asc">Ticket No (Asc)</SelectItem>
+                                        <SelectItem value="ticket_no:desc">Ticket No (Desc)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={filters.status ?? 'all'}
+                                    onValueChange={handleStatusChange}
+                                >
+                                    <SelectTrigger className="h-9 w-full bg-white dark:bg-black sm:w-36">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="assigned">Assigned</SelectItem>
+                                        <SelectItem value="in_progress">In Progress</SelectItem>
+                                        <SelectItem value="pending_on_hold">Pending/On Hold</SelectItem>
+                                        <SelectItem value="closed">Closed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <Deferred data="tickets" fallback={<TableSkeleton />}>
+                            {tickets && (
+                                <Card className="border-border/60 shadow-sm">
+                                    <CardContent className="p-0">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
+                                                        <th className="px-4 py-3 font-medium">Ticket</th>
+                                                        <th className="px-4 py-3 font-medium">Category</th>
+                                                        <th className="px-4 py-3 font-medium">Engineer</th>
+                                                        <th className="px-4 py-3 font-medium">Resp. Time</th>
+                                                        <th className="px-4 py-3 font-medium">Res. Time</th>
+                                                        <th className="px-4 py-3 font-medium">Status</th>
+                                                        <th className="px-4 py-3 font-medium">Created</th>
+                                                        <th className="px-4 py-3 font-medium">Completed</th>
                                                     </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {tickets.meta.last_page > 1 && (
-                                    <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
-                                        <p className="text-xs text-muted-foreground">
-                                            Showing {tickets.meta.from ?? 0}-{tickets.meta.to ?? 0} of {tickets.meta.total} tickets
-                                        </p>
-                                        <div className="flex flex-wrap items-center gap-1">
-                                            {tickets.links.map((link, i) =>
-                                                link.url ? (
-                                                    <Link
-                                                        key={i}
-                                                        href={link.url}
-                                                        preserveScroll
-                                                        className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
-                                                            ? 'bg-[#2E7D32] text-white'
-                                                            : 'border bg-background text-foreground hover:bg-muted'
-                                                            }`}
-                                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                                    />
-                                                ) : (
-                                                    <span
-                                                        key={i}
-                                                        className="rounded-md px-3 py-1.5 text-xs text-muted-foreground/40"
-                                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                                    />
-                                                ),
-                                            )}
+                                                </thead>
+                                                <tbody>
+                                                    {tickets.data.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                                                                <TicketIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                                                                No tickets yet.
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        tickets.data.map((ticket) => (
+                                                            <tr key={ticket.id} className="border-b last:border-0 hover:bg-muted/30">
+                                                                <td className="px-4 py-3 align-top">
+                                                                    <div className="font-mono text-xs text-muted-foreground">#{ticket.ticket_no}</div>
+                                                                    <div className="font-medium text-foreground">{ticket.title ?? '-'}</div>
+                                                                    {ticket.requested_for && (
+                                                                        <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top">
+                                                                    <Badge variant="outline" className={ticket.status ? TICKET_STATUS_STYLES[ticket.status] : ''}>
+                                                                        {ticket.status_label ?? '-'}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
+                                                                <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
+                                                            </tr>
+                                                        ))
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+
+                                        {tickets.meta.last_page > 1 && (
+                                            <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
+                                                <p className="text-xs text-muted-foreground">
+                                                    Showing {tickets.meta.from ?? 0}-{tickets.meta.to ?? 0} of {tickets.meta.total} tickets
+                                                </p>
+                                                <div className="flex flex-wrap items-center gap-1">
+                                                    {tickets.links.map((link, i) =>
+                                                        link.url ? (
+                                                            <Link
+                                                                key={i}
+                                                                href={link.url}
+                                                                preserveScroll
+                                                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
+                                                                    ? 'bg-[#2E7D32] text-white'
+                                                                    : 'border bg-background text-foreground hover:bg-muted'
+                                                                    }`}
+                                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                            />
+                                                        ) : (
+                                                            <span
+                                                                key={i}
+                                                                className="rounded-md px-3 py-1.5 text-xs text-muted-foreground/40"
+                                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                                            />
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </Deferred>
                     </section>
 
                     <footer className="pb-8 pt-2 text-center text-xs text-muted-foreground">

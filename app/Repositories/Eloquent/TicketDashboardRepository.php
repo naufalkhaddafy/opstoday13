@@ -20,13 +20,43 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         int $perPage = 10,
+        ?string $search = null,
+        ?string $sortBy = null,
+        ?string $sortDir = 'desc',
+        ?string $status = null,
     ): LengthAwarePaginator {
-        return $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
-            ->with('assignedUser:id,name,employee_id')
-            ->orderByRaw('COALESCE(completed_date, status_changed_at, first_seen_at, api_creation_date) DESC')
-            ->orderByDesc('id')
-            ->paginate($perPage)
-            ->withQueryString();
+        $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+            ->with('assignedUser:id,name,employee_id');
+
+        if ($search) {
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('ticket_no', 'like', "%{$search}%")
+                  ->orWhere('assigned_to_name', 'like', "%{$search}%")
+                  ->orWhereHas('assignedUser', function (Builder $uq) use ($search) {
+                      $uq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        $direction = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'ticket_no') {
+            $query->orderBy('ticket_no', $direction);
+        } elseif ($sortBy === 'response_time') {
+            $query->orderBy('response_time_seconds', $direction);
+        } elseif ($sortBy === 'resolution_time') {
+            $query->orderByRaw("CAST(resolution_time AS DECIMAL(10,2)) {$direction}");
+        } else {
+            // Default sort
+            $query->orderByRaw('COALESCE(completed_date, status_changed_at, first_seen_at, api_creation_date) DESC')
+                  ->orderByDesc('id');
+        }
+
+        return $query->paginate($perPage)->withQueryString();
     }
 
     public function engineerSummaries(

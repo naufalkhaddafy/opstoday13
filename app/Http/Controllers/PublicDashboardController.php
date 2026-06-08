@@ -49,27 +49,38 @@ class PublicDashboardController extends Controller
         $companyInput = $request->input('company_id');
         $companyId = $companyInput && $companyInput !== 'all' ? (int) $companyInput : null;
 
-        $users = $this->users->activeForDashboard($dateTo->toDateString(), $companyId);
+        $search = $request->input('search');
+        $sortBy = $request->input('sort_by');
+        $sortDir = $request->input('sort_dir', 'desc');
+        $status = $request->input('status');
 
         return Inertia::render(
             'public-dashboard',
             PublicDashboardPageResource::make([
-                'users' => $users,
+                'users' => fn () => $this->users->activeForDashboard($dateTo->toDateString(), $companyId),
                 'attendanceDate' => $dateTo,
                 'today' => $today,
                 'shiftResolver' => $shiftResolver,
-                'tickets' => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10),
-                'engineers' => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId),
-                'ticketStats' => $this->tickets->globalStats($dateFrom, $dateTo, $companyId),
+                'tickets' => fn () => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10, $search, $sortBy, $sortDir, $status),
+                'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId),
+                'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId),
                 'companies' => $this->companies->all(),
                 'filters' => [
                     'company_id' => $companyId,
                     'date_from' => $dateFrom->toDateString(),
                     'date_to' => $dateTo->toDateString(),
+                    'search' => $search,
+                    'sort_by' => $sortBy,
+                    'sort_dir' => $sortDir,
+                    'status' => $status,
                     'defaults' => [
                         'company_id' => null,
                         'date_from' => $today->toDateString(),
                         'date_to' => $today->toDateString(),
+                        'search' => null,
+                        'sort_by' => null,
+                        'sort_dir' => 'desc',
+                        'status' => null,
                     ],
                 ],
             ])->resolve()
