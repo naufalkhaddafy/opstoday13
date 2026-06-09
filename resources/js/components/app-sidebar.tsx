@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -75,6 +75,9 @@ const managementItems: NavItem[] = [
         href: ShiftController.index().url,
         icon: CalendarClock,
     },
+];
+
+const systemLogItems: NavItem[] = [
     {
         title: 'Schedule Logs',
         href: '/admin/schedule-logs',
@@ -82,21 +85,9 @@ const managementItems: NavItem[] = [
     },
 ];
 
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
 export function AppSidebar() {
+    const { auth } = usePage().props as any;
+    const isSuperAdmin = auth?.user?.role === 'super_admin';
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -114,11 +105,15 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={dashboardItems} title="Utama" />
                 <NavMain items={rosterItems} title="Operasional" />
-                <NavMain items={managementItems} title="Master Data" />
+                {isSuperAdmin && (
+                    <>
+                        <NavMain items={managementItems} title="Master Data" />
+                        <NavMain items={systemLogItems} title="System Log" />
+                    </>
+                )}
             </SidebarContent>
 
             <SidebarFooter>
-                <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
