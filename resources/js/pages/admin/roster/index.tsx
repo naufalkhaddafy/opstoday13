@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Calendar, Download } from 'lucide-react';
+import { Calendar, Download, CalendarRange } from 'lucide-react';
+import { BRAND_ICON_BOX } from '@/lib/brand';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
@@ -241,15 +242,15 @@ export default function RosterIndex({
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                        <div>
-                            <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-indigo-500" />
-                                Roster Kerja Bulanan
-                            </CardTitle>
-                            <CardDescription>
-                                Jadwal shift kerja seluruh karyawan untuk bulan {month_name} {year}.
-                            </CardDescription>
+                    <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 mb-6 border-b">
+                        <div className="flex items-center gap-3">
+                            <div className={BRAND_ICON_BOX}>
+                                <CalendarRange className="h-6 w-6 text-brand-500" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl">Roster Kerja Bulanan</CardTitle>
+                                <CardDescription>Jadwal shift karyawan {month_name} {year}</CardDescription>
+                            </div>
                         </div>
                         <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
                             <Download className="h-4 w-4" />

@@ -76,29 +76,23 @@ export default function ActivityLogsIndex({ logs, filters }: Props) {
             <Head title="Activity Logs" />
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className={BRAND_ICON_BOX}>
-                            <Activity className="h-6 w-6 text-brand-500" />
-                        </div>
-                        <div>
-                            <h1 className={BRAND_PAGE_HEADER}>Activity Logs</h1>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Records of all user activities and data changes within the system.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
                 <Card>
-                    <CardHeader className="pb-4">
-                        <div className="flex flex-col sm:flex-row justify-between gap-4">
-                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-muted-foreground" />
-                                Activity History
-                            </CardTitle>
-                            <div className="flex gap-2">
+                    <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 mb-6 border-b">
+                        <div className="flex items-center gap-3">
+                            <div className={BRAND_ICON_BOX}>
+                                <Activity className="h-6 w-6 text-brand-500" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl">Activity History</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Records of all user activities and data changes within the system.
+                                </p>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex gap-2 w-full sm:w-auto">
                                 <div className="relative w-full sm:w-64">
                                     <Input
                                         placeholder="Search user, model, or action..."
@@ -114,8 +108,6 @@ export default function ActivityLogsIndex({ logs, filters }: Props) {
                                 </Button>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent>
                         <div className="rounded-md border">
                             <Table>
                                 <TableHeader>

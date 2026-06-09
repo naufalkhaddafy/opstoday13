@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Pencil, Plus, Trash2, Search, FilterX, Users } from 'lucide-react';
+import { BRAND_ICON_BOX } from '@/lib/brand';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,10 +84,15 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                        <div>
-                            <CardTitle>Manajemen Grup</CardTitle>
-                            <CardDescription>Kelola data grup atau divisi pengguna.</CardDescription>
+                    <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 mb-6 border-b">
+                        <div className="flex items-center gap-3">
+                            <div className={BRAND_ICON_BOX}>
+                                <Users className="h-6 w-6 text-brand-500" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl">Manajemen Grup</CardTitle>
+                                <CardDescription>Kelola data grup atau divisi pengguna.</CardDescription>
+                            </div>
                         </div>
                         <Button asChild>
                             <Link href={GroupController.create().url}>

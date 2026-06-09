@@ -50,7 +50,18 @@ Semua halaman Inertia mengikuti pola layout yang seragam agar tampilan konsisten
   <Head title="..." />
   <div className="flex h-full flex-1 flex-col gap-4 p-4">
     <Card>
-      <CardHeader> ... </CardHeader>
+      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4">
+        <div className="flex items-center gap-3">
+          <div className={BRAND_ICON_BOX}>
+             <IconComponent className="h-6 w-6 text-brand-500" />
+          </div>
+          <div>
+            <CardTitle className="text-xl">Judul Halaman</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">Deskripsi halaman...</p>
+          </div>
+        </div>
+        {/* Opsional: Actions / Filters di sini */}
+      </CardHeader>
       <CardContent> <!-- tabel / daftar --> </CardContent>
     </Card>
   </div>

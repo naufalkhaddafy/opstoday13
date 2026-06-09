@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, CalendarRange } from 'lucide-react';
+import { BRAND_ICON_BOX } from '@/lib/brand';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
@@ -45,23 +46,23 @@ export default function LeaveIndex({ leaves, filters }: any) {
             <Head title="Pengajuan Cuti" />
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
-                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight">Daftar Cuti & Sakit</h2>
-                        <p className="text-muted-foreground">Kelola pengajuan cuti, izin, dan sakit pegawai.</p>
-                    </div>
-
-                    <Button asChild>
-                        <Link href="/leaves/create">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Ajukan Cuti Baru
-                        </Link>
-                    </Button>
-                </div>
-
                 <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle>Data Pengajuan</CardTitle>
+                    <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 mb-6 border-b">
+                        <div className="flex items-center gap-3">
+                            <div className={BRAND_ICON_BOX}>
+                                <CalendarRange className="h-6 w-6 text-brand-500" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl">Daftar Cuti & Sakit</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">Kelola pengajuan cuti, izin, dan sakit pegawai.</p>
+                            </div>
+                        </div>
+                        <Button asChild>
+                            <Link href="/leaves/create">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Ajukan Cuti Baru
+                            </Link>
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         <div className="mb-4 flex flex-col gap-4 md:flex-row">
