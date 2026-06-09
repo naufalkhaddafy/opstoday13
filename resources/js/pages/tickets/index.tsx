@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import TicketController from '@/actions/App/Http/Controllers/TicketController';
 import { TicketsHeader } from '@/components/admin/users/tickets/TicketsHeader';
 import { TicketsSummaryCards } from '@/components/admin/users/tickets/TicketsSummaryCards';
 import { TicketsFilters } from '@/components/admin/users/tickets/TicketsFilters';
@@ -65,7 +65,7 @@ type TicketsProps = {
     status_options: StatusOption[];
 };
 
-export default function UserTickets({ user, tickets, summary, filters, status_options }: TicketsProps) {
+export default function PersonalTickets({ user, tickets, summary, filters, status_options }: TicketsProps) {
     const navigate = (next: {
         status?: string | null;
         search?: string | null;
@@ -88,22 +88,22 @@ export default function UserTickets({ user, tickets, summary, filters, status_op
             params.search = search;
         }
 
-        router.get(UserController.tickets({ user: user.id }).url, params, {
+        router.get(TicketController.index().url, params, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    let exportUrl = `/admin/users/${user.id}/tickets/export?month=${filters.month}&year=${filters.year}`;
+    let exportUrl = `/tickets/export?month=${filters.month}&year=${filters.year}`;
     if (filters.status) exportUrl += `&status=${filters.status}`;
     if (filters.search) exportUrl += `&search=${filters.search}`;
 
     return (
         <>
-            <Head title={`Report Tiket: ${user.name}`} />
+            <Head title={`Data Tiket: ${user.name}`} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 max-w-7xl mx-auto w-full">
-                <TicketsHeader user={user} />
+                <TicketsHeader user={user} hideBackButton={true} />
 
                 <TicketsSummaryCards summary={summary} />
 
@@ -120,14 +120,10 @@ export default function UserTickets({ user, tickets, summary, filters, status_op
     );
 }
 
-UserTickets.layout = {
+PersonalTickets.layout = {
     breadcrumbs: [
         {
-            title: 'Manajemen User',
-            href: UserController.index().url,
-        },
-        {
-            title: 'Report Tiket',
+            title: 'Ticket Overview',
             href: '#',
         },
     ],

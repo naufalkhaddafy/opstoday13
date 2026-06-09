@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -20,6 +20,7 @@ import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftControlle
 import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
 import GroupController from '@/actions/App/Http/Controllers/Admin/GroupController';
 import AttendanceController from '@/actions/App/Http/Controllers/AttendanceController';
+import TicketController from '@/actions/App/Http/Controllers/TicketController';
 import type { NavItem } from '@/types';
 
 const dashboardItems: NavItem[] = [
@@ -42,9 +43,14 @@ const rosterItems: NavItem[] = [
         icon: CalendarRange,
     },
     {
-        title: 'Attendance KPI',
+        title: 'Attendance Overview',
         href: AttendanceController.index().url,
         icon: CalendarClock,
+    },
+    {
+        title: 'Ticket Overview',
+        href: TicketController.index().url,
+        icon: TicketIcon,
     },
 ];
 
