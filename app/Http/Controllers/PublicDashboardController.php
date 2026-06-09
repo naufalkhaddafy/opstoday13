@@ -57,7 +57,7 @@ class PublicDashboardController extends Controller
         return Inertia::render(
             'public-dashboard',
             PublicDashboardPageResource::make([
-                'users' => fn () => $this->users->activeForDashboard($dateTo->toDateString(), $companyId),
+                'users' => fn () => $this->users->activeForDashboard($dateFrom->toDateString(), $dateTo->toDateString(), $companyId),
                 'attendanceDate' => $dateTo,
                 'today' => $today,
                 'shiftResolver' => $shiftResolver,

@@ -49,9 +49,9 @@ class PublicDashboardPageResource extends JsonResource
             'date' => $dateFrom->eq($dateTo)
                 ? $dateFrom->locale('en')->translatedFormat('l, d F Y')
                 : $dateFrom->locale('en')->translatedFormat('d M Y').' – '.$dateTo->locale('en')->translatedFormat('d M Y'),
-            'attendance' => \Inertia\Inertia::defer(function () use ($usersClosure, $attendanceDate, $shiftResolver) {
+            'attendance' => \Inertia\Inertia::defer(function () use ($usersClosure, $dateFrom, $attendanceDate, $shiftResolver) {
                 $users = $usersClosure();
-                $attendance = (new DailyAttendanceSummarizer())->summarize($users, $attendanceDate, $shiftResolver);
+                  $attendance = (new DailyAttendanceSummarizer())->summarize($users, $dateFrom, $attendanceDate, $shiftResolver);
                 return [
                     'stats' => $attendance['stats'],
                     'employees' => $attendance['employees'],

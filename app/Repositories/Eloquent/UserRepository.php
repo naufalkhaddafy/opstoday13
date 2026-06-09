@@ -80,17 +80,24 @@ class UserRepository implements UserRepositoryInterface
         $user->delete();
     }
 
-    public function activeForDashboard(string $date, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection
+    public function activeForDashboard(string $dateFrom, string $dateTo, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection
     {
         return User::query()
             ->where('is_active', true)
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::SuperAdmin->value))
             ->with([
-                'leaves' => fn ($q) => $q->approved()->activeOn($date),
+                'leaves' => fn ($q) => $q->approved()->where(function ($sub) use ($dateFrom, $dateTo) {
+                    $sub->whereBetween('start_date', [$dateFrom, $dateTo])
+                        ->orWhereBetween('end_date', [$dateFrom, $dateTo])
+                        ->orWhere(function ($s) use ($dateFrom, $dateTo) {
+                            $s->where('start_date', '<=', $dateFrom)
+                              ->where('end_date', '>=', $dateTo);
+                        });
+                }),
                 'shiftAssignments',
-                'exceptions' => fn ($q) => $q->whereDate('date', $date),
-                'attendanceDays' => fn ($q) => $q->whereDate('work_date', $date),
+                'exceptions' => fn ($q) => $q->whereBetween('date', [$dateFrom, $dateTo]),
+                'attendanceDays' => fn ($q) => $q->whereBetween('work_date', [$dateFrom, $dateTo]),
             ])
             ->get();
     }

@@ -20,6 +20,16 @@ export type EmployeeStatus = {
     early_leave_minutes: number;
     extended_minutes: number;
     leave_description: string | null;
+    period_stats: {
+        present_days: number;
+        leave_days: number;
+        sick_days: number;
+        permit_days: number;
+        absent_days: number;
+        late_minutes: number;
+        early_leave_minutes: number;
+        extended_minutes: number;
+    };
 };
 
 export type TicketStats = {

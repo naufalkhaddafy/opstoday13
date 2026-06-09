@@ -23,7 +23,7 @@ class DashboardPageResource extends JsonResource
         /** @var ShiftAssignmentResolver */
         $shiftResolver = $this->resource['shiftResolver'];
 
-        $summary = (new DailyAttendanceSummarizer())->summarize($users, $today, $shiftResolver);
+        $summary = (new DailyAttendanceSummarizer())->summarize($users, $today, $today, $shiftResolver);
 
         return [
             'stats' => $summary['stats'],

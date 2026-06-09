@@ -21,7 +21,7 @@ class DashboardController extends Controller
         $timezone = config('app.timezone');
         $today = CarbonImmutable::now($timezone)->startOfDay();
 
-        $users = $this->users->activeForDashboard($today->toDateString());
+        $users = $this->users->activeForDashboard($today->toDateString(), $today->toDateString());
 
         return Inertia::render(
             'dashboard',

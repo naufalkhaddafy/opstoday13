@@ -5,6 +5,7 @@ namespace App\Services\Attendance;
 use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
 
 /**
@@ -19,9 +20,10 @@ class DailyAttendanceSummarizer
      * @param  Collection<int, User>  $users
      * @return array{stats: array<string, int>, employees: array<int, array<string, mixed>>}
      */
-    public function summarize(Collection $users, CarbonImmutable $today, ShiftAssignmentResolver $shiftResolver): array
+    public function summarize(Collection $users, CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ShiftAssignmentResolver $shiftResolver): array
     {
         $timezone = config('app.timezone');
+        $period = CarbonPeriod::create($dateFrom, $dateTo);
 
         $stats = [
             'total_users' => $users->count(),
@@ -36,65 +38,140 @@ class DailyAttendanceSummarizer
         $employees = [];
 
         foreach ($users as $user) {
-            $activeLeave = $user->leaves->first();
-            $assignment = $shiftResolver->forWorkDate($user, $today);
-            $shift = $shiftResolver->shiftForWorkDate($user, $today);
+            $periodStats = [
+                'present_days' => 0,
+                'leave_days' => 0,
+                'sick_days' => 0,
+                'permit_days' => 0,
+                'absent_days' => 0,
+                'late_minutes' => 0,
+                'early_leave_minutes' => 0,
+                'extended_minutes' => 0,
+            ];
 
-            $isScheduled = $assignment !== null && $assignment->isActiveOn($today);
-            $attendanceDay = $user->attendanceDays->first();
+            // Default for the last day (for badge)
+            $lastDayStatus = 'off_day';
+            $lastDayCheckIn = null;
+            $lastDayCheckOut = null;
+            $lastDayLeaveDesc = null;
+            $lastDayShift = null;
+            $lastDayLate = 0;
+            $lastDayEarly = 0;
+            $lastDayExtended = 0;
 
-            $status = 'off_day';
-            $checkIn = null;
-            $checkOut = null;
-            $lateMinutes = 0;
-            $earlyLeaveMinutes = 0;
-            $overtimeMinutes = 0;
-            $leaveDesc = null;
+            foreach ($period as $date) {
+                $immutableDate = CarbonImmutable::instance($date);
+                
+                $activeLeave = $user->leaves->firstWhere(fn($leave) => $immutableDate->between($leave->start_date, $leave->end_date));
+                $assignment = $shiftResolver->forWorkDate($user, $immutableDate);
+                $shift = $shiftResolver->shiftForWorkDate($user, $immutableDate);
 
-            if ($activeLeave) {
-                $status = $activeLeave->type;
-                $leaveDesc = $activeLeave->description;
-                $stats['total_leave']++;
-            } elseif ($isScheduled) {
-                $stats['total_scheduled']++;
-
-                if ($attendanceDay) {
-                    $status = $attendanceDay->presence_status->value;
-                    $checkIn = $attendanceDay->check_in_at ? Carbon::parse($attendanceDay->check_in_at)->timezone($timezone)->format('H:i') : null;
-                    $checkOut = $attendanceDay->check_out_at ? Carbon::parse($attendanceDay->check_out_at)->timezone($timezone)->format('H:i') : null;
-                    $lateMinutes = $attendanceDay->late_minutes ?? 0;
-                    $earlyLeaveMinutes = $attendanceDay->early_leave_minutes ?? 0;
-                    $overtimeMinutes = $attendanceDay->overtime_minutes ?? 0;
-
-                    if (in_array($status, ['hadir', 'tidak_lengkap'])) {
-                        $stats['total_present']++;
-                        if ($lateMinutes > 0) {
-                            $stats['total_late']++;
-                        }
-                        if ($earlyLeaveMinutes > 0) {
-                            $stats['total_early_leave']++;
-                        }
-                    } elseif (in_array($status, ['absen', 'tidak_hadir'])) {
-                        $stats['total_absent']++;
+                $isScheduled = $assignment !== null && $assignment->isActiveOn($immutableDate);
+                $attendanceDay = $user->attendanceDays->firstWhere(function($day) use ($immutableDate) {
+                    if (is_string($day->work_date)) {
+                        return $immutableDate->toDateString() === $day->work_date;
                     }
-                } else {
-                    $status = 'absen';
-                    $stats['total_absent']++;
+                    return $immutableDate->isSameDay($day->work_date);
+                });
+
+                $dayStatus = 'off_day';
+                $dayLeaveDesc = null;
+                $dayCheckIn = null;
+                $dayCheckOut = null;
+                $dayLate = 0;
+                $dayEarly = 0;
+                $dayExtended = 0;
+
+                if ($activeLeave) {
+                    $dayStatus = $activeLeave->type;
+                    $dayLeaveDesc = $activeLeave->description;
+                    
+                    if ($dayStatus === 'cuti') {
+                        $periodStats['leave_days']++;
+                    } elseif ($dayStatus === 'sakit') {
+                        $periodStats['sick_days']++;
+                    } elseif ($dayStatus === 'izin') {
+                        $periodStats['permit_days']++;
+                    } else {
+                        $periodStats['leave_days']++; // Fallback
+                    }
+
+                    $stats['total_leave']++;
+                } elseif ($isScheduled || $attendanceDay) {
+                    if ($isScheduled) {
+                        $stats['total_scheduled']++;
+                    }
+
+                    if ($attendanceDay) {
+                        $dayStatus = $attendanceDay->presence_status->value;
+                        $dayCheckIn = $attendanceDay->check_in_at ? Carbon::parse($attendanceDay->check_in_at)->timezone($timezone)->format('H:i') : null;
+                        $dayCheckOut = $attendanceDay->check_out_at ? Carbon::parse($attendanceDay->check_out_at)->timezone($timezone)->format('H:i') : null;
+                        $dayLate = $attendanceDay->late_minutes ?? 0;
+                        $dayEarly = $attendanceDay->early_leave_minutes ?? 0;
+                        $dayExtended = $attendanceDay->overtime_minutes ?? 0;
+
+                        if (in_array($dayStatus, ['hadir', 'tidak_lengkap'])) {
+                            if ($isScheduled) {
+                                $stats['total_present']++;
+                            }
+                            $periodStats['present_days']++;
+                            
+                            $periodStats['late_minutes'] += $dayLate;
+                            $periodStats['early_leave_minutes'] += $dayEarly;
+                            $periodStats['extended_minutes'] += $dayExtended;
+
+                            if ($dayLate > 0 && $isScheduled) {
+                                $stats['total_late']++;
+                            }
+                            if ($dayEarly > 0 && $isScheduled) {
+                                $stats['total_early_leave']++;
+                            }
+                        } elseif (in_array($dayStatus, ['sakit'])) {
+                            $periodStats['sick_days']++;
+                            if ($isScheduled) $stats['total_absent']++;
+                        } elseif (in_array($dayStatus, ['izin'])) {
+                            $periodStats['permit_days']++;
+                            if ($isScheduled) $stats['total_absent']++;
+                        } elseif (in_array($dayStatus, ['cuti'])) {
+                            $periodStats['leave_days']++;
+                            if ($isScheduled) $stats['total_leave']++;
+                        } elseif (in_array($dayStatus, ['absen', 'tidak_hadir'])) {
+                            $periodStats['absent_days']++;
+                            if ($isScheduled) $stats['total_absent']++;
+                        }
+                    } else {
+                        $dayStatus = 'absen';
+                        $periodStats['absent_days']++;
+                        if ($isScheduled) $stats['total_absent']++;
+                    }
+                }
+
+                // If this is the last day of the period, save for badge
+                if ($date->isSameDay($dateTo)) {
+                    $lastDayStatus = $dayStatus;
+                    $lastDayCheckIn = $dayCheckIn;
+                    $lastDayCheckOut = $dayCheckOut;
+                    $lastDayLeaveDesc = $dayLeaveDesc;
+                    $lastDayShift = $shift;
+                    $lastDayLate = $dayLate;
+                    $lastDayEarly = $dayEarly;
+                    $lastDayExtended = $dayExtended;
                 }
             }
 
             $employees[] = [
                 'id' => $user->id,
                 'name' => $user->name,
-                'shift_name' => $shift?->name ?? 'Libur',
-                'shift_time' => $shift ? substr($shift->start_time, 0, 5).' - '.substr($shift->end_time, 0, 5) : '-',
-                'status' => $status,
-                'check_in' => $checkIn,
-                'check_out' => $checkOut,
-                'late_minutes' => $lateMinutes,
-                'early_leave_minutes' => $earlyLeaveMinutes,
-                'extended_minutes' => $overtimeMinutes,
-                'leave_description' => $leaveDesc,
+                'shift_name' => $lastDayShift?->name ?? 'Libur',
+                'shift_time' => $lastDayShift ? substr($lastDayShift->start_time, 0, 5).' - '.substr($lastDayShift->end_time, 0, 5) : '-',
+                'status' => $lastDayStatus,
+                'check_in' => $lastDayCheckIn,
+                'check_out' => $lastDayCheckOut,
+                'leave_description' => $lastDayLeaveDesc,
+                'late_minutes' => $lastDayLate,
+                'early_leave_minutes' => $lastDayEarly,
+                'extended_minutes' => $lastDayExtended,
+                'period_stats' => $periodStats,
             ];
         }
 

@@ -33,5 +33,5 @@ interface UserRepositoryInterface
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, User>
      */
-    public function activeForDashboard(string $date, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection;
+    public function activeForDashboard(string $dateFrom, string $dateTo, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection;
 }

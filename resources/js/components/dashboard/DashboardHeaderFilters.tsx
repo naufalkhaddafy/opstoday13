@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon } from 'lucide-react';
+import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon, RefreshCw } from 'lucide-react';
 import {
     Sheet,
     SheetContent,
@@ -25,12 +25,18 @@ export function DashboardHeaderFilters({
     filters,
     onApply,
     onExport,
+    isAutoRefresh,
+    autoRefreshCountdown,
+    onAutoRefreshToggle,
     light = false,
 }: {
     companies: CompanyOption[];
     filters: DashboardFilters;
     onApply: (next: Partial<DashboardFilters>) => void;
     onExport: () => void;
+    isAutoRefresh?: boolean;
+    autoRefreshCountdown?: number;
+    onAutoRefreshToggle?: () => void;
     light?: boolean;
 }) {
     const [open, setOpen] = useState(false);
@@ -64,6 +70,26 @@ export function DashboardHeaderFilters({
     return (
         <>
             <div className="flex items-center gap-2">
+                {onAutoRefreshToggle && (
+                    <Button
+                        type="button"
+                        variant={isAutoRefresh ? 'default' : 'outline'}
+                        onClick={onAutoRefreshToggle}
+                        className={`${btnClasses} ${
+                            isAutoRefresh
+                                ? 'bg-[#2E7D32] text-white hover:bg-[#1B5E20] border-[#2E7D32] min-w-[90px]'
+                                : light
+                                    ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md min-w-[90px]'
+                                    : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md min-w-[90px]'
+                        }`}
+                        title={isAutoRefresh ? "Auto Refresh is ON (every 1m)" : "Auto Refresh is OFF"}
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${isAutoRefresh ? 'animate-spin' : ''}`} />
+                        <span className="hidden sm:inline">
+                            {isAutoRefresh && autoRefreshCountdown !== undefined ? `Auto (${autoRefreshCountdown}s)` : 'Auto'}
+                        </span>
+                    </Button>
+                )}
                 <Button
                     type="button"
                     variant="outline"
@@ -71,7 +97,7 @@ export function DashboardHeaderFilters({
                     className={`${btnClasses} ${light ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md' : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md'}`}
                 >
                     <Download className="h-3.5 w-3.5 text-[#2E7D32]" />
-                    Export
+                    <span className="hidden sm:inline">Export</span>
                 </Button>
                 <Button
                     type="button"
