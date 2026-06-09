@@ -2,7 +2,7 @@ stages:
   - build
 
 variables:
-  # Tag untuk image (bisa pakai branch name atau commit sha)
+  # Tag untuk image (bisa pakai branch name atau commit sha
   IMAGE_TAG: $CI_REGISTRY_IMAGE/opstoday13-app:latest
 
 build-docker-image:
