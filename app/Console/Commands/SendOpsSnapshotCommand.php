@@ -33,12 +33,11 @@ class SendOpsSnapshotCommand extends Command
         ]);
 
         try {
-            $companies = Company::whereNotNull('whatsapp_group_number')
-                ->where('whatsapp_group_number', '!=', '')
-                ->get();
+            // Ambil SEMUA company agar bisa di-log mana yang di-skip
+            $companies = Company::all();
 
             if ($companies->isEmpty()) {
-                $msg = 'No companies with WhatsApp group number configured.';
+                $msg = 'No companies found in database.';
                 $this->warn($msg);
 
                 $log->update([
@@ -53,9 +52,18 @@ class SendOpsSnapshotCommand extends Command
 
             $sent = 0;
             $failed = 0;
+            $skipped = 0;
             $details = [];
 
             foreach ($companies as $company) {
+                // Skip jika tidak ada nomor WA
+                if (empty($company->whatsapp_group_number)) {
+                    $skipped++;
+                    $details[] = "⏭️ {$company->name} (Skipped - No WhatsApp number)";
+                    $this->line("Skipping {$company->name} (No WhatsApp number configured).");
+                    continue;
+                }
+
                 $this->info("Building {$type} snapshot for {$company->name}...");
 
                 $text = $type === 'morning'
@@ -89,11 +97,12 @@ class SendOpsSnapshotCommand extends Command
             }
 
             $outputMsg = sprintf(
-                '%s snapshot complete. Companies: %d, Sent: %d, Failed: %d',
+                '%s snapshot complete. Companies: %d, Sent: %d, Failed: %d, Skipped: %d',
                 ucfirst($type),
                 $companies->count(),
                 $sent,
                 $failed,
+                $skipped
             );
 
             $this->info($outputMsg);
@@ -108,6 +117,7 @@ class SendOpsSnapshotCommand extends Command
                     'companies' => $companies->count(),
                     'sent' => $sent,
                     'failed' => $failed,
+                    'skipped' => $skipped,
                 ],
             ]);
 
