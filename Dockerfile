@@ -1,5 +1,4 @@
-# Stage 1: Base PHP Image
-FROM dunglas/frankenphp:php8.3-alpine AS base
+FROM dunglas/frankenphp:php8.4-alpine AS base
 
 # Install required PHP extensions
 RUN install-php-extensions \
@@ -36,7 +35,8 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev
 
 # Build Frontend (Requires artisan/PHP for Wayfinder)
-RUN npm run build
+RUN npm run build && \
+    rm -rf node_modules
 
 # Stage 3: Final Production Image
 FROM base AS final
@@ -51,23 +51,23 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # Opcache config for performance
 RUN { \
-        echo 'opcache.memory_consumption=256'; \
-        echo 'opcache.interned_strings_buffer=16'; \
-        echo 'opcache.max_accelerated_files=10000'; \
-        echo 'opcache.revalidate_freq=0'; \
-        echo 'opcache.validate_timestamps=0'; \
-        echo 'opcache.enable_cli=1'; \
-        echo 'opcache.jit=1255'; \
-        echo 'opcache.jit_buffer_size=128M'; \
+    echo 'opcache.memory_consumption=256'; \
+    echo 'opcache.interned_strings_buffer=16'; \
+    echo 'opcache.max_accelerated_files=10000'; \
+    echo 'opcache.revalidate_freq=0'; \
+    echo 'opcache.validate_timestamps=0'; \
+    echo 'opcache.enable_cli=1'; \
+    echo 'opcache.jit=1255'; \
+    echo 'opcache.jit_buffer_size=128M'; \
     } > /usr/local/etc/php/conf.d/opcache-recommended.ini
 
 # PHP hardening
 RUN { \
-        echo 'expose_php=Off'; \
-        echo 'memory_limit=256M'; \
-        echo 'upload_max_filesize=32M'; \
-        echo 'post_max_size=48M'; \
-        echo 'max_execution_time=60'; \
+    echo 'expose_php=Off'; \
+    echo 'memory_limit=256M'; \
+    echo 'upload_max_filesize=32M'; \
+    echo 'post_max_size=48M'; \
+    echo 'max_execution_time=60'; \
     } > /usr/local/etc/php/conf.d/hardening.ini
 
 WORKDIR /app

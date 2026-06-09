@@ -1,5 +1,6 @@
 services:
   init:
+    image: opstoday13-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -15,9 +16,10 @@ services:
     volumes:
       - app_storage:/app/storage
     networks:
-      - opstoday
+      - opstoday13
 
   app:
+    image: opstoday13-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -37,9 +39,10 @@ services:
     volumes:
       - app_storage:/app/storage
     networks:
-      - opstoday
+      - opstoday13
 
   queue:
+    image: opstoday13-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -57,9 +60,10 @@ services:
     volumes:
       - app_storage:/app/storage
     networks:
-      - opstoday
+      - opstoday13
 
   scheduler:
+    image: opstoday13-app:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -77,7 +81,7 @@ services:
     volumes:
       - app_storage:/app/storage
     networks:
-      - opstoday
+      - opstoday13
 
   mysql:
     image: mysql:8.0
@@ -96,7 +100,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - opstoday
+      - opstoday13
 
   redis:
     image: redis:7-alpine
@@ -112,7 +116,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - opstoday
+      - opstoday13
 
 volumes:
   mysql_data:
@@ -120,5 +124,5 @@ volumes:
   app_storage:
 
 networks:
-  opstoday:
+  opstoday13:
     driver: bridge
