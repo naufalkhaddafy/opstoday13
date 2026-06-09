@@ -45,6 +45,15 @@ class AttendanceDayAggregator
 
         // Auto-match: jika shift adalah placeholder generik, cocokkan ke shift riil terdekat
         $placeholderCodes = ['steady', 'shift'];
+
+        // Jika shift kosong (karena libur/jadwal null) tapi ada check in, coba fallback ke logika resolver
+        if ($shift === null && $checkIn !== null) {
+            $resolved = $this->workDateResolver->resolve($user, $checkIn->punched_at);
+            if ($resolved !== null && $resolved['shift'] !== null) {
+                $shift = $resolved['shift'];
+            }
+        }
+
         if ($shift !== null && in_array($shift->code, $placeholderCodes, true) && $checkIn !== null) {
             $realShifts = Shift::where('type', $shift->type)
                 ->whereNotIn('code', $placeholderCodes)

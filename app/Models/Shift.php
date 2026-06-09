@@ -79,6 +79,10 @@ class Shift extends Model
             $end = $workDate->addDay()->startOfDay();
         } else {
             $end = $workDate->setTimeFromTimeString($endTime);
+            // Fix: Jika end lebih kecil dari start, atau is_overnight true, berarti lewat tengah malam
+            if ($this->is_overnight || $end->lt($start)) {
+                $end = $end->addDay();
+            }
         }
 
         return [$start, $end];

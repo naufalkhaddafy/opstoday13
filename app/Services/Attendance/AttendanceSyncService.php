@@ -50,7 +50,7 @@ class AttendanceSyncService
                 }
 
                 $punchedAt = $this->logRepository->normalizePunchedAt($record['punched_at']);
-                $workDate = $this->workDateResolver->resolve($user, $punchedAt)['work_date'] ?? $punchedAt->startOfDay();
+                $workDate = $this->workDateResolver->resolve($user, $punchedAt, $record['status'])['work_date'] ?? $punchedAt->startOfDay();
 
                 if ($this->logRepository->insertFromSyncRecord(
                     [

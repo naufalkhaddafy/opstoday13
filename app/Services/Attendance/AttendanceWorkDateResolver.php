@@ -27,9 +27,29 @@ class AttendanceWorkDateResolver
     /**
      * @return array{work_date: CarbonImmutable, shift: Shift}|null
      */
-    public function resolve(User $user, CarbonImmutable $punchedAt): ?array
+    public function resolve(User $user, CarbonImmutable $punchedAt, ?string $status = null): ?array
     {
         $punchedAt = $punchedAt->timezone($this->timezone);
+
+        if ($status !== null && strtolower($status) === 'keluar') {
+            $lastIn = \App\Models\AttendanceLog::where('user_id', $user->id)
+                ->where('status', 'hadir')
+                ->where('punched_at', '<', $punchedAt)
+                ->where('punched_at', '>=', $punchedAt->subHours(16))
+                ->orderByDesc('punched_at')
+                ->first();
+
+            if ($lastIn !== null) {
+                // Selesaikan ulang untuk check-in sebelumnya agar work_date dan shift sama persis
+                $resolvedIn = $this->resolve($user, CarbonImmutable::instance($lastIn->punched_at), 'hadir');
+                \Illuminate\Support\Facades\Log::info("KELUAR PUNCH {$punchedAt} FOUND LAST IN {$lastIn->punched_at}. RESOLVED TO: " . ($resolvedIn ? $resolvedIn['work_date'] : 'null'));
+                if ($resolvedIn !== null) {
+                    return $resolvedIn;
+                }
+            } else {
+                \Illuminate\Support\Facades\Log::info("KELUAR PUNCH {$punchedAt} DID NOT FIND LAST IN");
+            }
+        }
 
         // Check each candidate date for an explicit exception
         foreach ($this->candidateWorkDates($punchedAt) as $workDate) {
@@ -100,14 +120,16 @@ class AttendanceWorkDateResolver
                         ];
                     }
                 } else {
-                    // Shift spesifik langsung — periksa window
+                    // Shift spesifik langsung — periksa window dengan padding (4 jam sebelum, 4 jam sesudah)
                     [$start, $end] = $assignedShift->windowForWorkDate($workDate, $this->timezone);
+                    $matchStart = $start->subHours(4);
+                    $matchEnd = $end->addHours(4);
 
-                    if ($punchedAt->gte($start) && $punchedAt->lt($end)) {
+                    if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
                         return [
                             'work_date' => $workDate->startOfDay(),
                             'shift' => $assignedShift,
-                        ];
+                        ];  
                     }
                 }
             }
@@ -131,7 +153,11 @@ class AttendanceWorkDateResolver
         foreach ($shifts as $shift) {
             [$start, $end] = $shift->windowForWorkDate($workDate, $this->timezone);
 
-            if ($punchedAt->gte($start) && $punchedAt->lt($end)) {
+            // Beri toleransi 4 jam sebelum shift mulai dan 4 jam setelah shift selesai
+            $matchStart = $start->subHours(4);
+            $matchEnd = $end->addHours(4);
+
+            if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
                 $candidates[] = [
                     'shift' => $shift,
                     'diff' => abs($punchedAt->diffInMinutes($start)),
@@ -190,20 +216,16 @@ class AttendanceWorkDateResolver
      */
     protected function fallbackByRule(User $user, CarbonImmutable $punchedAt): ?array
     {
-        // First check if there's an explicit exception for today. If it's explicitly null (Libur), then don't fallback.
+        // First check if there's an explicit exception for today.
         $dateStr = $punchedAt->toDateString();
         $exception = UserShiftException::where('user_id', $user->id)
             ->where('date', $dateStr)
             ->first();
 
         if ($exception !== null) {
-            // There's an exception. If shift_id is null, it's explicitly an off day, don't fall back to working.
             if ($exception->shift_id === null) {
                 return null;
             }
-
-            // If there's an exception shift, and we reached fallback, it means the time window didn't match.
-            // But we shouldn't use fallback auto-match if an explicit exception exists.
             $shift = Shift::find($exception->shift_id);
             if ($shift) {
                 return [
@@ -214,41 +236,56 @@ class AttendanceWorkDateResolver
         }
 
         $assignment = $user->shiftAssignments()->orderByDesc('effective_from')->first();
-
         if ($assignment === null) {
             return null;
         }
 
-        $dayOfWeek = $punchedAt->dayOfWeekIso;
-        $shiftId = $assignment->schedule[$dayOfWeek] ?? $assignment->schedule[(string) $dayOfWeek] ?? null;
-
-        if ($shiftId === null) {
-            // Fallback to first non-null shift in the schedule
-            $shiftId = collect($assignment->schedule)->filter()->first();
-        }
-
-        if ($shiftId === null) {
+        // Cari shift fallback (shift pertama yang bukan null di jadwal)
+        $fallbackShiftId = collect($assignment->schedule)->filter()->first();
+        if ($fallbackShiftId === null) {
             return null;
         }
 
-        $shift = Shift::find($shiftId);
-        if ($shift === null) {
+        $fallbackShift = Shift::find($fallbackShiftId);
+        if ($fallbackShift === null) {
             return null;
         }
 
-        // Jika placeholder, resolve ke shift riil terdekat
-        if (in_array($shift->code, self::PLACEHOLDER_CODES, true)) {
-            $realShifts = Shift::where('type', $shift->type)
+        // Jika fallback adalah placeholder, kita cari shift riil yang paling cocok di semua candidate date
+        if (in_array($fallbackShift->code, self::PLACEHOLDER_CODES, true)) {
+            $realShifts = Shift::where('type', $fallbackShift->type)
                 ->whereNotIn('code', self::PLACEHOLDER_CODES)
                 ->get();
 
-            $bestMatch = $this->findClosestShift($realShifts, $punchedAt->startOfDay(), $punchedAt);
-            if ($bestMatch !== null) {
-                $shift = $bestMatch;
+            $bestOverallMatch = null;
+            $bestOverallDiff = PHP_INT_MAX;
+
+            foreach ($this->candidateWorkDates($punchedAt) as $workDate) {
+                foreach ($realShifts as $realShift) {
+                    [$start, $end] = $realShift->windowForWorkDate($workDate, $this->timezone);
+                    $matchStart = $start->subHours(4);
+                    $matchEnd = $end->addHours(4);
+
+                    if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
+                        $diff = abs($punchedAt->diffInMinutes($start));
+                        if ($diff < $bestOverallDiff) {
+                            $bestOverallDiff = $diff;
+                            $bestOverallMatch = [
+                                'work_date' => $workDate->startOfDay(),
+                                'shift' => $realShift,
+                            ];
+                        }
+                    }
+                }
+            }
+
+            if ($bestOverallMatch !== null) {
+                return $bestOverallMatch;
             }
         }
 
-        $workDate = match ($shift->work_date_rule) {
+        // Jika gagal auto-match atau bukan placeholder, gunakan rule bawaan untuk hari h
+        $workDate = match ($fallbackShift->work_date_rule) {
             ShiftWorkDateRule::NextDay => $punchedAt->hour >= 23
                 ? $punchedAt->addDay()->startOfDay()
                 : ($punchedAt->hour < 8 ? $punchedAt->startOfDay() : $punchedAt->startOfDay()),
@@ -257,7 +294,7 @@ class AttendanceWorkDateResolver
 
         return [
             'work_date' => $workDate,
-            'shift' => $shift,
+            'shift' => $fallbackShift,
         ];
     }
 }
