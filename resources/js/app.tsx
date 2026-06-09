@@ -6,10 +6,10 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 
-const appName = import.meta.env.VITE_APP_NAME || window.document.title || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'B-Hero';
 
 createInertiaApp({
-    title: (title) => (title ? `${title} - ${appName}` : appName),
+    title: (title) => (title ? `${title} | ${appName}` : appName),
     layout: (name) => {
         switch (true) {
             case name === 'welcome':
