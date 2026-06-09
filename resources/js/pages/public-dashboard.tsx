@@ -199,8 +199,15 @@ export default function PublicDashboard({
     };
 
     const handleExport = useCallback(() => {
-        // TODO: export dashboard data based on current filters
-    }, []);
+        const params = new URLSearchParams();
+        if (filters.date_from) params.set('date_from', filters.date_from);
+        if (filters.date_to) params.set('date_to', filters.date_to);
+        if (filters.company_id && filters.company_id !== 'all') params.set('company_id', String(filters.company_id));
+        if (filters.search) params.set('search', filters.search);
+        if (filters.status) params.set('status', filters.status);
+
+        window.location.href = `/export?${params.toString()}`;
+    }, [filters]);
 
     const ticketSegments: Segment[] = ticket_stats ? [
         { label: 'Assigned', value: ticket_stats.assigned, color: TICKET_CHART_COLORS.assigned },
@@ -657,14 +664,21 @@ export default function PublicDashboard({
                                     {engineers && attendance && (
                                         engineers.length > 0 ? (
                                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                                {engineers.map((engineer) => (
-                                                    <EngineerCard
-                                                        key={engineer.id}
-                                                        engineer={engineer}
-                                                        attendance={attendanceByUserId.get(engineer.id) ?? null}
-                                                        variant="attendance"
-                                                    />
-                                                ))}
+                                                {engineers.map((engineer) => {
+                                                    const periodStr = filters.date_from === filters.date_to 
+                                                        ? filters.date_from 
+                                                        : `${filters.date_from} to ${filters.date_to}`;
+                                                    
+                                                    return (
+                                                        <EngineerCard
+                                                            key={engineer.id}
+                                                            engineer={engineer}
+                                                            attendance={attendanceByUserId.get(engineer.id) ?? null}
+                                                            variant="attendance"
+                                                            periodDateStr={periodStr}
+                                                        />
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
                                             <Card className="border-border/60 shadow-sm">

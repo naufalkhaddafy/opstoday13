@@ -26,6 +26,8 @@ export type EmployeeStatus = {
         sick_days: number;
         permit_days: number;
         absent_days: number;
+        scheduled_days: number;
+        scheduled_working_days: number;
         late_minutes: number;
         early_leave_minutes: number;
         extended_minutes: number;

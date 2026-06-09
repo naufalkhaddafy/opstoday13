@@ -1,5 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Segment } from '@/types/dashboard';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 export function DonutChart({ segments, centerLabel, centerValue }: { segments: Segment[]; centerLabel: string; centerValue: number }) {
     if (centerValue === 0) {
@@ -10,39 +14,44 @@ export function DonutChart({ segments, centerLabel, centerValue }: { segments: S
         );
     }
 
-    const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
-    let currentOffset = 0;
+    const data = useMemo(() => {
+        // filter out zero values
+        const validSegments = segments.filter(s => s.value > 0);
+        return {
+            labels: validSegments.map(s => s.label),
+            datasets: [
+                {
+                    data: validSegments.map(s => s.value),
+                    backgroundColor: validSegments.map(s => s.color),
+                    borderWidth: 0,
+                    hoverOffset: 4,
+                },
+            ],
+        };
+    }, [segments]);
+
+    const options = {
+        cutout: '75%',
+        plugins: {
+            legend: {
+                display: false, // We use custom legend
+            },
+            tooltip: {
+                enabled: true,
+                padding: 12,
+                titleFont: { size: 13, family: "'Instrument Sans', sans-serif" },
+                bodyFont: { size: 12, family: "'Instrument Sans', sans-serif" },
+                cornerRadius: 8,
+            },
+        },
+        maintainAspectRatio: false,
+    };
 
     return (
         <div className="flex h-48 items-center gap-6">
             <div className="relative h-32 w-32 shrink-0">
-                <svg viewBox="0 0 100 100" className="-rotate-90 transform">
-                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" strokeWidth="16" className="text-muted/20" />
-                    {segments.map((segment) => {
-                        if (segment.value === 0) return null;
-                        const percentage = (segment.value / total) * 100;
-                        const circumference = 2 * Math.PI * 40;
-                        const strokeDasharray = `${(percentage * circumference) / 100} ${circumference}`;
-                        const strokeDashoffset = -((currentOffset * circumference) / 100);
-                        currentOffset += percentage;
-
-                        return (
-                            <circle
-                                key={segment.label}
-                                cx="50"
-                                cy="50"
-                                r="40"
-                                fill="transparent"
-                                strokeWidth="16"
-                                strokeDasharray={strokeDasharray}
-                                strokeDashoffset={strokeDashoffset}
-                                className="transition-all duration-500 ease-in-out"
-                                style={{ stroke: segment.color }}
-                            />
-                        );
-                    })}
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <Doughnut data={data} options={options} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-2xl font-bold text-foreground">{centerValue}</span>
                     <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{centerLabel}</span>
                 </div>

@@ -16,9 +16,10 @@ type EngineerCardProps = {
     engineer: EngineerSummary;
     attendance?: EmployeeStatus | null;
     variant?: 'tickets' | 'attendance' | 'combined';
+    periodDateStr?: string;
 };
 
-export function EngineerCard({ engineer, attendance, variant = 'combined' }: EngineerCardProps) {
+export function EngineerCard({ engineer, attendance, variant = 'combined', periodDateStr }: EngineerCardProps) {
     const initials = engineer.name
         .split(' ')
         .slice(0, 2)
@@ -57,7 +58,7 @@ export function EngineerCard({ engineer, attendance, variant = 'combined' }: Eng
 
                         {attendance && (
                             <div className="mt-2 flex flex-col gap-1 text-[11px] text-muted-foreground">
-                                <div className="font-semibold text-primary/80">Data Hari Ini:</div>
+                                <div className="font-semibold text-primary/80">Today's Data:</div>
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <span className="flex items-center gap-1">
                                         <CalendarClock className="h-3 w-3 text-[#2E7D32]" />
@@ -131,27 +132,33 @@ export function EngineerCard({ engineer, attendance, variant = 'combined' }: Eng
                     )}
 
                     {variant === 'attendance' && (
-                        <div className="mt-4 border-t pt-3">
+                        <div className="mt-1">
                             <div className="mb-2 flex items-center justify-between">
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Overview by Period</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Overview by Period {periodDateStr && `(${periodDateStr})`}
+                                </span>
                             </div>
                             
-                            <div className="mb-3 grid grid-cols-4 gap-1 text-center">
+                            <div className="mb-3 grid grid-cols-5 gap-1 text-center">
                                 <div className="rounded-md bg-muted/30 p-1.5">
-                                    <div className="text-[10px] font-medium text-muted-foreground">Hadir</div>
+                                    <div className="text-[10px] font-medium text-muted-foreground">Present</div>
                                     <div className="text-xs font-semibold text-foreground">{attendance?.period_stats?.present_days ?? 0}d</div>
                                 </div>
                                 <div className="rounded-md bg-muted/30 p-1.5">
-                                    <div className="text-[10px] font-medium text-muted-foreground">Cuti</div>
+                                    <div className="text-[10px] font-medium text-muted-foreground">Leave</div>
                                     <div className="text-xs font-semibold text-foreground">{attendance?.period_stats?.leave_days ?? 0}d</div>
                                 </div>
                                 <div className="rounded-md bg-muted/30 p-1.5">
-                                    <div className="text-[10px] font-medium text-muted-foreground">Sakit</div>
+                                    <div className="text-[10px] font-medium text-muted-foreground">Sick</div>
                                     <div className="text-xs font-semibold text-foreground">{attendance?.period_stats?.sick_days ?? 0}d</div>
                                 </div>
                                 <div className="rounded-md bg-muted/30 p-1.5">
-                                    <div className="text-[10px] font-medium text-muted-foreground">Izin</div>
+                                    <div className="text-[10px] font-medium text-muted-foreground">Permit</div>
                                     <div className="text-xs font-semibold text-foreground">{attendance?.period_stats?.permit_days ?? 0}d</div>
+                                </div>
+                                <div className="rounded-md bg-muted/30 p-1.5">
+                                    <div className="text-[10px] font-medium text-muted-foreground">Absent</div>
+                                    <div className="text-xs font-semibold text-foreground">{attendance?.period_stats?.absent_days ?? 0}d</div>
                                 </div>
                             </div>
 
@@ -183,6 +190,16 @@ export function EngineerCard({ engineer, attendance, variant = 'combined' }: Eng
                                         {attendance?.period_stats?.extended_minutes ? `${attendance.period_stats.extended_minutes} min` : '0 min'}
                                     </p>
                                 </div>
+                            </div>
+
+                            <div className="mt-2 rounded-lg border border-indigo-200/60 bg-indigo-50/50 p-2.5 dark:border-indigo-900/40 dark:bg-indigo-950/20">
+                                <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                    <CalendarClock className="h-3 w-3 text-indigo-500" />
+                                    Total Scheduled Working Days
+                                </div>
+                                <p className="mt-1 text-sm font-semibold text-foreground">
+                                    {attendance?.period_stats?.scheduled_working_days ?? 0} Days
+                                </p>
                             </div>
                         </div>
                     )}

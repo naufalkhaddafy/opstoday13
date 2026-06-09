@@ -44,6 +44,8 @@ class DailyAttendanceSummarizer
                 'sick_days' => 0,
                 'permit_days' => 0,
                 'absent_days' => 0,
+                'scheduled_days' => 0,
+                'scheduled_working_days' => 0,
                 'late_minutes' => 0,
                 'early_leave_minutes' => 0,
                 'extended_minutes' => 0,
@@ -82,6 +84,10 @@ class DailyAttendanceSummarizer
                 $dayEarly = 0;
                 $dayExtended = 0;
 
+                if ($isScheduled) {
+                    $periodStats['scheduled_days']++;
+                }
+
                 if ($activeLeave) {
                     $dayStatus = $activeLeave->type;
                     $dayLeaveDesc = $activeLeave->description;
@@ -98,6 +104,9 @@ class DailyAttendanceSummarizer
 
                     $stats['total_leave']++;
                 } elseif ($isScheduled || $attendanceDay) {
+                    if ($isScheduled) {
+                        $periodStats['scheduled_working_days']++;
+                    }
                     if ($isScheduled) {
                         $stats['total_scheduled']++;
                     }

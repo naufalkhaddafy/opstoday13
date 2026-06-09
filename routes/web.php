@@ -6,6 +6,7 @@ use App\Http\Controllers\PublicDashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicDashboardController::class, 'index'])->name('home');
+Route::get('/export', [PublicDashboardController::class, 'export'])->name('home.export');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

@@ -87,4 +87,32 @@ class PublicDashboardController extends Controller
             ])->resolve()
         );
     }
+
+    public function export(Request $request)
+    {
+        $timezone = config('app.timezone');
+        $today = CarbonImmutable::now($timezone)->startOfDay();
+
+        $dateFrom = CarbonImmutable::parse(
+            $request->input('date_from', $today->toDateString()),
+            $timezone,
+        )->startOfDay();
+
+        $dateTo = CarbonImmutable::parse(
+            $request->input('date_to', $today->toDateString()),
+            $timezone,
+        )->startOfDay();
+
+        if ($dateFrom->gt($dateTo)) {
+            [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+        }
+
+        $companyInput = $request->input('company_id');
+        $companyId = $companyInput && $companyInput !== 'all' ? (int) $companyInput : null;
+
+        $search = $request->input('search');
+        $status = $request->input('status');
+
+        return (new \App\Exports\DashboardExport($dateFrom, $dateTo, $companyId, $search, $status))->download('dashboard-export.xlsx');
+    }
 }
