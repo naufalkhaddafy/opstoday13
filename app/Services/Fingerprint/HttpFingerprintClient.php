@@ -43,7 +43,11 @@ class HttpFingerprintClient implements FingerprintClientInterface
                 continue;
             }
 
-            $cleanDate = substr(str_replace('T', ' ', $row['fdDate']), 0, 19);
+            if (empty($row['CI'])) {
+                continue;
+            }
+
+            $cleanDate = substr(str_replace('T', ' ', $row['CI']), 0, 19);
             $punchedAt = CarbonImmutable::parse($cleanDate, $timezone);
 
             // The API is state-based, so we consume everything it gives us.

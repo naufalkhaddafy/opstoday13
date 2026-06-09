@@ -1,0 +1,28 @@
+stages:
+  - build
+
+variables:
+  # Tag untuk image (bisa pakai branch name atau commit sha)
+  IMAGE_TAG: $CI_REGISTRY_IMAGE/opstoday13-app:latest
+
+build-docker-image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    # Login otomatis ke GitLab Container Registry menggunakan token CI bawaan
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - echo "Mulai mem-build Docker Image..."
+    # Build image
+    - docker build -t $IMAGE_TAG -f Dockerfile .
+    - echo "Mendorong (Push) image ke GitLab Container Registry..."
+    # Push image ke registry
+    - docker push $IMAGE_TAG
+  rules:
+    # Hanya jalankan script ini kalau ada push ke branch main atau master
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "master"
