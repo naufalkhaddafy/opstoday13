@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: "no"
-    command: ["sh", "-c", "php artisan optimize:clear && php artisan optimize && php artisan migrate --force"]
+    command: [ "sh", "-c", "php artisan optimize:clear && php artisan optimize && php artisan migrate --force && php artisan storage:link" ]
     env_file:
       - .env.docker
     depends_on:
@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: ["sh", "-c", "php artisan optimize && exec frankenphp run --config /etc/caddy/Caddyfile"]
+    command: [ "sh", "-c", "php artisan optimize && exec frankenphp run --config /etc/caddy/Caddyfile" ]
     ports:
       - "${APP_PORT:-8000}:80"
     env_file:
@@ -44,7 +44,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: ["sh", "-c", "php artisan optimize && exec php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600"]
+    command: [ "sh", "-c", "php artisan optimize && exec php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600" ]
     env_file:
       - .env.docker
     depends_on:
@@ -64,7 +64,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: ["sh", "-c", "php artisan optimize && exec php artisan schedule:work"]
+    command: [ "sh", "-c", "php artisan optimize && exec php artisan schedule:work" ]
     env_file:
       - .env.docker
     depends_on:
@@ -85,10 +85,12 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-opstoday13}
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    ports:
+      - "${DB_FORWARD_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -99,11 +101,13 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-changeme}"]
+    command: [ "redis-server", "--requirepass", "${REDIS_PASSWORD:-changeme}" ]
+    ports:
+      - "${REDIS_FORWARD_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5

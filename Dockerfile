@@ -1,21 +1,5 @@
-# Stage 1: Build Frontend Assets
-FROM node:20-alpine AS frontend
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
-COPY . .
-RUN npm run build
-
-# Stage 2: Build Backend Vendor
-FROM composer:2.7 AS backend
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-COPY . .
-RUN composer dump-autoload --optimize --no-dev
-
-# Stage 3: Final Production Image (FrankenPHP)
-FROM dunglas/frankenphp:php8.3-alpine
+# Stage 1: Base PHP Image
+FROM dunglas/frankenphp:php8.3-alpine AS base
 
 # Install required PHP extensions
 RUN install-php-extensions \
@@ -27,6 +11,35 @@ RUN install-php-extensions \
     gd \
     bcmath \
     intl
+
+# Stage 2: Build dependencies (Node & Composer)
+FROM base AS build
+
+# Install Composer and Node.js
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
+RUN apk add --no-cache nodejs npm
+
+WORKDIR /app
+
+# Install PHP dependencies
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Install Node dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+
+# Copy the rest of the application
+COPY . .
+
+# Generate autoloader
+RUN composer dump-autoload --optimize --no-dev
+
+# Build Frontend (Requires artisan/PHP for Wayfinder)
+RUN npm run build
+
+# Stage 3: Final Production Image
+FROM base AS final
 
 # Set production environment
 ENV APP_ENV=production
@@ -59,9 +72,8 @@ RUN { \
 
 WORKDIR /app
 
-# Copy files from previous stages
-COPY --from=backend /app /app
-COPY --from=frontend /app/public/build /app/public/build
+# Copy files from build stage
+COPY --from=build /app /app
 
 # Set permissions
 RUN chown -R root:root /app && \

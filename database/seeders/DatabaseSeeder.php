@@ -22,14 +22,15 @@ class DatabaseSeeder extends Seeder
 
         $company = CompanySeeder::$companies[0];
 
-        User::factory()->create([
+        $admin = User::firstOrCreate(['email' => 'super@example.com'], [
             'name' => 'Super Admin',
-            'email' => 'super@example.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
             'company_id' => null,
             'employee_id' => null,
             'is_verified' => true,
             'is_active' => true,
-        ])->syncRoles([RoleName::SuperAdmin->value]);
+        ]);
+        $admin->syncRoles([RoleName::SuperAdmin->value]);
 
         // Query placeholder shifts for assignments
         $steadyPlaceholder = \App\Models\Shift::query()->where('code', 'steady')->first();
@@ -41,19 +42,21 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($supervisors as $emp) {
-            $user = User::factory()->forCompany($company)->create([
+            $user = User::firstOrCreate(['email' => $emp['email']], [
                 'name' => $emp['name'],
-                'email' => $emp['email'],
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'company_id' => $company->id,
                 'employee_id' => $emp['employee_id'],
                 'is_verified' => true,
                 'is_active' => true,
-            ])->syncRoles([RoleName::Supv->value]);
+            ]);
+            $user->syncRoles([RoleName::Supv->value]);
 
             if ($emp['shift'] !== null) {
-                \App\Models\UserShiftAssignment::factory()->create([
-                    'user_id' => $user->id,
-                    'schedule' => array_fill(1, 5, $emp['shift']->id) + [6 => null, 7 => null],
-                ]);
+                \App\Models\UserShiftAssignment::updateOrCreate(
+                    ['user_id' => $user->id, 'effective_from' => now()->toDateString()],
+                    ['schedule' => array_fill(1, 5, $emp['shift']->id) + [6 => null, 7 => null]]
+                );
             }
         }
 
@@ -65,19 +68,21 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($engineers as $emp) {
-            $user = User::factory()->forCompany($company)->create([
+            $user = User::firstOrCreate(['email' => $emp['email']], [
                 'name' => $emp['name'],
-                'email' => $emp['email'],
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'company_id' => $company->id,
                 'employee_id' => $emp['employee_id'],
                 'is_verified' => true,
                 'is_active' => true,
-            ])->syncRoles([RoleName::Engineer->value]);
+            ]);
+            $user->syncRoles([RoleName::Engineer->value]);
 
             if ($emp['shift'] !== null) {
-                \App\Models\UserShiftAssignment::factory()->create([
-                    'user_id' => $user->id,
-                    'schedule' => array_fill(1, 5, $emp['shift']->id) + [6 => null, 7 => null],
-                ]);
+                \App\Models\UserShiftAssignment::updateOrCreate(
+                    ['user_id' => $user->id, 'effective_from' => now()->toDateString()],
+                    ['schedule' => array_fill(1, 5, $emp['shift']->id) + [6 => null, 7 => null]]
+                );
             }
         }
     }

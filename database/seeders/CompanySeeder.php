@@ -18,19 +18,16 @@ class CompanySeeder extends Seeder
     public function run(): void
     {
         self::$companies = [
-            Company::factory()->create([
+            Company::firstOrCreate(['slug' => 'pt-berca'], [
                 'name' => 'PT. Berca',
-                'slug' => 'pt-berca',
                 'whatsapp_group_number' => '6281234567890',
             ]),
-            Company::factory()->create([
+            Company::firstOrCreate(['slug' => 'pt-dcs'], [
                 'name' => 'PT. DCS',
-                'slug' => 'pt-dcs',
                 'whatsapp_group_number' => null,
             ]),
-            Company::factory()->create([
+            Company::firstOrCreate(['slug' => 'pt-mkn'], [
                 'name' => 'PT. MKN',
-                'slug' => 'pt-mkn',
                 'whatsapp_group_number' => null,
             ]),
         ];
