@@ -17,9 +17,10 @@ type EngineerCardProps = {
     attendance?: EmployeeStatus | null;
     variant?: 'tickets' | 'attendance' | 'combined';
     periodDateStr?: string;
+    companyName?: string;
 };
 
-export function EngineerCard({ engineer, attendance, variant = 'combined', periodDateStr }: EngineerCardProps) {
+export function EngineerCard({ engineer, attendance, variant = 'combined', periodDateStr, companyName }: EngineerCardProps) {
     const initials = engineer.name
         .split(' ')
         .slice(0, 2)
@@ -49,7 +50,15 @@ export function EngineerCard({ engineer, attendance, variant = 'combined', perio
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                                 <p className="truncate font-semibold text-foreground">{engineer.name}</p>
-                                <p className="text-xs text-muted-foreground">{engineer.employee_id ?? '-'}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {engineer.employee_id ?? '-'}
+                                    {companyName && (
+                                        <>
+                                            <span className="mx-1.5">•</span>
+                                            <span className="font-medium text-primary/80">{companyName}</span>
+                                        </>
+                                    )}
+                                </p>
                             </div>
                             {attendance ? attendanceBadge(attendance) : (
                                 <Badge variant="outline" className="shrink-0 bg-muted/50 text-muted-foreground">No data</Badge>

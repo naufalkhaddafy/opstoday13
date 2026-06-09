@@ -75,13 +75,12 @@ export function DashboardHeaderFilters({
                         type="button"
                         variant={isAutoRefresh ? 'default' : 'outline'}
                         onClick={onAutoRefreshToggle}
-                        className={`${btnClasses} ${
-                            isAutoRefresh
-                                ? 'bg-[#2E7D32] text-white hover:bg-[#1B5E20] border-[#2E7D32] min-w-[90px]'
-                                : light
-                                    ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md min-w-[90px]'
-                                    : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md min-w-[90px]'
-                        }`}
+                        className={`${btnClasses} ${isAutoRefresh
+                            ? 'bg-[#2E7D32] text-white hover:bg-[#1B5E20] border-[#2E7D32] min-w-[90px]'
+                            : light
+                                ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md min-w-[90px]'
+                                : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md min-w-[90px]'
+                            }`}
                         title={isAutoRefresh ? "Auto Refresh is ON (every 1m)" : "Auto Refresh is OFF"}
                     >
                         <RefreshCw className={`h-3.5 w-3.5 ${isAutoRefresh ? 'animate-spin' : ''}`} />

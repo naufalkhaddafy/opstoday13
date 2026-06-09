@@ -31,7 +31,7 @@ import {
     ArrowUpDown,
     Trophy,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 import { DashboardProps, DashboardFilters, Segment } from '@/types/dashboard';
 import { formatDate, formatPeriodLabel } from '@/components/dashboard/helpers';
@@ -92,6 +92,10 @@ export default function PublicDashboard({
     }, [isAutoRefresh]);
 
     const isTicketFiltersActive = !!filters.search || !!filters.sort_by || !!filters.status;
+
+    const selectedCompany = useMemo(() => {
+        return filters.company_id ? companies.find(c => c.id === filters.company_id)?.name : undefined;
+    }, [filters.company_id, companies]);
 
     const handleTicketFiltersReset = () => {
         setSearchQuery('');
@@ -202,7 +206,7 @@ export default function PublicDashboard({
         const params = new URLSearchParams();
         if (filters.date_from) params.set('date_from', filters.date_from);
         if (filters.date_to) params.set('date_to', filters.date_to);
-        if (filters.company_id && filters.company_id !== 'all') params.set('company_id', String(filters.company_id));
+        if (filters.company_id) params.set('company_id', String(filters.company_id));
         if (filters.search) params.set('search', filters.search);
         if (filters.status) params.set('status', filters.status);
 
@@ -281,6 +285,11 @@ export default function PublicDashboard({
                                     </button>
                                 </div>
                             </div>
+                            {selectedCompany && (
+                                <span className="text-sm font-bold text-[#1B5E20] dark:text-emerald-400">
+                                    {selectedCompany}
+                                </span>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             <DashboardHeaderFilters
@@ -316,7 +325,7 @@ export default function PublicDashboard({
                             {/* Section: Team KPI & Performance */}
                             <section className="flex flex-col gap-4">
                                 <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                    <ArrowUp className="h-5 w-5 text-[#2E7D32]" /> Team KPI & Performance
+                                    <ArrowUp className="h-5 w-5 text-[#2E7D32]" /> Team KPI & Performance {selectedCompany && `- ${selectedCompany}`}
                                 </h2>
                                 <p className="-mt-2 text-sm text-muted-foreground">
                                     Global performance metrics and SLAs for {isSingleDay ? 'the selected date' : formatPeriodLabel(filters.date_from, filters.date_to)}.
@@ -373,7 +382,7 @@ export default function PublicDashboard({
                             {/* Section: Tickets overview */}
                             <section className="flex flex-col gap-4">
                                 <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                    <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Ticket Overview
+                                    <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Ticket Overview {selectedCompany && `- ${selectedCompany}`}
                                 </h2>
                                 <p className="-mt-2 text-sm text-muted-foreground">
                                     {isSingleDay ? 'Summary for selected date.' : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
@@ -605,7 +614,7 @@ export default function PublicDashboard({
                             {/* Section: Attendance Overview */}
                             <section className="flex flex-col gap-4">
                                 <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                    <Users className="h-5 w-5 text-[#2E7D32]" /> Attendance Overview
+                                    <Users className="h-5 w-5 text-[#2E7D32]" /> Attendance Overview {selectedCompany && `- ${selectedCompany}`}
                                 </h2>
                                 <p className="-mt-2 text-sm text-muted-foreground">
                                     {isSingleDay ? 'Summary for selected date.' : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
@@ -650,7 +659,7 @@ export default function PublicDashboard({
                             <section className="flex flex-col gap-4">
                                 <div>
                                     <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                        <Users className="h-5 w-5 text-[#2E7D32]" /> Team Operations Overview
+                                        <Users className="h-5 w-5 text-[#2E7D32]" /> Team Operations Overview {selectedCompany && `- ${selectedCompany}`}
                                     </h2>
                                     <p className="mt-1 text-sm text-muted-foreground">
                                         Engineer attendance and ticket workload for the selected filters.
@@ -665,10 +674,10 @@ export default function PublicDashboard({
                                         engineers.length > 0 ? (
                                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                                                 {engineers.map((engineer) => {
-                                                    const periodStr = filters.date_from === filters.date_to 
-                                                        ? filters.date_from 
+                                                    const periodStr = filters.date_from === filters.date_to
+                                                        ? filters.date_from
                                                         : `${filters.date_from} to ${filters.date_to}`;
-                                                    
+
                                                     return (
                                                         <EngineerCard
                                                             key={engineer.id}
@@ -676,6 +685,7 @@ export default function PublicDashboard({
                                                             attendance={attendanceByUserId.get(engineer.id) ?? null}
                                                             variant="attendance"
                                                             periodDateStr={periodStr}
+                                                            companyName={selectedCompany}
                                                         />
                                                     );
                                                 })}
