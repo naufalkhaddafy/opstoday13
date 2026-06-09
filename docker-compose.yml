@@ -118,6 +118,22 @@ services:
     networks:
       - opstoday13
 
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8080}:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      UPLOAD_LIMIT: 300M
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - opstoday13
+
 volumes:
   mysql_data:
   redis_data:
