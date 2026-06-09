@@ -26,9 +26,11 @@ class DashboardPageResource extends JsonResource
         $summary = (new DailyAttendanceSummarizer())->summarize($users, $today, $today, $shiftResolver);
 
         return [
+            'view' => $this->resource['view'] ?? 'admin',
             'stats' => $summary['stats'],
             'employeeStatuses' => $summary['employees'],
             'date' => $today->translatedFormat('l, d F Y'),
+            'tickets' => $this->resource['tickets'] ?? null,
         ];
     }
 }
