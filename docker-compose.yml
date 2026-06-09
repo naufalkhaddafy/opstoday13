@@ -1,9 +1,6 @@
 services:
   init:
-    image: opstoday13-app:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: registry.gitlab.com/naufalkhaddafy1/opstoday13/opstoday13-app:latest
     restart: "no"
     command: [ "sh", "-c", "php artisan optimize:clear && php artisan optimize && php artisan migrate --force && php artisan storage:link" ]
     env_file:
@@ -19,10 +16,7 @@ services:
       - opstoday13
 
   app:
-    image: opstoday13-app:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: registry.gitlab.com/naufalkhaddafy1/opstoday13/opstoday13-app:latest
     restart: unless-stopped
     command: [ "sh", "-c", "php artisan optimize && exec frankenphp run --config /etc/caddy/Caddyfile" ]
     ports:
@@ -42,10 +36,7 @@ services:
       - opstoday13
 
   queue:
-    image: opstoday13-app:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: registry.gitlab.com/naufalkhaddafy1/opstoday13/opstoday13-app:latest
     restart: unless-stopped
     command: [ "sh", "-c", "php artisan optimize && exec php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600" ]
     env_file:
@@ -63,10 +54,7 @@ services:
       - opstoday13
 
   scheduler:
-    image: opstoday13-app:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: registry.gitlab.com/naufalkhaddafy1/opstoday13/opstoday13-app:latest
     restart: unless-stopped
     command: [ "sh", "-c", "php artisan optimize && exec php artisan schedule:work" ]
     env_file:
