@@ -12,7 +12,9 @@ class ShiftObserver
      */
     public function saved(Shift $shift): void
     {
-        Cache::forget('shifts.all');
+        try {
+            Cache::store('redis')->forget('shifts.all');
+        } catch (\Exception $e) {}
     }
 
     /**
@@ -20,6 +22,8 @@ class ShiftObserver
      */
     public function deleted(Shift $shift): void
     {
-        Cache::forget('shifts.all');
+        try {
+            Cache::store('redis')->forget('shifts.all');
+        } catch (\Exception $e) {}
     }
 }

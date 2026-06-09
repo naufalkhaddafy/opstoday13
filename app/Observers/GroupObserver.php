@@ -12,8 +12,10 @@ class GroupObserver
      */
     public function saved(Group $group): void
     {
-        Cache::forget('groups.all');
-        Cache::forget('groups.all_select');
+        try {
+            Cache::store('redis')->forget('groups.all');
+            Cache::store('redis')->forget('groups.all_select');
+        } catch (\Exception $e) {}
     }
 
     /**
@@ -21,7 +23,9 @@ class GroupObserver
      */
     public function deleted(Group $group): void
     {
-        Cache::forget('groups.all');
-        Cache::forget('groups.all_select');
+        try {
+            Cache::store('redis')->forget('groups.all');
+            Cache::store('redis')->forget('groups.all_select');
+        } catch (\Exception $e) {}
     }
 }

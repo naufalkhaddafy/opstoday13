@@ -12,7 +12,9 @@ class CompanyObserver
      */
     public function saved(Company $company): void
     {
-        Cache::forget('companies.all');
+        try {
+            Cache::store('redis')->forget('companies.all');
+        } catch (\Exception $e) {}
     }
 
     /**
@@ -20,6 +22,8 @@ class CompanyObserver
      */
     public function deleted(Company $company): void
     {
-        Cache::forget('companies.all');
+        try {
+            Cache::store('redis')->forget('companies.all');
+        } catch (\Exception $e) {}
     }
 }

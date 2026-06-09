@@ -48,13 +48,27 @@ class RosterController extends Controller
         $employees = $this->users->getEmployeesForRoster($filters);
         $companiesList = $this->companies->all();
         
-        $groupsList = Cache::rememberForever('groups.all_select', function () {
-            return Group::select('id', 'name')->get();
-        });
+        try {
+            $rows = Cache::store('redis')->get('groups.all_select');
+            if (! is_array($rows)) {
+                $rows = Group::select('id', 'name')->get()->toArray();
+                Cache::store('redis')->forever('groups.all_select', $rows);
+            }
+            $groupsList = Group::query()->hydrate($rows);
+        } catch (\Exception $e) {
+            $groupsList = Group::select('id', 'name')->get();
+        }
         
-        $shiftsList = Cache::rememberForever('shifts.all', function () {
-            return Shift::select('id', 'name', 'code')->get();
-        });
+        try {
+            $rows = Cache::store('redis')->get('shifts.all');
+            if (! is_array($rows)) {
+                $rows = Shift::select('id', 'name', 'code')->get()->toArray();
+                Cache::store('redis')->forever('shifts.all', $rows);
+            }
+            $shiftsList = Shift::query()->hydrate($rows);
+        } catch (\Exception $e) {
+            $shiftsList = Shift::select('id', 'name', 'code')->get();
+        }
 
         // Return Inertia rendering with Page Resource shaping (following rules.md)
         return Inertia::render(

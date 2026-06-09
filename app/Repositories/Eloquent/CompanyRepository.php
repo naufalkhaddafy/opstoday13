@@ -52,20 +52,27 @@ class CompanyRepository implements CompanyRepositoryInterface
 
     public function all(): \Illuminate\Database\Eloquent\Collection
     {
-        $rows = Cache::get('companies.all');
+        try {
+            $rows = Cache::store('redis')->get('companies.all');
 
-        if (! is_array($rows)) {
-            $rows = Company::query()
+            if (! is_array($rows)) {
+                $rows = Company::query()
+                    ->select('id', 'name')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (Company $company) => $company->only(['id', 'name']))
+                    ->values()
+                    ->all();
+
+                Cache::store('redis')->forever('companies.all', $rows);
+            }
+
+            return Company::query()->hydrate($rows);
+        } catch (\Exception $e) {
+            return Company::query()
                 ->select('id', 'name')
                 ->orderBy('name')
-                ->get()
-                ->map(fn (Company $company) => $company->only(['id', 'name']))
-                ->values()
-                ->all();
-
-            Cache::forever('companies.all', $rows);
+                ->get();
         }
-
-        return Company::query()->hydrate($rows);
     }
 }

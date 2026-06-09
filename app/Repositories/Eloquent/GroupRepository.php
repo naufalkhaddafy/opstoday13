@@ -25,9 +25,16 @@ class GroupRepository implements GroupRepositoryInterface
 
     public function all(): Collection
     {
-        return Cache::rememberForever('groups.all', function () {
+        try {
+            $rows = Cache::store('redis')->get('groups.all');
+            if (! is_array($rows)) {
+                $rows = Group::orderBy('name')->get()->toArray();
+                Cache::store('redis')->forever('groups.all', $rows);
+            }
+            return Group::query()->hydrate($rows);
+        } catch (\Exception $e) {
             return Group::orderBy('name')->get();
-        });
+        }
     }
 
     public function create(array $data): Group
