@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable([
     'code',
@@ -25,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Shift extends Model
 {
     /** @use HasFactory<ShiftFactory> */
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * @return array<string, string>
@@ -80,5 +82,13 @@ class Shift extends Model
         }
 
         return [$start, $end];
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 }

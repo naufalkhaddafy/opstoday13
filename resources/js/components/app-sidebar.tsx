@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -82,6 +82,11 @@ const systemLogItems: NavItem[] = [
         title: 'Schedule Logs',
         href: '/admin/schedule-logs',
         icon: TerminalSquare,
+    },
+    {
+        title: 'Activity Logs',
+        href: '/admin/activity-logs',
+        icon: Activity,
     },
 ];
 

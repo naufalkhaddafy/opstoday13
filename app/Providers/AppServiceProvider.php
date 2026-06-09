@@ -7,6 +7,7 @@ use App\Repositories\Contracts\SihepiTicketClientInterface;
 use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
 use App\Repositories\Contracts\TicketRepositoryInterface;
 use App\Repositories\Contracts\TicketSyncRunRepositoryInterface;
+use App\Repositories\Contracts\ActivityLogRepositoryInterface;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Group;
@@ -37,6 +38,7 @@ use App\Repositories\Eloquent\UserLeaveRepository;
 use App\Repositories\Eloquent\TicketDashboardRepository;
 use App\Repositories\Eloquent\TicketRepository;
 use App\Repositories\Eloquent\TicketSyncRunRepository;
+use App\Repositories\Eloquent\ActivityLogRepository;
 use App\Services\Fingerprint\HttpFingerprintClient;
 use App\Services\Sihepi\HttpSihepiTicketClient;
 use Carbon\CarbonImmutable;
@@ -68,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TicketRepositoryInterface::class, TicketRepository::class);
         $this->app->bind(TicketDashboardRepositoryInterface::class, TicketDashboardRepository::class);
         $this->app->bind(TicketSyncRunRepositoryInterface::class, TicketSyncRunRepository::class);
+        $this->app->bind(ActivityLogRepositoryInterface::class, ActivityLogRepository::class);
     }
 
     /**

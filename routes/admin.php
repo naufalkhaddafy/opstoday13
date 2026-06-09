@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ScheduleLogController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\GroupController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified', 'role:super_admin'])
@@ -27,4 +28,5 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::resource('groups', GroupController::class);
         Route::resource('shifts', ShiftController::class);
         Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
+        Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });
