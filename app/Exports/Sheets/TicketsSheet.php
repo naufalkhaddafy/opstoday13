@@ -46,9 +46,6 @@ class TicketsSheet implements FromCollection, WithTitle, WithHeadings, WithMappi
         return [
             'Ticket No',
             'Status',
-            'Summary',
-            'Description',
-            'Computer Name',
             'Requested For',
             'Assigned To',
             'Created Date',
@@ -62,10 +59,7 @@ class TicketsSheet implements FromCollection, WithTitle, WithHeadings, WithMappi
         return [
             $ticket->ticket_no,
             $ticket->status?->value ?? (is_string($ticket->status) ? $ticket->status : (string) $ticket->status),
-            $ticket->summary,
-            $ticket->description,
-            $ticket->computer_name,
-            $ticket->requested_for_name,
+            $ticket->requested_for,
             $ticket->assignedUser ? $ticket->assignedUser->name : $ticket->assigned_to_name,
             $ticket->api_creation_date,
             $ticket->response_time_seconds,
