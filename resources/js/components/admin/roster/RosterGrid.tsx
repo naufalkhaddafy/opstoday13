@@ -1,4 +1,4 @@
-import { Building, Edit2, AlertCircle } from 'lucide-react';
+import { Building, Edit2, AlertCircle, Activity } from 'lucide-react';
 import { Link } from '@inertiajs/react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -147,7 +147,7 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
             <table className="w-full text-sm text-left border-collapse" style={{ minWidth: `${180 + month_days.length * 46 + 64}px` }}>
                 <thead>
                     <tr className="bg-muted/50 text-muted-foreground border-b font-medium">
-                        <th className="px-3 py-2.5 min-w-[180px] border-r sticky left-0 bg-muted/50 z-20 text-xs">
+                        <th className="px-3 py-2.5 min-w-[180px] border-r sticky left-0 bg-muted z-20 text-xs">
                             Karyawan
                         </th>
                         {month_days.map((day) => {
@@ -174,7 +174,7 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
                                 </th>
                             );
                         })}
-                        <th className="px-2 py-2.5 text-center min-w-[56px] text-xs">Aksi</th>
+                        <th className="px-2 py-2.5 text-center min-w-[56px] text-xs sticky right-0 bg-muted z-20 border-l">Aksi</th>
                     </tr>
                 </thead>
                 <tbody className={`divide-y ${isLoading ? 'opacity-50 pointer-events-none transition-opacity' : ''}`}>
@@ -182,7 +182,19 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
                         roster.map((emp) => (
                             <tr key={emp.id} className="transition-colors hover:bg-muted/30">
                                 <td className="px-3 py-2 border-r sticky left-0 bg-card z-10">
-                                    <div className="font-semibold text-foreground text-xs leading-tight">{emp.name}</div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="font-semibold text-foreground text-xs leading-tight">{emp.name}</div>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-indigo-500" asChild>
+                                                    <Link href={UserController.attendance({ user: emp.id }).url + '?from=roster'}>
+                                                        <Activity className="h-3.5 w-3.5" />
+                                                    </Link>
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>Lihat Attendance KPI</TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                     <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-col gap-0">
                                         {emp.employee_id && <span>ID: {emp.employee_id}</span>}
                                         {emp.company && (
@@ -212,7 +224,7 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
                                         </td>
                                     );
                                 })}
-                                <td className="px-2 py-2 text-center">
+                                <td className="px-2 py-2 text-center sticky right-0 bg-card z-10 border-l shadow-[-4px_0_10px_rgba(0,0,0,0.02)] dark:shadow-[-4px_0_10px_rgba(0,0,0,0.2)]">
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-7 w-7" asChild>

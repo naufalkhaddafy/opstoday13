@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -27,6 +27,7 @@ type AttendanceFiltersProps = {
     handleFilterChange: (key: 'month' | 'year', value: string) => void;
     handlePrevMonth: () => void;
     handleNextMonth: () => void;
+    exportUrl: string;
 };
 
 export function AttendanceFilters({
@@ -34,7 +35,8 @@ export function AttendanceFilters({
     currentMonthName,
     handleFilterChange,
     handlePrevMonth,
-    handleNextMonth
+    handleNextMonth,
+    exportUrl
 }: AttendanceFiltersProps) {
     const yearOptions = useMemo(() => {
         const currentYear = new Date().getFullYear();
@@ -91,6 +93,13 @@ export function AttendanceFilters({
                         ))}
                     </SelectContent>
                 </Select>
+
+                <div className="w-px h-8 bg-border mx-2 hidden sm:block"></div>
+                <Button variant="outline" asChild className="shrink-0 group">
+                    <a href={exportUrl} target="_blank" rel="noreferrer">
+                        <Download className="mr-2 h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" /> Export Excel
+                    </a>
+                </Button>
             </div>
         </div>
     );

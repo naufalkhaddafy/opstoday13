@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Head, router } from '@inertiajs/react';
-import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import AttendanceController from '@/actions/App/Http/Controllers/AttendanceController';
 
 import { AttendanceHeader } from '@/components/admin/users/attendance/AttendanceHeader';
 import { AttendanceFilters } from '@/components/admin/users/attendance/AttendanceFilters';
@@ -87,7 +87,7 @@ const MONTH_NAMES = [
     { value: 12, name: 'Desember' }
 ];
 
-export default function UserAttendance({ user, attendance_logs, summary, current_shift, filters }: AttendanceProps) {
+export default function PersonalAttendance({ user, attendance_logs, summary, current_shift, filters }: AttendanceProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     // Stop loading when new data arrives
@@ -110,12 +110,9 @@ export default function UserAttendance({ user, attendance_logs, summary, current
             ...filters,
             [key]: parseInt(value, 10),
         };
-        
-        const params = new URLSearchParams(window.location.search);
-        if (params.has('from')) newFilters.from = params.get('from');
 
         setIsLoading(true);
-        router.get(UserController.attendance({ user: user.id }).url, newFilters, { preserveState: true, preserveScroll: true });
+        router.get(AttendanceController.index().url, newFilters, { preserveState: true, preserveScroll: true });
     };
 
     const handlePrevMonth = () => {
@@ -125,13 +122,11 @@ export default function UserAttendance({ user, attendance_logs, summary, current
             newMonth = 12;
             newYear -= 1;
         }
-        
-        const params = new URLSearchParams(window.location.search);
+
         const queryParams: any = { month: newMonth, year: newYear };
-        if (params.has('from')) queryParams.from = params.get('from');
 
         setIsLoading(true);
-        router.get(UserController.attendance({ user: user.id }).url, queryParams, { preserveState: true, preserveScroll: true });
+        router.get(AttendanceController.index().url, queryParams, { preserveState: true, preserveScroll: true });
     };
 
     const handleNextMonth = () => {
@@ -141,13 +136,11 @@ export default function UserAttendance({ user, attendance_logs, summary, current
             newMonth = 1;
             newYear += 1;
         }
-        
-        const params = new URLSearchParams(window.location.search);
+
         const queryParams: any = { month: newMonth, year: newYear };
-        if (params.has('from')) queryParams.from = params.get('from');
 
         setIsLoading(true);
-        router.get(UserController.attendance({ user: user.id }).url, queryParams, { preserveState: true, preserveScroll: true });
+        router.get(AttendanceController.index().url, queryParams, { preserveState: true, preserveScroll: true });
     };
 
     const currentMonthName = useMemo(() => {
@@ -156,7 +149,7 @@ export default function UserAttendance({ user, attendance_logs, summary, current
 
     return (
         <>
-            <Head title={`Detail Kehadiran: ${user.name}`} />
+            <Head title={`Data Kehadiran: ${user.name}`} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 max-w-7xl mx-auto w-full">
                 {/* Upper Section: User details & Current Shift Card */}
@@ -166,6 +159,7 @@ export default function UserAttendance({ user, attendance_logs, summary, current
                     year={filters.year}
                     totalScheduled={summary.total_scheduled}
                     currentShift={current_shift}
+                    hideBackButton={true}
                 />
 
                 {/* Filter & Navigation Bar */}
@@ -175,7 +169,7 @@ export default function UserAttendance({ user, attendance_logs, summary, current
                     handleFilterChange={handleFilterChange}
                     handlePrevMonth={handlePrevMonth}
                     handleNextMonth={handleNextMonth}
-                    exportUrl={`/admin/users/${user.id}/attendance/export?month=${filters.month}&year=${filters.year}`}
+                    exportUrl={`/attendance/export?month=${filters.month}&year=${filters.year}`}
                 />
 
                 {/* Monthly Summary Statistics Grid */}
@@ -192,14 +186,10 @@ export default function UserAttendance({ user, attendance_logs, summary, current
     );
 }
 
-UserAttendance.layout = {
+PersonalAttendance.layout = {
     breadcrumbs: [
         {
-            title: 'Manajemen User',
-            href: UserController.index().url,
-        },
-        {
-            title: 'Detail Kehadiran',
+            title: 'Attendance KPI',
             href: '#',
         },
     ],

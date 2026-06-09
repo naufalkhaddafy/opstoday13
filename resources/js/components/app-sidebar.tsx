@@ -19,6 +19,7 @@ import CompanyController from '@/actions/App/Http/Controllers/Admin/CompanyContr
 import ShiftController from '@/actions/App/Http/Controllers/Admin/ShiftController';
 import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
 import GroupController from '@/actions/App/Http/Controllers/Admin/GroupController';
+import AttendanceController from '@/actions/App/Http/Controllers/AttendanceController';
 import type { NavItem } from '@/types';
 
 const dashboardItems: NavItem[] = [
@@ -39,6 +40,11 @@ const rosterItems: NavItem[] = [
         title: 'Pengajuan Cuti',
         href: '/leaves',
         icon: CalendarRange,
+    },
+    {
+        title: 'Attendance KPI',
+        href: AttendanceController.index().url,
+        icon: CalendarClock,
     },
 ];
 

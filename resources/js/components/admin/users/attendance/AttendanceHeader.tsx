@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, User as UserIcon, Clock, Calendar, Coffee } from 'lucide-react';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
+import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
 import { BRAND_ICON_BOX, BRAND_PAGE_HEADER } from '@/lib/brand';
 
 type User = {
@@ -27,6 +28,7 @@ type AttendanceHeaderProps = {
     year: number;
     totalScheduled: number;
     currentShift: CurrentShift;
+    hideBackButton?: boolean;
 };
 
 const formatShiftDays = (days: number[] | null) => {
@@ -49,7 +51,8 @@ export function AttendanceHeader({
     currentMonthName,
     year,
     totalScheduled,
-    currentShift
+    currentShift,
+    hideBackButton
 }: AttendanceHeaderProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -73,11 +76,13 @@ export function AttendanceHeader({
                                 </div>
                             </div>
                         </div>
-                        <Button variant="outline" asChild className="shrink-0 w-full sm:w-auto">
-                            <Link href={UserController.index().url}>
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-                            </Link>
-                        </Button>
+                        {!hideBackButton && (
+                            <Button variant="outline" asChild className="shrink-0 w-full sm:w-auto">
+                                <Link href={typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'roster' ? RosterController.index().url : UserController.index().url}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 

@@ -22,6 +22,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\UserAttendanceExport;
 
 class UserController extends Controller
 {
@@ -331,6 +333,45 @@ class UserController extends Controller
                 'shift_resolver' => $shiftResolver,
             ])->resolve()
         );
+    }
+
+    /**
+     * Export detail rekap absensi harian user ke Excel.
+     */
+    public function attendanceExport(
+        Request $request,
+        User $user,
+        ShiftAssignmentResolver $shiftResolver
+    ) {
+        $timezone = config('app.timezone');
+        
+        $year = (int) $request->input('year', now($timezone)->year);
+        $month = (int) $request->input('month', now($timezone)->month);
+        
+        $startOfMonth = CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
+        $endOfMonth = $startOfMonth->endOfMonth();
+        
+        $days = $this->attendanceDays->getForUserInDateRange($user, $startOfMonth, $endOfMonth)
+            ->keyBy(fn ($record) => $record->work_date->toDateString());
+            
+        $resource = UserAttendancePageResource::make([
+            'user' => $user,
+            'attendance_days' => $days,
+            'month' => $month,
+            'year' => $year,
+            'shift_resolver' => $shiftResolver,
+        ])->resolve($request);
+
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $monthName = $monthNames[$month] ?? '';
+
+        $fileName = "Attendance_{$user->name}_{$monthName}_{$year}.xlsx";
+
+        return Excel::download(new UserAttendanceExport($resource['attendance_logs'], $user->name, $monthName, $year), $fileName);
     }
 
     /**
