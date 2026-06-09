@@ -52,5 +52,17 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->runInBackground()
             ->timezone(config('app.timezone'));
+
+        $schedule->command('ops:send-snapshot morning')
+            ->dailyAt('10:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->timezone(config('app.timezone'));
+
+        $schedule->command('ops:send-snapshot evening')
+            ->dailyAt('19:00')
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->timezone(config('app.timezone'));
     })
     ->create();
