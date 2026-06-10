@@ -107,16 +107,12 @@ class OpsSnapshotBuilder
 
         // Attendance
         $checkedIn = array_filter($scheduled, fn($s) => $s['check_in'] !== null);
-        $offDutyWithAttendance = array_filter($offDuty, fn($s) => $s['check_in'] !== null || $s['check_out'] !== null);
 
-        if (count($checkedIn) > 0 || count($offDutyWithAttendance) > 0) {
+        if (count($checkedIn) > 0) {
             $lines[] = '';
             $lines[] = "Attendance (per Engineer):";
             foreach ($checkedIn as $s) {
                 $lines[] = $this->formatAttendanceLine($s, false, $timezone);
-            }
-            foreach ($offDutyWithAttendance as $s) {
-                $lines[] = $this->formatAttendanceLine($s, true, $timezone);
             }
         }
 
@@ -140,9 +136,12 @@ class OpsSnapshotBuilder
         $lines[] = "📊 Total Tickets (This Morning): " . $totalTickets
             . " (Completed Today: {$completedCount}, Assigned: {$assignedCount}, In Progress: {$inProgressCount})";
 
-        // No ticket assigned
-        $usersWithTickets = $activeTickets->pluck('assigned_to_user_id')->unique()->toArray();
-        $noTicketUsers = $users->filter(fn($u) => !in_array($u->id, $usersWithTickets));
+        // No ticket assigned (excluding those who already closed a ticket today)
+        $usersWithActiveTickets = $activeTickets->pluck('assigned_to_user_id')->unique()->toArray();
+        $usersWithClosedTickets = $closedTodayTickets->pluck('assigned_to_user_id')->unique()->toArray();
+        $usersWithAnyTickets = array_unique(array_merge($usersWithActiveTickets, $usersWithClosedTickets));
+
+        $noTicketUsers = $users->filter(fn($u) => !in_array($u->id, $usersWithAnyTickets));
         if ($noTicketUsers->isNotEmpty()) {
             $lines[] = "⛔ No Ticket Assigned: " . $noTicketUsers->pluck('name')->implode(', ');
         }
@@ -291,10 +290,13 @@ class OpsSnapshotBuilder
         $lines[] = "⏱ Work Duration ({$workTarget} hours from check-in):";
         $lines[] = '';
 
-        $allTracked = array_merge($scheduled, $offDuty);
-        foreach ($allTracked as $s) {
-            $isOff = in_array($s, $offDuty, true);
-            $lines[] = $this->formatAttendanceLine($s, $isOff, $timezone);
+        $totalScheduled = count($scheduled);
+        $i = 0;
+        foreach ($scheduled as $s) {
+            $lines[] = $this->formatAttendanceLine($s, false, $timezone);
+            if (++$i < $totalScheduled) {
+                $lines[] = '';
+            }
         }
 
         $lines[] = '';
@@ -308,9 +310,12 @@ class OpsSnapshotBuilder
         $lines[] = "📊 Total Tickets: " . $totalTickets
             . " (Completed Today: {$completedCount}, Assigned: {$assignedCount}, In Progress: {$inProgressCount})";
 
-        // No ticket assigned
-        $usersWithTickets = $activeTickets->pluck('assigned_to_user_id')->unique()->toArray();
-        $noTicketUsers = $users->filter(fn($u) => !in_array($u->id, $usersWithTickets));
+        // No ticket assigned (excluding those who already closed a ticket today)
+        $usersWithActiveTickets = $activeTickets->pluck('assigned_to_user_id')->unique()->toArray();
+        $usersWithClosedTickets = $closedTodayTickets->pluck('assigned_to_user_id')->unique()->toArray();
+        $usersWithAnyTickets = array_unique(array_merge($usersWithActiveTickets, $usersWithClosedTickets));
+
+        $noTicketUsers = $users->filter(fn($u) => !in_array($u->id, $usersWithAnyTickets));
         if ($noTicketUsers->isNotEmpty()) {
             $lines[] = "⛔ No Ticket Assigned: " . $noTicketUsers->pluck('name')->implode(', ');
         }
@@ -549,7 +554,7 @@ class OpsSnapshotBuilder
                 return "─ {$name} – In: {$inTime}, Out: {$outTime} ✅ Perfect schedule (Worked: {$workedStr})";
             }
         } elseif ($s['check_in'] && !$s['check_out']) {
-            return "─ {$name}{$prefix} – In: {$inTime}, Out: - Still working (No checkout yet)";
+            return "─ {$name}{$prefix} – In: {$inTime}";
         } else {
             return "─ {$name}{$prefix} – In: -, Out: - ❌ No attendance data";
         }
