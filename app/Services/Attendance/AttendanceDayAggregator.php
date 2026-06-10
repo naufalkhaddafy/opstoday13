@@ -39,7 +39,8 @@ class AttendanceDayAggregator
 
         // Ambil log masuk: cari yang berstatus 'hadir' paling awal, fallback ke log paling pertama hari itu
         $checkIn = $logs->first(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Hadir);
-        if ($checkIn === null && $logs->isNotEmpty()) {
+        // Jangan jadikan log "Keluar" sebagai "Check In" jika itu satu-satunya log
+        if ($checkIn === null && $logs->isNotEmpty() && $logs->first()->status !== AttendanceLogStatus::Keluar) {
             $checkIn = $logs->first();
         }
 
