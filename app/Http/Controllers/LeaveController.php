@@ -81,8 +81,10 @@ class LeaveController extends Controller
 
     public function update(UpdateUserLeaveRequest $request, UserLeave $leave): RedirectResponse
     {
-        if ($request->user()->hasRole(RoleName::Engineer->value) && $leave->user_id !== $request->user()->id) {
-            abort(403);
+        if ($request->user()->hasRole(RoleName::Engineer->value)) {
+            if ($leave->user_id != $request->user()->id) {
+                abort(403, 'Unauthorized action. ID mismatch.');
+            }
         }
 
         $validated = $request->validated();
@@ -101,8 +103,10 @@ class LeaveController extends Controller
 
     public function destroy(Request $request, UserLeave $leave): RedirectResponse
     {
-        if ($request->user()->hasRole(RoleName::Engineer->value) && $leave->user_id !== $request->user()->id) {
-            abort(403);
+        if ($request->user()->hasRole(RoleName::Engineer->value)) {
+            if ($leave->user_id != $request->user()->id) {
+                abort(403, 'Unauthorized action. ID mismatch.');
+            }
         }
 
         $this->leaves->delete($leave);

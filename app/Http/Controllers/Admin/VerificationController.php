@@ -40,6 +40,8 @@ class VerificationController extends Controller
             'companies' => $this->companyRepository->all(),
             'groups' => $this->groupRepository->all(),
             'roles' => $roles,
+            'attendance_url' => env('FINGERPRINT_API_URL', '#'),
+            'sihepi_url' => rtrim(env('SIHEPI_API_URL', '#'), '/') . '/GetAllTicketCompleted',
         ]);
     }
 

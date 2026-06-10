@@ -18,7 +18,9 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('leaves', LeaveController::class);
+    Route::resource('leaves', LeaveController::class)->parameters([
+        'leaves' => 'leave'
+    ]);
     Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
     Route::get('attendance/export', [AttendanceController::class, 'export'])->name('attendance.export');
     Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');

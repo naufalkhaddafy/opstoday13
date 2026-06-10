@@ -40,9 +40,11 @@ interface Props {
     companies: Company[];
     groups: Group[];
     roles: string[];
+    attendance_url: string;
+    sihepi_url: string;
 }
 
-export default function VerificationIndex({ users, companies, groups, roles }: Props) {
+export default function VerificationIndex({ users, companies, groups, roles, attendance_url, sihepi_url }: Props) {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -161,7 +163,7 @@ export default function VerificationIndex({ users, companies, groups, roles }: P
                         <div className="my-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-md flex items-start gap-3 text-amber-800 dark:text-amber-200 text-sm">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <p>
-                                <strong>Penting:</strong> Pastikan data Badge Number (ID Karyawan) ini terdapat dan cocok dengan yang ada di sistem Attendance dan SiHepi!
+                                <strong>Penting:</strong> Pastikan data Badge Number (ID Karyawan) ini terdapat dan cocok dengan yang ada di sistem <a href={attendance_url} target="_blank" rel="noreferrer" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">Attendance</a> dan <a href={sihepi_url} target="_blank" rel="noreferrer" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">SiHepi</a>!
                             </p>
                         </div>
 
