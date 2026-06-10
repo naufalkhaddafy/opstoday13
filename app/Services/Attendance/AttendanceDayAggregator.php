@@ -93,6 +93,19 @@ class AttendanceDayAggregator
             }
         }
 
+        if ($logs->isEmpty()) {
+            $existing = AttendanceDay::query()
+                ->where('user_id', $user->id)
+                ->where('work_date', $workDate->toDateString())
+                ->first();
+                
+            if ($existing) {
+                $existing->delete();
+            }
+            
+            return new AttendanceDay();
+        }
+
         return AttendanceDay::query()->updateOrCreate(
             [
                 'user_id' => $user->id,
