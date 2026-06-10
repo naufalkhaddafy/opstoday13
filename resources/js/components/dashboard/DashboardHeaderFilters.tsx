@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon, RefreshCw } from 'lucide-react';
+import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon, RefreshCw, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 import {
     Sheet,
     SheetContent,
@@ -168,27 +172,57 @@ export function DashboardHeaderFilters({
                             <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                                 <CalendarClock className="h-4 w-4 text-[#2E7D32]" /> Date Range
                             </Label>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="filter-date-from" className="text-xs text-muted-foreground">From</Label>
-                                    <Input
-                                        id="filter-date-from"
-                                        type="date"
-                                        className="h-10"
-                                        value={filters.date_from}
-                                        onChange={(e) => onApply({ date_from: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label htmlFor="filter-date-to" className="text-xs text-muted-foreground">To</Label>
-                                    <Input
-                                        id="filter-date-to"
-                                        type="date"
-                                        className="h-10"
-                                        value={filters.date_to}
-                                        onChange={(e) => onApply({ date_to: e.target.value })}
-                                    />
-                                </div>
+                            <div className="grid gap-2">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            id="date"
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal h-10",
+                                                !filters.date_from && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {filters.date_from ? (
+                                                filters.date_to && filters.date_from !== filters.date_to ? (
+                                                    <>
+                                                        {format(new Date(filters.date_from), "LLL dd, y")} -{" "}
+                                                        {format(new Date(filters.date_to), "LLL dd, y")}
+                                                    </>
+                                                ) : (
+                                                    format(new Date(filters.date_from), "LLL dd, y")
+                                                )
+                                            ) : (
+                                                <span>Pick a date range</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="center">
+                                        <Calendar
+                                            mode="range"
+                                            defaultMonth={filters.date_from ? new Date(filters.date_from) : new Date()}
+                                            selected={{
+                                                from: filters.date_from ? new Date(filters.date_from) : undefined,
+                                                to: filters.date_to ? new Date(filters.date_to) : undefined,
+                                            }}
+                                            onSelect={(range) => {
+                                                if (range?.from) {
+                                                    const fromDateStr = format(range.from, 'yyyy-MM-dd');
+                                                    if (range.to) {
+                                                        const toDateStr = format(range.to, 'yyyy-MM-dd');
+                                                        onApply({ date_from: fromDateStr, date_to: toDateStr });
+                                                    } else {
+                                                        onApply({ date_from: fromDateStr, date_to: fromDateStr });
+                                                    }
+                                                } else {
+                                                    onApply({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to });
+                                                }
+                                            }}
+                                            numberOfMonths={2}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
 

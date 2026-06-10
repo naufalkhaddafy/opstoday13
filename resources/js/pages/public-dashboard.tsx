@@ -180,6 +180,10 @@ export default function PublicDashboard({
     );
 
     useEffect(() => {
+        setSearchQuery(filters.search ?? '');
+    }, [filters.search]);
+
+    useEffect(() => {
         const handler = setTimeout(() => {
             if (searchQuery !== (filters.search ?? '')) {
                 applyFilters({ search: searchQuery || null });
@@ -229,7 +233,7 @@ export default function PublicDashboard({
         <>
             <Head title="Operations Dashboard" />
 
-            <div className="min-h-screen bg-gradient-to-b from-green-50/40 to-white text-foreground dark:from-[#0a0a0a] dark:to-[#0a0a0a]">
+            <div className="flex flex-col min-h-screen bg-gradient-to-b from-green-50/40 to-white text-foreground dark:from-[#0a0a0a] dark:to-[#0a0a0a]">
                 <div ref={headerRef}>
                     <BrandHeroHeader
                         badge="Live Operations Board"
@@ -312,7 +316,7 @@ export default function PublicDashboard({
                     </div>
                 </div>
 
-                <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-8">
+                <div className="flex-1 w-full mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-8">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="flex w-full items-center justify-between mb-6">
                             <TabsList className="grid w-[400px] grid-cols-2">
@@ -701,11 +705,12 @@ export default function PublicDashboard({
 
                         </TabsContent>
 
-                        <footer className="pb-8 pt-2 text-center text-xs text-muted-foreground">
-                            © 2026, Developed by <a href='#' className='text-red-700 font-bold'>IT Computer Operations</a>
-                        </footer>
                     </Tabs>
                 </div>
+
+                <footer className="mt-auto border-t border-black/5 dark:border-white/5 py-6 text-center text-xs text-gray-500">
+                    © 2026, Developed by <a href='#' className='text-gray-600 font-bold hover:text-gray-900 transition-colors'>IT Computer Operations</a>
+                </footer>
             </div>
 
             {/* Floating Scroll to Top Button */}
