@@ -12,6 +12,10 @@ interface UserRepositoryInterface
 
     public function find(int $id): User;
 
+    public function findByAzureId(string $azureId): ?User;
+
+    public function findByEmail(string $email): ?User;
+
     public function create(array $data): User;
 
     public function assignRole(User $user, RoleName $role): void;

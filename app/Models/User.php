@@ -17,7 +17,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['name', 'email', 'password', 'company_id', 'group_id', 'employee_id', 'is_verified', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'company_id', 'group_id', 'employee_id', 'is_verified', 'is_active', 'azure_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {

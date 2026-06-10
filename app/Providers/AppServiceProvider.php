@@ -85,6 +85,11 @@ class AppServiceProvider extends ServiceProvider
         Group::observe(GroupObserver::class);
         Shift::observe(ShiftObserver::class);
         Ticket::observe(TicketObserver::class);
+
+        Event::listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            [\SocialiteProviders\Azure\AzureExtendSocialite::class, 'handle']
+        );
     }
 
     protected function configureLastActiveTracking(): void

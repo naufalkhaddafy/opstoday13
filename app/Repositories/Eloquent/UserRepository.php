@@ -44,6 +44,16 @@ class UserRepository implements UserRepositoryInterface
         return User::query()->with('company')->findOrFail($id);
     }
 
+    public function findByAzureId(string $azureId): ?User
+    {
+        return User::query()->where('azure_id', $azureId)->first();
+    }
+
+    public function findByEmail(string $email): ?User
+    {
+        return User::query()->where('email', $email)->first();
+    }
+
     public function create(array $data): User
     {
         return User::query()->create($data);
