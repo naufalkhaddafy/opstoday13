@@ -80,7 +80,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureLastActiveTracking();
-
+        //https force
         if ($this->app->environment('production', 'staging')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
