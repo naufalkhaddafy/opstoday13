@@ -55,14 +55,14 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
             const sched: Record<number, string> = { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '' };
             if (activeAssignment && activeAssignment.schedule) {
                 if (Array.isArray(activeAssignment.schedule)) {
-                    // Jika dari backend berupa array, kita cek index 0
-                    // Jika index 0 terisi, berarti 0-indexed (Senin = 0). Offset = 1.
-                    // Jika index 0 kosong/null, berarti 1-indexed (Senin = 1). Offset = 0.
-                    const offset = (activeAssignment.schedule[0] !== null && activeAssignment.schedule[0] !== undefined) ? 1 : 0;
+                    // Jika dari backend berupa array, kita perlu mengecek apakah ini 0-indexed atau 1-indexed
+                    const isZeroIndexed = activeAssignment.schedule.length === 7 || 
+                                          (activeAssignment.schedule.length > 0 && activeAssignment.schedule[0] !== null);
+                    
                     activeAssignment.schedule.forEach((shiftId, index) => {
-                        const day = index + offset;
-                        if (day >= 1 && day <= 7) {
-                            sched[day] = shiftId ? shiftId.toString() : '';
+                        const dayId = isZeroIndexed ? index + 1 : index;
+                        if (dayId >= 1 && dayId <= 7) {
+                            sched[dayId] = shiftId ? shiftId.toString() : '';
                         }
                     });
                 } else {

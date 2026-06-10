@@ -81,6 +81,10 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureLastActiveTracking();
 
+        if ($this->app->environment('production', 'staging')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         Company::observe(CompanyObserver::class);
         Group::observe(GroupObserver::class);
         Shift::observe(ShiftObserver::class);
