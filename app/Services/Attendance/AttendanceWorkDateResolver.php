@@ -80,6 +80,9 @@ class AttendanceWorkDateResolver
         $assignments = $this->activeAssignments($user, $punchedAt);
 
         foreach ($assignments as $assignment) {
+            $bestOverallMatch = null;
+            $bestOverallDiff = PHP_INT_MAX;
+
             foreach ($this->candidateWorkDates($punchedAt) as $workDate) {
                 // If an exception exists for this candidate date, skip checking the weekly assignment
                 if (UserShiftException::where('user_id', $user->id)->where('date', $workDate->toDateString())->exists()) {
@@ -111,13 +114,21 @@ class AttendanceWorkDateResolver
                         ->whereNotIn('code', self::PLACEHOLDER_CODES)
                         ->get();
 
-                    $bestMatch = $this->findClosestShift($realShifts, $workDate, $punchedAt);
+                    foreach ($realShifts as $realShift) {
+                        [$start, $end] = $realShift->windowForWorkDate($workDate, $this->timezone);
+                        $matchStart = $start->subHours(4);
+                        $matchEnd = $end->addHours(4);
 
-                    if ($bestMatch !== null) {
-                        return [
-                            'work_date' => $workDate->startOfDay(),
-                            'shift' => $bestMatch,
-                        ];
+                        if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
+                            $diff = abs($punchedAt->diffInMinutes($start));
+                            if ($diff < $bestOverallDiff) {
+                                $bestOverallDiff = $diff;
+                                $bestOverallMatch = [
+                                    'work_date' => $workDate->startOfDay(),
+                                    'shift' => $realShift,
+                                ];
+                            }
+                        }
                     }
                 } else {
                     // Shift spesifik langsung — periksa window dengan padding (4 jam sebelum, 4 jam sesudah)
@@ -126,12 +137,20 @@ class AttendanceWorkDateResolver
                     $matchEnd = $end->addHours(4);
 
                     if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
-                        return [
-                            'work_date' => $workDate->startOfDay(),
-                            'shift' => $assignedShift,
-                        ];  
+                        $diff = abs($punchedAt->diffInMinutes($start));
+                        if ($diff < $bestOverallDiff) {
+                            $bestOverallDiff = $diff;
+                            $bestOverallMatch = [
+                                'work_date' => $workDate->startOfDay(),
+                                'shift' => $assignedShift,
+                            ];
+                        }
                     }
                 }
+            }
+
+            if ($bestOverallMatch !== null) {
+                return $bestOverallMatch;
             }
         }
 
