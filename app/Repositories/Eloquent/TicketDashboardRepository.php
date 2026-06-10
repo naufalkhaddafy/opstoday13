@@ -3,6 +3,7 @@
 namespace App\Repositories\Eloquent;
 
 use App\Enums\TicketStatus;
+use App\Helpers\SlaConstants;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
@@ -171,9 +172,11 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        int $responseSlaSeconds = 900,
-        float $resolutionSlaHours = 4.0,
+        ?int $responseSlaSeconds = null,
+        ?float $resolutionSlaHours = null,
     ): array {
+        $responseSlaSeconds ??= SlaConstants::RESPONSE_TIME_GREEN * 60;
+        $resolutionSlaHours ??= SlaConstants::RESOLUTION_TIME_GREEN / 60;
         $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $responseSlaSeconds, $resolutionSlaHours) {
             $baseQuery = $this->scopedTicketQuery($start, $end, $companyId);
 

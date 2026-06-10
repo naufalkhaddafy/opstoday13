@@ -43,4 +43,15 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
     ): array;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function kpiStats(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+        ?int $responseSlaSeconds = null,
+        ?float $resolutionSlaHours = null,
+    ): array;
 }

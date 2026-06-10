@@ -2,6 +2,7 @@
 
 namespace App\Services\Whatsapp;
 
+use App\Helpers\SlaConstants;
 use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\User;

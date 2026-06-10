@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Whatsapp;
+namespace App\Helpers;
 
 /**
  * Konstanta SLA untuk Ops Snapshot.
@@ -12,7 +12,7 @@ final class SlaConstants
     public const RESPONSE_TIME_GREEN = 60;
 
     // Resolution time threshold (menit) — hijau jika <= ini
-    public const RESOLUTION_TIME_GREEN = 120;
+    public const RESOLUTION_TIME_GREEN = 240;
 
     // Work duration target (jam) — untuk menentukan "Perfect" / "Extended"
     public const WORK_DURATION_HOURS = 8;
