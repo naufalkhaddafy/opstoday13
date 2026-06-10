@@ -21,6 +21,7 @@ import RosterController from '@/actions/App/Http/Controllers/Admin/RosterControl
 import GroupController from '@/actions/App/Http/Controllers/Admin/GroupController';
 import AttendanceController from '@/actions/App/Http/Controllers/AttendanceController';
 import TicketController from '@/actions/App/Http/Controllers/TicketController';
+import VerificationController from '@/actions/App/Http/Controllers/Admin/VerificationController';
 import type { NavItem } from '@/types';
 
 const dashboardItems: NavItem[] = [
@@ -75,6 +76,11 @@ const managementItems: NavItem[] = [
         href: ShiftController.index().url,
         icon: CalendarClock,
     },
+    {
+        title: 'Verifikasi Account',
+        href: VerificationController.index().url,
+        icon: Users,
+    },
 ];
 
 const systemLogItems: NavItem[] = [
@@ -110,11 +116,14 @@ export function AppSidebar() {
             <SidebarContent>
                 <NavMain items={dashboardItems} title="Utama" />
                 <NavMain items={rosterItems} title="Operasional" />
+                {(isSuperAdmin || auth?.user?.role === 'supv') && (
+                    <NavMain 
+                        items={managementItems.filter(item => isSuperAdmin || item.title === 'Verifikasi Account')} 
+                        title="Master Data" 
+                    />
+                )}
                 {isSuperAdmin && (
-                    <>
-                        <NavMain items={managementItems} title="Master Data" />
-                        <NavMain items={systemLogItems} title="System Log" />
-                    </>
+                    <NavMain items={systemLogItems} title="System Log" />
                 )}
             </SidebarContent>
 

@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PublicDashboardController::class, 'index'])->name('home');
 Route::get('/export', [PublicDashboardController::class, 'export'])->name('home.export');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/onboarding', [\App\Http\Controllers\Auth\OnboardingController::class, 'index'])->name('onboarding.index');
+    Route::post('/onboarding', [\App\Http\Controllers\Auth\OnboardingController::class, 'store'])->name('onboarding.store');
+    Route::get('/waiting-for-verification', [\App\Http\Controllers\Auth\OnboardingController::class, 'waiting'])->name('onboarding.waiting');
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::resource('leaves', LeaveController::class);

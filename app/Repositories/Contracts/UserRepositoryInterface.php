@@ -29,6 +29,13 @@ interface UserRepositoryInterface
     /**
      * @return \Illuminate\Database\Eloquent\Collection<int, User>
      */
+    public function getUnverifiedUsers(?int $companyId = null): \Illuminate\Database\Eloquent\Collection;
+
+    public function verifyUser(User $user, array $data): void;
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, User>
+     */
     public function getEmployeesForRoster(array $filters = []): \Illuminate\Database\Eloquent\Collection;
 
     /**

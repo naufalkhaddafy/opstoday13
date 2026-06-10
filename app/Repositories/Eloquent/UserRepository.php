@@ -90,6 +90,29 @@ class UserRepository implements UserRepositoryInterface
         $user->delete();
     }
 
+    public function getUnverifiedUsers(?int $companyId = null): \Illuminate\Database\Eloquent\Collection
+    {
+        return User::query()
+            ->with(['company', 'group'])
+            ->where('is_verified', false)
+            ->whereNotNull('employee_id')
+            ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function verifyUser(User $user, array $data): void
+    {
+        $user->update([
+            'employee_id' => $data['employee_id'],
+            'company_id' => $data['company_id'],
+            'group_id' => $data['group_id'],
+            'is_verified' => true,
+        ]);
+        
+        $user->syncRoles([$data['role']]);
+    }
+
     public function activeForDashboard(string $dateFrom, string $dateTo, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection
     {
         return User::query()

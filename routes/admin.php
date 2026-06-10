@@ -21,6 +21,14 @@ Route::middleware(['auth', 'verified'])
         Route::delete('roster/exceptions', [RosterExceptionController::class, 'destroy'])->name('roster.exceptions.destroy');
     });
 
+Route::middleware(['auth', 'verified', 'role:super_admin|supv'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('verifications', [\App\Http\Controllers\Admin\VerificationController::class, 'index'])->name('verifications.index');
+        Route::post('verifications/{user}/verify', [\App\Http\Controllers\Admin\VerificationController::class, 'verify'])->name('verifications.verify');
+    });
+
 Route::middleware(['auth', 'verified', 'role:super_admin'])
     ->prefix('admin')
     ->name('admin.')
