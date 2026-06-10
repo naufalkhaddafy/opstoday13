@@ -80,10 +80,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureLastActiveTracking();
-        //https force
-        if ($this->app->environment('production', 'staging')) {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-        }
+        // Biarkan Laravel mendeteksi HTTPS dari proxy secara otomatis
+        // agar tidak merusak akses langsung via IP.
 
         Company::observe(CompanyObserver::class);
         Group::observe(GroupObserver::class);
