@@ -73,12 +73,16 @@ class OpsSnapshotBuilder
 
         // Active tickets (Assigned, In Progress, Pending/On Hold)
         $userIds = $users->pluck('id')->toArray();
-        $activeTickets = Ticket::whereIn('assigned_to_user_id', $userIds)
+        $activeTickets = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereIn('assigned_to_user_id', $userIds)
             ->whereIn('status', ['assigned', 'in_progress', 'pending_on_hold'])
             ->get();
 
         // Tickets Closed TODAY
-        $closedTodayTickets = Ticket::whereIn('assigned_to_user_id', $userIds)
+        $closedTodayTickets = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereIn('assigned_to_user_id', $userIds)
             ->where('status', 'closed')
             ->whereDate('completed_date', $today->toDateString())
             ->get();
@@ -252,12 +256,16 @@ class OpsSnapshotBuilder
 
         // Active tickets (Assigned, In Progress, Pending/On Hold)
         $userIds = $users->pluck('id')->toArray();
-        $activeTickets = Ticket::whereIn('assigned_to_user_id', $userIds)
+        $activeTickets = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereIn('assigned_to_user_id', $userIds)
             ->whereIn('status', ['assigned', 'in_progress', 'pending_on_hold'])
             ->get();
 
         // Tickets Closed TODAY
-        $closedTodayTickets = Ticket::whereIn('assigned_to_user_id', $userIds)
+        $closedTodayTickets = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereIn('assigned_to_user_id', $userIds)
             ->where('status', 'closed')
             ->whereDate('completed_date', $today->toDateString())
             ->get();
@@ -372,7 +380,9 @@ class OpsSnapshotBuilder
         $highLoadThreshold = SlaConstants::HIGH_TICKET_LOAD;
         $last24h = CarbonImmutable::now($timezone)->subHours(24);
         
-        $recentTickets = Ticket::whereIn('assigned_to_user_id', $userIds)
+        $recentTickets = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereIn('assigned_to_user_id', $userIds)
             ->where(function ($query) use ($last24h) {
                 $query->where('api_creation_date', '>=', $last24h)
                       ->orWhere(function ($q) use ($last24h) {

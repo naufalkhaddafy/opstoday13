@@ -38,7 +38,9 @@ class DashboardController extends Controller
     {
         $users = $this->users->activeForDashboard($today->toDateString(), $today->toDateString());
 
-        $ticketCounts = Ticket::selectRaw("
+        $ticketCounts = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed,
                 SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
@@ -228,7 +230,9 @@ class DashboardController extends Controller
         }
 
         // Tickets summary
-        $ticketCounts = Ticket::where('assigned_to_user_id', $user->id)
+        $ticketCounts = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->where('assigned_to_user_id', $user->id)
             ->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed,

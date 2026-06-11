@@ -156,6 +156,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?int $companyId,
     ): Builder {
         return Ticket::query()
+            ->whereNull('disappeared_at')
             ->when($companyId, function (Builder $query) use ($companyId) {
                 $query->whereHas('assignedUser', fn (Builder $userQuery) => $userQuery->where('company_id', $companyId));
             })

@@ -32,6 +32,7 @@ class TicketController extends Controller
         $dateExpression = 'COALESCE(api_creation_date, first_seen_at, status_changed_at)';
 
         $tickets = Ticket::query()
+            ->whereNull('disappeared_at')
             ->where('assigned_to_user_id', $user->id)
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($search !== '', function ($query) use ($search) {
@@ -81,6 +82,7 @@ class TicketController extends Controller
         $dateExpression = 'COALESCE(api_creation_date, first_seen_at, status_changed_at)';
 
         $tickets = Ticket::query()
+            ->whereNull('disappeared_at')
             ->where('assigned_to_user_id', $user->id)
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($search !== '', function ($query) use ($search) {
