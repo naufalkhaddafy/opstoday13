@@ -25,6 +25,7 @@ type Shift = {
 type RosterDay = {
     date: string;
     is_exception: boolean;
+    is_holiday: boolean;
     leave?: { type: string; description: string | null } | null;
     shift: Shift | null;
 };
@@ -44,6 +45,7 @@ type MonthDay = {
     day_name: string;
     day_name_short: string;
     is_weekend: boolean;
+    is_holiday: boolean;
 };
 
 type RosterProps = {

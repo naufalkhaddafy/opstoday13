@@ -57,6 +57,7 @@ export default function PublicDashboard({
     engineers,
     tickets,
     analytics,
+    holiday_name,
 }: DashboardProps) {
     const stats = attendance?.stats ?? { total_scheduled: 0, total_present: 0, total_absent: 0, total_leave: 0, total_late: 0, total_users: 0, total_early_leave: 0 };
     const employees = attendance?.employees ?? [];
@@ -391,9 +392,28 @@ export default function PublicDashboard({
                                 <h2 className="flex items-center gap-2 text-lg font-semibold">
                                     <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Ticket Overview {selectedCompany && `- ${selectedCompany}`}
                                 </h2>
-                                <p className="-mt-2 text-sm text-muted-foreground">
-                                    {isSingleDay ? 'Summary for selected date.' : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
-                                </p>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            {isSingleDay ? `Summary for ${formatDate(filters.date_from)}.` : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
+                                        </p>
+                                        {isSingleDay && holiday_name && (
+                                            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-400 font-normal shadow-sm">
+                                                Hari Libur: {holiday_name}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {(filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to) && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => applyFilters({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to })}
+                                            className="h-6 px-2 text-xs"
+                                        >
+                                            Reset to Today
+                                        </Button>
+                                    )}
+                                </div>
 
                                 <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
                                     <Deferred data="ticket_stats" fallback={<><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>}>
@@ -623,9 +643,28 @@ export default function PublicDashboard({
                                 <h2 className="flex items-center gap-2 text-lg font-semibold">
                                     <Users className="h-5 w-5 text-[#2E7D32]" /> Attendance Overview {selectedCompany && `- ${selectedCompany}`}
                                 </h2>
-                                <p className="-mt-2 text-sm text-muted-foreground">
-                                    {isSingleDay ? 'Summary for selected date.' : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
-                                </p>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            {isSingleDay ? `Summary for ${formatDate(filters.date_from)}.` : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
+                                        </p>
+                                        {isSingleDay && holiday_name && (
+                                            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-400 font-normal shadow-sm">
+                                                Hari Libur: {holiday_name}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {(filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to) && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => applyFilters({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to })}
+                                            className="h-6 px-2 text-xs"
+                                        >
+                                            Reset to Today
+                                        </Button>
+                                    )}
+                                </div>
                                 <Deferred data={["attendance"]} fallback={
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                         <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>

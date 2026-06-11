@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 
 /**
  * Hitung ringkasan kehadiran harian per user (status, jam, KPI agregat).
@@ -67,8 +68,7 @@ class DailyAttendanceSummarizer
                 $activeLeave = $user->leaves->firstWhere(fn($leave) => $immutableDate->between($leave->start_date, $leave->end_date));
                 $assignment = $shiftResolver->forWorkDate($user, $immutableDate);
                 $shift = $shiftResolver->shiftForWorkDate($user, $immutableDate);
-
-                $isScheduled = $assignment !== null && $assignment->isActiveOn($immutableDate);
+                $isScheduled = $shift !== null;
                 $attendanceDay = $user->attendanceDays->firstWhere(function($day) use ($immutableDate) {
                     if (is_string($day->work_date)) {
                         return $immutableDate->toDateString() === $day->work_date;
@@ -152,6 +152,12 @@ class DailyAttendanceSummarizer
                         $dayStatus = 'absen';
                         $periodStats['absent_days']++;
                         if ($isScheduled) $stats['total_absent']++;
+                    }
+                } else {
+                    $holidayName = app(HolidayRepositoryInterface::class)->getHolidayName($immutableDate->toDateString());
+                    if ($holidayName !== null) {
+                        $dayStatus = 'holiday';
+                        $dayLeaveDesc = $holidayName . ' (' . $immutableDate->translatedFormat('l') . ')';
                     }
                 }
 

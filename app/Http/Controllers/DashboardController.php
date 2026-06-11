@@ -6,6 +6,7 @@ use App\Enums\RoleName;
 use App\Http\Resources\DashboardPageResource;
 use App\Models\Ticket;
 use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\CarbonImmutable;
@@ -121,6 +122,8 @@ class DashboardController extends Controller
             $todayStatus = $todayLeave->type;
         } elseif ($currentAssignment && $currentAssignment->isActiveOn($today)) {
             $todayStatus = 'scheduled'; // scheduled but not yet checked in
+        } elseif (app(HolidayRepositoryInterface::class)->isHoliday($today->toDateString())) {
+            $todayStatus = 'holiday';
         }
 
         // Monthly summary
@@ -140,7 +143,8 @@ class DashboardController extends Controller
             $date = $startOfMonth->setDay($day);
             $dateString = $date->toDateString();
             $assignment = $shiftResolver->forWorkDate($user, $date);
-            $isWorkday = $assignment !== null && $assignment->isActiveOn($date);
+            $shift = $shiftResolver->shiftForWorkDate($user, $date);
+            $isWorkday = $shift !== null;
             $dbRecord = $attendanceDays->get($dateString);
             $activeLeave = $user->leaves->first(fn($l) =>
                 $l->start_date->toDateString() <= $dateString && $l->end_date->toDateString() >= $dateString
@@ -185,13 +189,14 @@ class DashboardController extends Controller
             $dbRecord = $attendanceDays->get($dateStr);
             $assignment = $shiftResolver->forWorkDate($user, $dateCheck);
             $shift = $shiftResolver->shiftForWorkDate($user, $dateCheck);
-            $isWorkday = $assignment !== null && $assignment->isActiveOn($dateCheck);
+            $isWorkday = $shift !== null;
+            $isHoliday = app(HolidayRepositoryInterface::class)->isHoliday($dateStr);
             $activeLeave = $user->leaves->first(fn($l) =>
                 $l->start_date->toDateString() <= $dateStr && $l->end_date->toDateString() >= $dateStr
             );
 
-            if ($isWorkday || $dbRecord || $activeLeave) {
-                $status = 'off_day';
+            if ($isWorkday || $dbRecord || $activeLeave || $isHoliday) {
+                $status = $isHoliday ? 'holiday' : 'off_day';
                 $checkIn = null;
                 $checkOut = null;
                 $late = 0;

@@ -17,6 +17,8 @@ use App\Observers\CompanyObserver;
 use App\Observers\GroupObserver;
 use App\Observers\ShiftObserver;
 use App\Observers\TicketObserver;
+use App\Models\Holiday;
+use App\Observers\HolidayObserver;
 use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
 use App\Repositories\Contracts\AttendanceLogRepositoryInterface;
 use App\Repositories\Contracts\AttendanceSyncRunRepositoryInterface;
@@ -39,6 +41,8 @@ use App\Repositories\Eloquent\TicketDashboardRepository;
 use App\Repositories\Eloquent\TicketRepository;
 use App\Repositories\Eloquent\TicketSyncRunRepository;
 use App\Repositories\Eloquent\ActivityLogRepository;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
+use App\Repositories\Eloquent\HolidayRepository;
 use App\Services\Fingerprint\HttpFingerprintClient;
 use App\Services\Sihepi\HttpSihepiTicketClient;
 use Carbon\CarbonImmutable;
@@ -71,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TicketDashboardRepositoryInterface::class, TicketDashboardRepository::class);
         $this->app->bind(TicketSyncRunRepositoryInterface::class, TicketSyncRunRepository::class);
         $this->app->bind(ActivityLogRepositoryInterface::class, ActivityLogRepository::class);
+        $this->app->bind(HolidayRepositoryInterface::class, HolidayRepository::class);
     }
 
     /**
@@ -87,6 +92,7 @@ class AppServiceProvider extends ServiceProvider
         Group::observe(GroupObserver::class);
         Shift::observe(ShiftObserver::class);
         Ticket::observe(TicketObserver::class);
+        Holiday::observe(HolidayObserver::class);
 
         Event::listen(
             \SocialiteProviders\Manager\SocialiteWasCalled::class,

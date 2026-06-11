@@ -34,6 +34,7 @@ type AttendanceLog = {
     late_minutes: number;
     early_leave_minutes: number;
     overtime_minutes: number;
+    is_holiday: boolean;
 };
 
 type Summary = {

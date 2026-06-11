@@ -51,6 +51,7 @@ class PublicDashboardPageResource extends JsonResource
             'date' => $dateFrom->eq($dateTo)
                 ? $dateFrom->locale('en')->translatedFormat('l, d F Y')
                 : $dateFrom->locale('en')->translatedFormat('d M Y').' – '.$dateTo->locale('en')->translatedFormat('d M Y'),
+            'holiday_name' => app(\App\Repositories\Contracts\HolidayRepositoryInterface::class)->getHolidayName($dateTo->toDateString()),
             'attendance' => \Inertia\Inertia::defer(function () use ($usersClosure, $dateFrom, $attendanceDate, $shiftResolver) {
                 $users = $usersClosure();
                   $attendance = (new DailyAttendanceSummarizer())->summarize($users, $dateFrom, $attendanceDate, $shiftResolver);

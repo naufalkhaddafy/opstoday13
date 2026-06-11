@@ -123,6 +123,7 @@ export type DashboardFilters = {
 
 export type DashboardProps = {
     date: string;
+    holiday_name?: string | null;
     attendance?: { stats: AttendanceStats; employees: EmployeeStatus[] };
     ticket_stats?: TicketStats;
     kpi_stats?: KpiStats;

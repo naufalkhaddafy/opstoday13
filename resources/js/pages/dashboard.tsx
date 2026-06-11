@@ -55,6 +55,8 @@ function getStatusBadge(status: string) {
         case 'absen':
         case 'tidak_hadir':
             return <Badge className="border-rose-200 bg-rose-100 text-rose-700 hover:bg-rose-100/80 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-400">Alpha</Badge>;
+        case 'holiday':
+            return <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-50/80 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-400">Holiday</Badge>;
         case 'off_day':
         default:
             return <Badge variant="outline" className="bg-muted/50 text-muted-foreground">Libur</Badge>;

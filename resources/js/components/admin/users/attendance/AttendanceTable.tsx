@@ -16,7 +16,8 @@ type AttendanceLog = {
     shift: Shift | null;
     check_in_at: string | null;
     check_out_at: string | null;
-    presence_status: 'hadir' | 'tidak_lengkap' | 'absen' | 'tidak_hadir' | 'scheduled' | 'off_day';
+    presence_status: 'hadir' | 'tidak_lengkap' | 'absen' | 'tidak_hadir' | 'scheduled' | 'off_day' | 'holiday';
+    is_holiday: boolean;
     timing_status: 'on_time' | 'late' | 'early_leave' | 'overtime' | 'mixed' | null;
     late_minutes: number;
     early_leave_minutes: number;
@@ -60,6 +61,8 @@ const getPresenceBadge = (status: string) => {
             return <Badge className="bg-slate-100 text-slate-800 dark:bg-slate-800/60 dark:text-slate-300 border-slate-200 dark:border-slate-700 font-normal">Izin</Badge>;
         case 'scheduled':
             return <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50/50 dark:text-blue-300 dark:border-blue-900/50 dark:bg-blue-950/20 font-normal">Terjadwal</Badge>;
+        case 'holiday':
+            return <Badge variant="outline" className="text-rose-600 border-rose-200 bg-rose-50/50 dark:text-rose-300 dark:border-rose-900/50 dark:bg-rose-950/20 font-medium">Holiday</Badge>;
         case 'off_day':
             return <Badge variant="secondary" className="text-muted-foreground bg-muted/50 dark:bg-muted/20 font-normal">Libur</Badge>;
         default:
@@ -149,6 +152,8 @@ export function AttendanceTable({ logs, currentMonthName, isLoading }: Attendanc
                                     let rowBg = '';
                                     if (today) {
                                         rowBg = 'bg-indigo-50/30 dark:bg-indigo-950/10 font-medium border-l-2 border-l-indigo-500';
+                                    } else if (log.is_holiday || log.presence_status === 'holiday') {
+                                        rowBg = 'bg-rose-50/30 dark:bg-rose-950/10';
                                     } else if (isWeekend && log.presence_status === 'off_day') {
                                         rowBg = 'bg-muted/20 text-muted-foreground/80';
                                     }
@@ -161,8 +166,8 @@ export function AttendanceTable({ logs, currentMonthName, isLoading }: Attendanc
                                             <td className="px-4 py-3.5 text-center text-muted-foreground/60">{log.day_number}</td>
                                             <td className="px-4 py-3.5 font-medium">
                                                 <div className="flex flex-col">
-                                                    <span className="text-foreground">{DAY_NAMES[log.day_of_week]}</span>
-                                                    <span className="text-[11px] text-muted-foreground font-normal">{log.date}</span>
+                                                    <span className={log.is_holiday ? 'text-rose-600 dark:text-rose-400' : 'text-foreground'}>{DAY_NAMES[log.day_of_week]}</span>
+                                                    <span className={`text-[11px] font-normal ${log.is_holiday ? 'text-rose-500/80 dark:text-rose-400/80' : 'text-muted-foreground'}`}>{log.date}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3.5">

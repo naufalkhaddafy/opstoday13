@@ -16,6 +16,7 @@ type Shift = {
 type RosterDay = {
     date: string;
     is_exception: boolean;
+    is_holiday: boolean;
     leave?: { type: string; description: string | null } | null;
     shift: Shift | null;
 };
@@ -35,6 +36,7 @@ type MonthDay = {
     day_name: string;
     day_name_short: string;
     is_weekend: boolean;
+    is_holiday: boolean;
 };
 
 type RosterGridProps = {
@@ -89,6 +91,26 @@ const getShiftBadge = (day: RosterDay) => {
     }
 
     if (!shift) {
+        if (day.is_holiday) {
+            return (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className={`relative flex items-center justify-center h-7 text-[9px] font-bold text-rose-700 bg-rose-100 dark:bg-rose-900/40 dark:text-rose-300 rounded cursor-help ${today ? 'ring-2 ring-indigo-500 shadow-sm' : ''} ${day.is_exception ? 'border border-dashed border-rose-300 dark:border-rose-700' : ''}`}>
+                            HLD
+                            {day.is_exception && <AlertCircle className="absolute -top-1 -right-1 h-2.5 w-2.5 text-rose-500" />}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                        <div className="text-xs space-y-0.5">
+                            <p className="font-bold text-rose-600 dark:text-rose-400">Hari Libur Nasional</p>
+                            <p className="opacity-90">Jadwal Roster Diliburkan.</p>
+                            {day.is_exception && <p className="text-[10px] text-amber-500 font-bold mt-1">Jadwal Khusus (Override)</p>}
+                        </div>
+                    </TooltipContent>
+                </Tooltip>
+            );
+        }
+
         return (
             <div className={`relative flex items-center justify-center h-7 text-[9px] font-medium text-muted-foreground/50 select-none ${today ? 'ring-1 ring-indigo-400 rounded' : ''} ${day.is_exception ? 'bg-amber-50/50 dark:bg-amber-950/20 rounded border border-dashed border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400' : ''}`}>
                 L
@@ -164,10 +186,10 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
                                         }`}
                                 >
                                     <div className="flex flex-col items-center gap-0">
-                                        <span className={`text-[9px] uppercase tracking-wider ${day.is_weekend ? 'text-rose-500 dark:text-rose-400' : ''} ${today ? 'text-indigo-600 font-bold dark:text-indigo-300' : ''}`}>
+                                        <span className={`text-[9px] uppercase tracking-wider ${day.is_holiday || day.is_weekend ? 'text-rose-500 dark:text-rose-400' : ''} ${today ? 'text-indigo-600 font-bold dark:text-indigo-300' : ''}`}>
                                             {day.day_name_short}
                                         </span>
-                                        <span className={`text-[11px] font-semibold ${today ? 'bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center' : ''}`}>
+                                        <span className={`text-[11px] font-semibold ${today ? 'bg-indigo-600 text-white rounded-full w-5 h-5 flex items-center justify-center' : ''} ${day.is_holiday && !today ? 'text-rose-600 dark:text-rose-400' : ''}`}>
                                             {day.day}
                                         </span>
                                     </div>

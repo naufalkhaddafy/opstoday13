@@ -19,6 +19,7 @@ class AttendanceWorkDateResolver
     protected const PLACEHOLDER_CODES = ['steady', 'shift'];
 
     public function __construct(
+        protected \App\Repositories\Contracts\HolidayRepositoryInterface $holidayRepository,
         ?string $timezone = null,
     ) {
         $this->timezone = $timezone ?? config('app.timezone');
@@ -86,6 +87,11 @@ class AttendanceWorkDateResolver
             foreach ($this->candidateWorkDates($punchedAt) as $workDate) {
                 // If an exception exists for this candidate date, skip checking the weekly assignment
                 if (UserShiftException::where('user_id', $user->id)->where('date', $workDate->toDateString())->exists()) {
+                    continue;
+                }
+
+                // If it's a global holiday, skip checking the weekly assignment
+                if ($this->holidayRepository->isHoliday($workDate->toDateString())) {
                     continue;
                 }
 

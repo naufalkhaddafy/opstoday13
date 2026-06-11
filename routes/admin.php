@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::resource('companies', CompanyController::class);
         Route::resource('groups', GroupController::class);
         Route::resource('shifts', ShiftController::class);
+        Route::resource('holidays', \App\Http\Controllers\Admin\HolidayController::class)->except(['show']);
         Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });

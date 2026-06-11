@@ -77,6 +77,11 @@ const managementItems: NavItem[] = [
         icon: CalendarClock,
     },
     {
+        title: 'Manajemen Tanggal Merah',
+        href: '/admin/holidays',
+        icon: CalendarClock,
+    },
+    {
         title: 'Verifikasi Account',
         href: VerificationController.index().url,
         icon: Users,

@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 
 class UserAttendancePageResource extends JsonResource
 {
@@ -23,6 +24,8 @@ class UserAttendancePageResource extends JsonResource
         $startOfMonth = \Carbon\CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
         $endOfMonth = $startOfMonth->endOfMonth();
         $totalDays = $startOfMonth->daysInMonth;
+        
+        $holidayRepo = app(HolidayRepositoryInterface::class);
         
         $daysInMonth = [];
         $summary = [
@@ -67,6 +70,7 @@ class UserAttendancePageResource extends JsonResource
             $assignment = $shiftResolver->forWorkDate($user, $date);
             $shift = $shiftResolver->shiftForWorkDate($user, $date);
             $isWorkday = $assignment !== null && $assignment->isActiveOn($date);
+            $isHoliday = $holidayRepo->isHoliday($dateString);
             
             $dbRecord = $attendanceDays->get($dateString);
             
@@ -125,6 +129,9 @@ class UserAttendancePageResource extends JsonResource
                     $presence = $activeLeave->type;
                     $summary["total_{$presence}"]++;
                     $summary['total_scheduled']++;
+                } elseif ($isHoliday) {
+                    $presence = 'holiday';
+                    $summary['total_off_days']++;
                 } elseif ($isWorkday) {
                     $summary['total_scheduled']++;
                     if ($date->isPast() && !$date->isToday()) {
@@ -153,6 +160,7 @@ class UserAttendancePageResource extends JsonResource
                 'check_in_at' => $checkIn,
                 'check_out_at' => $checkOut,
                 'presence_status' => $presence,
+                'is_holiday' => $isHoliday,
                 'timing_status' => $timing,
                 'late_minutes' => $lateMinutes,
                 'early_leave_minutes' => $earlyMinutes,

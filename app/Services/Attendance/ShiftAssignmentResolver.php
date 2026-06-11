@@ -6,10 +6,14 @@ use App\Models\Shift;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
 use App\Models\UserShiftException;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 use Carbon\CarbonImmutable;
 
 class ShiftAssignmentResolver
 {
+    public function __construct(
+        protected HolidayRepositoryInterface $holidayRepository
+    ) {}
     /**
      * Cache for Shift models to avoid repeated DB lookups.
      *
@@ -59,6 +63,11 @@ class ShiftAssignmentResolver
 
         if ($exception !== null) {
             return $exception->shift_id !== null ? $this->findShift($exception->shift_id) : null;
+        }
+
+        // Global Holiday check (returns null/Off Day for everyone unless overriden above)
+        if ($this->holidayRepository->isHoliday($dateStr)) {
+            return null;
         }
 
         // Fallback to weekly schedule

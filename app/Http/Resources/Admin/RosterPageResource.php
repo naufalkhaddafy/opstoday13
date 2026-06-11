@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -23,17 +24,21 @@ class RosterPageResource extends JsonResource
 
         $timezone = config('app.timezone');
         $daysInMonth = $startOfMonth->daysInMonth;
+        
+        $holidayRepo = app(HolidayRepositoryInterface::class);
 
         // Build array of month days (1 .. N)
         $monthDays = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $dayDate = CarbonImmutable::create($year, $month, $d, 0, 0, 0, $timezone);
+            $dateString = $dayDate->toDateString();
             $monthDays[] = [
-                'date' => $dayDate->toDateString(),
+                'date' => $dateString,
                 'day' => $d,
                 'day_name' => $this->getDayNameIndo($dayDate->dayOfWeekIso),
                 'day_name_short' => $this->getDayNameShort($dayDate->dayOfWeekIso),
                 'is_weekend' => $dayDate->dayOfWeekIso >= 6,
+                'is_holiday' => $holidayRepo->isHoliday($dateString),
             ];
         }
 
@@ -69,6 +74,7 @@ class RosterPageResource extends JsonResource
                 $schedule[] = [
                     'date' => $day['date'],
                     'is_exception' => $isException,
+                    'is_holiday' => $day['is_holiday'],
                     'leave' => $activeLeave,
                     'shift' => $shift ? [
                         'id' => $shift->id,
