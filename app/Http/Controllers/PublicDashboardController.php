@@ -6,6 +6,7 @@ use App\Http\Resources\PublicDashboardPageResource;
 use App\Repositories\Contracts\CompanyRepositoryInterface;
 use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\Attendance\AttendanceAnalyticsService;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\CarbonImmutable;
 
@@ -19,6 +20,7 @@ class PublicDashboardController extends Controller
         private readonly UserRepositoryInterface $users,
         private readonly TicketDashboardRepositoryInterface $tickets,
         private readonly CompanyRepositoryInterface $companies,
+        private readonly AttendanceAnalyticsService $analyticsService,
     ) {}
 
     /**
@@ -65,6 +67,10 @@ class PublicDashboardController extends Controller
                 'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId),
                 'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId),
                 'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId),
+                'analytics' => fn () => [
+                    'leaderboard' => $this->analyticsService->getDisciplineLeaderboard($dateFrom, $dateTo, $companyId),
+                    'lateTrend' => $this->analyticsService->getLateTrend($dateFrom, $dateTo, $companyId),
+                ],
                 'companies' => $this->companies->all(),
                 'filters' => [
                     'company_id' => $companyId,

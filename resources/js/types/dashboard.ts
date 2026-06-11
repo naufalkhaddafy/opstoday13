@@ -134,6 +134,22 @@ export type DashboardProps = {
         meta: { current_page: number; last_page: number; per_page: number; total: number; from: number | null; to: number | null };
         links: PaginationLink[];
     };
+    analytics?: {
+        leaderboard: LeaderboardEntry[];
+        lateTrend: Record<string, number>;
+    };
+};
+
+export type LeaderboardEntry = {
+    user_id: number;
+    name: string;
+    employee_id: string | null;
+    total_late_minutes: number;
+    total_overtime_minutes: number;
+    net_penalized_minutes: number;
+    late_days: number;
+    mangkir_days: number;
+    score: number;
 };
 
 export type Segment = { label: string; value: number; color: string };

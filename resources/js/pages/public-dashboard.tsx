@@ -42,6 +42,8 @@ import { StatCard, KpiCard, LeaderboardCard, MiniStat } from '@/components/dashb
 import { EngineerCard } from '@/components/dashboard/EngineerCard';
 import { StatCardSkeleton, EngineerCardSkeleton, TableSkeleton } from '@/components/dashboard/Skeletons';
 import { TicketStatusBadge } from '@/components/shared/TicketStatusBadge';
+import { DisciplineTable } from '@/components/leaderboard/DisciplineTable';
+import { LateTrendChart } from '@/components/charts/LateTrendChart';
 
 const AUTO_REFRESH_INTERVAL_SECONDS = 60;
 
@@ -54,6 +56,7 @@ export default function PublicDashboard({
     filters,
     engineers,
     tickets,
+    analytics,
 }: DashboardProps) {
     const stats = attendance?.stats ?? { total_scheduled: 0, total_present: 0, total_absent: 0, total_leave: 0, total_late: 0, total_users: 0, total_early_leave: 0 };
     const employees = attendance?.employees ?? [];
@@ -76,7 +79,7 @@ export default function PublicDashboard({
                 setAutoRefreshCountdown((prev) => {
                     if (prev <= 1) {
                         router.visit(window.location.href, {
-                            only: ['attendance', 'ticket_stats', 'kpi_stats', 'engineers', 'tickets'],
+                            only: ['attendance', 'ticket_stats', 'kpi_stats', 'engineers', 'tickets', 'analytics'],
                             preserveScroll: true,
                             preserveState: true,
                         });
@@ -654,6 +657,24 @@ export default function PublicDashboard({
                                                     <MiniStat label="On Leave" value={stats.total_leave} icon={<CalendarClock className="h-4 w-4 text-[#2E7D32]" />} />
                                                 </CardContent>
                                             </Card>
+                                        </div>
+                                    )}
+                                </Deferred>
+
+                                <Deferred data={["analytics"]} fallback={
+                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                        <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-1"><CardContent className="h-64"></CardContent></Card>
+                                        <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-2"><CardContent className="h-64"></CardContent></Card>
+                                    </div>
+                                }>
+                                    {analytics && (
+                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                            <div className="lg:col-span-1">
+                                                <DisciplineTable leaderboard={analytics.leaderboard.slice(0, 10)} />
+                                            </div>
+                                            <div className="lg:col-span-2">
+                                                <LateTrendChart data={analytics.lateTrend} />
+                                            </div>
                                         </div>
                                     )}
                                 </Deferred>

@@ -37,6 +37,8 @@ class PublicDashboardPageResource extends JsonResource
         $ticketStatsClosure = $this->resource['ticketStats'];
         /** @var \Closure $kpiStatsClosure */
         $kpiStatsClosure = $this->resource['kpiStats'];
+        /** @var \Closure $analyticsClosure */
+        $analyticsClosure = $this->resource['analytics'] ?? fn() => null;
         /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Company> $companies */
         $companies = $this->resource['companies'];
         /** @var array{company_id: int|null, date_from: string, date_to: string} $filters */
@@ -76,6 +78,7 @@ class PublicDashboardPageResource extends JsonResource
 
                 return $stats;
             }),
+            'analytics' => \Inertia\Inertia::defer(fn() => $analyticsClosure()),
             'companies' => $companies->map(fn ($company) => [
                 'id' => $company->id,
                 'name' => $company->name,
