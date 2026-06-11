@@ -86,13 +86,13 @@ export function LateTrendChart({ data }: LateTrendChartProps) {
     };
 
     return (
-        <Card className="border-border/60 shadow-sm flex flex-col h-full">
+        <Card className="border-border/60 shadow-sm flex flex-col h-[400px]">
             <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <TrendingUp className="h-4 w-4 text-amber-500" /> Late Minutes Trend
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-[250px] relative">
+            <CardContent className="flex-1 relative">
                 {!hasData ? (
                     <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
                         No late minutes recorded in this period. Great job! 🎉

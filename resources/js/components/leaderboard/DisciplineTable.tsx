@@ -4,13 +4,13 @@ import { LeaderboardEntry } from '@/types/dashboard'; // I will define this inte
 
 export function DisciplineTable({ leaderboard }: { leaderboard: LeaderboardEntry[] }) {
     return (
-        <Card className="border-border/60 shadow-sm flex flex-col h-full">
+        <Card className="border-border/60 shadow-sm flex flex-col h-[400px]">
             <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <Trophy className="h-4 w-4 text-amber-500" /> Discipline Leaderboard
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1">
+            <CardContent className="flex-1 overflow-auto p-0">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
