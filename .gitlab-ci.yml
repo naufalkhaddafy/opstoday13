@@ -1,5 +1,6 @@
 stages:
   - build
+  # - deploy
 
 variables:
   # Base nama image di registry
@@ -44,3 +45,39 @@ build-docker-image:
     - if: $CI_COMMIT_BRANCH == "master"
     # ATAU jika ada push berupa Git Tag (contoh: v1.0.0)
     - if: $CI_COMMIT_TAG
+
+# =========================================================================
+# CONTINUOUS DEPLOYMENT (CD) - DIBUAT SEBAGAI COMMENT DULU (TINGGAL UNCOMMENT)
+# =========================================================================
+#
+# deploy-production:
+#   stage: deploy
+#   image: alpine:latest
+#   before_script:
+#     # Install SSH Client
+#     - apk add --no-cache openssh-client
+#     - eval $(ssh-agent -s)
+#     # Menambahkan private key dari variabel GitLab CI ke ssh-agent
+#     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+#     # Membuat direktori ssh dan menambahkan host server ke known_hosts
+#     - mkdir -p ~/.ssh
+#     - chmod 700 ~/.ssh
+#     - ssh-keyscan $SERVER_IP >> ~/.ssh/known_hosts
+#     - chmod 644 ~/.ssh/known_hosts
+#   script:
+#     - echo "Memulai proses deployment ke server $SERVER_IP..."
+#     # Login SSH ke server dan eksekusi command update
+#     - >
+#       ssh $SERVER_USER@$SERVER_IP "
+#       cd /path/ke/folder/opstoday13 &&
+#       export APP_VERSION=${CI_COMMIT_TAG:-latest} &&
+#       docker-compose pull &&
+#       docker-compose up -d &&
+#       docker image prune -f
+#       "
+#     - echo "Deployment Berhasil menggunakan tag ${CI_COMMIT_TAG:-latest}!"
+#   rules:
+#     # Opsional: CD otomatis hanya jalan kalau rilis tag vX.Y.Z
+#     - if: $CI_COMMIT_TAG
+#     # Atau CD otomatis jika push ke main
+#     # - if: $CI_COMMIT_BRANCH == "main"
