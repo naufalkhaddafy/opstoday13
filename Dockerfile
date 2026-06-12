@@ -46,6 +46,10 @@ ENV APP_ENV=production
 ENV APP_DEBUG=false
 ENV SERVER_NAME=":80"
 
+# Tangkap argument versi dari CI/CD dan jadikan Environment Variable Laravel
+ARG APP_VERSION=latest
+ENV APP_VERSION=${APP_VERSION}
+
 # PHP production config
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 

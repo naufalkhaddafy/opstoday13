@@ -1,4 +1,4 @@
-import { Head, Link, router, Deferred } from '@inertiajs/react';
+import { Head, Link, router, Deferred, usePage } from '@inertiajs/react';
 import { BrandHeroHeader } from '@/components/shared/brand-hero-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,7 @@ export default function PublicDashboard({
     analytics,
     holiday_name,
 }: DashboardProps) {
+    const { app_version } = usePage().props as any;
     const stats = attendance?.stats ?? { total_scheduled: 0, total_present: 0, total_absent: 0, total_leave: 0, total_late: 0, total_users: 0, total_early_leave: 0 };
     const employees = attendance?.employees ?? [];
     const isSingleDay = filters.date_from === filters.date_to;
@@ -769,7 +770,8 @@ export default function PublicDashboard({
                 </div>
 
                 <footer className="mt-auto border-t border-black/5 dark:border-white/5 py-6 text-center text-xs text-gray-500">
-                    © 2026, Developed by <a href='#' className='text-gray-600 font-bold hover:text-gray-900 transition-colors'>IT Computer Operations</a>
+                    <div>© 2026, Developed by <a href='#' className='text-gray-600 font-bold hover:text-gray-900 transition-colors'>IT Computer Operations</a></div>
+                    {app_version && <div className="mt-1 font-mono uppercase opacity-50 text-[10px]">{app_version}</div>}
                 </footer>
             </div>
 

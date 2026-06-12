@@ -102,18 +102,14 @@ const systemLogItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { auth } = usePage().props as any;
+    const { auth, app_version } = usePage().props as any;
     const isSuperAdmin = auth?.user?.role === 'super_admin';
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
+                    <SidebarMenuItem className="pt-2 pb-4 px-2">
+                        <AppLogo version={app_version} />
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>

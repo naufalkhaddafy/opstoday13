@@ -18,8 +18,10 @@ build-docker-image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - echo "Mulai mem-build Docker Image..."
-    # 1. Build image dengan tag commit hash (selalu unik untuk pelacakan)
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -f Dockerfile .
+    # Menentukan versi (Pakai Tag jika ada, kalau tidak pakai Commit Hash)
+    - export DYNAMIC_VERSION=${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}
+    # 1. Build image dengan tag commit hash dan inject versi ke dalam image
+    - docker build --build-arg APP_VERSION=$DYNAMIC_VERSION -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -f Dockerfile .
     
     # 2. Push tag commit hash
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
