@@ -2,8 +2,8 @@ stages:
   - build
 
 variables:
-  # Tag untuk image (bisa pakai branch name atau commit sha
-  IMAGE_TAG: $CI_REGISTRY_IMAGE/opstoday13-app:latest
+  # Base nama image di registry
+  IMAGE_NAME: $CI_REGISTRY_IMAGE/opstoday13-app
 
 build-docker-image:
   stage: build
@@ -17,12 +17,30 @@ build-docker-image:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
     - echo "Mulai mem-build Docker Image..."
-    # Build image
-    - docker build -t $IMAGE_TAG -f Dockerfile .
-    - echo "Mendorong (Push) image ke GitLab Container Registry..."
-    # Push image ke registry
-    - docker push $IMAGE_TAG
+    # 1. Build image dengan tag commit hash (selalu unik untuk pelacakan)
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -f Dockerfile .
+    
+    # 2. Push tag commit hash
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    
+    # 3. Handle Semantic Versioning Tags vs Branch Biasa
+    - >
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        echo "Git Tag terdeteksi: $CI_COMMIT_TAG. Memberikan tag Semantic Versioning..."
+        docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:$CI_COMMIT_TAG
+        docker push $IMAGE_NAME:$CI_COMMIT_TAG
+        
+        echo "Mengupdate tag :latest agar menunjuk ke rilis terbaru ini..."
+        docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:latest
+        docker push $IMAGE_NAME:latest
+      else
+        echo "Bukan Git Tag. Mengupdate tag :latest untuk environment staging/development..."
+        docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:latest
+        docker push $IMAGE_NAME:latest
+      fi
   rules:
-    # Hanya jalankan script ini kalau ada push ke branch main atau master
+    # Jalankan script ini kalau ada push ke branch main atau master
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_COMMIT_BRANCH == "master"
+    # ATAU jika ada push berupa Git Tag (contoh: v1.0.0)
+    - if: $CI_COMMIT_TAG
