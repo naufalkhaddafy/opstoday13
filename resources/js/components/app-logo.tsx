@@ -20,7 +20,7 @@ export default function AppLogo({ version }: { version?: string }) {
             <Link href={dashboard().url} className="flex aspect-square size-8 items-center justify-center rounded-md bg-white shadow-sm border p-1 shrink-0 hover:opacity-80 transition-opacity">
                 <img src={BRAND_LOGO_SRC} alt="B-Hero" className="size-full object-contain" />
             </Link>
-            <div className="flex flex-col flex-1 text-left">
+            <div className="flex flex-col flex-1 text-left group-data-[collapsible=icon]:hidden">
                 <Link href={dashboard().url} className="truncate leading-tight font-bold text-lg text-foreground hover:text-foreground/80 transition-colors">
                     B-Hero
                 </Link>

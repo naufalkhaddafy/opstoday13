@@ -34,12 +34,12 @@ const dashboardItems: NavItem[] = [
 
 const rosterItems: NavItem[] = [
     {
-        title: 'Roster Kerja',
+        title: 'Work Roster',
         href: RosterController.index().url,
         icon: CalendarRange,
     },
     {
-        title: 'Pengajuan Cuti',
+        title: 'Leave Requests',
         href: '/leaves',
         icon: CalendarRange,
     },
@@ -53,36 +53,41 @@ const rosterItems: NavItem[] = [
         href: TicketController.index().url,
         icon: TicketIcon,
     },
+    {
+        title: 'Overall Ticket',
+        href: '/tickets/overall',
+        icon: TicketIcon,
+    },
 ];
 
 const managementItems: NavItem[] = [
     {
-        title: 'Manajemen User',
+        title: 'Users',
         href: UserController.index().url,
         icon: Users,
     },
     {
-        title: 'Manajemen Perusahaan',
+        title: 'Companies',
         href: CompanyController.index().url,
         icon: Building,
     },
     {
-        title: 'Manajemen Grup',
+        title: 'Groups',
         href: GroupController.index().url,
         icon: Users,
     },
     {
-        title: 'Manajemen Shift',
+        title: 'Shifts',
         href: ShiftController.index().url,
         icon: CalendarClock,
     },
     {
-        title: 'Manajemen Tanggal Merah',
+        title: 'Holidays',
         href: '/admin/holidays',
         icon: CalendarClock,
     },
     {
-        title: 'Verifikasi Account',
+        title: 'Account Verification',
         href: VerificationController.index().url,
         icon: Users,
     },
@@ -115,16 +120,16 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={dashboardItems} title="Utama" />
-                <NavMain items={rosterItems} title="Operasional" />
+                <NavMain items={dashboardItems} title="Main" />
+                <NavMain items={rosterItems} title="Operational" />
                 {(isSuperAdmin || auth?.user?.role === 'supv') && (
                     <NavMain 
-                        items={managementItems.filter(item => isSuperAdmin || item.title === 'Verifikasi Account')} 
-                        title="Master Data" 
+                        items={managementItems.filter(item => isSuperAdmin || item.title === 'Account Verification' || item.title === 'Holidays' || item.title === 'Users')} 
+                        title="Master Data Management" 
                     />
                 )}
                 {isSuperAdmin && (
-                    <NavMain items={systemLogItems} title="System Log" />
+                    <NavMain items={systemLogItems} title="System Logs" />
                 )}
             </SidebarContent>
 

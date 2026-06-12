@@ -27,21 +27,22 @@ Route::middleware(['auth', 'verified', 'role:super_admin|supv'])
     ->group(function () {
         Route::get('verifications', [\App\Http\Controllers\Admin\VerificationController::class, 'index'])->name('verifications.index');
         Route::post('verifications/{user}/verify', [\App\Http\Controllers\Admin\VerificationController::class, 'verify'])->name('verifications.verify');
+        Route::resource('holidays', \App\Http\Controllers\Admin\HolidayController::class)->except(['show']);
+        
+        Route::get('users/{user}/attendance', [UserController::class, 'attendance'])->name('users.attendance');
+        Route::get('users/{user}/attendance/export', [UserController::class, 'attendanceExport'])->name('users.attendance.export');
+        Route::get('users/{user}/tickets', [UserController::class, 'tickets'])->name('users.tickets');
+        Route::get('users/{user}/tickets/export', [UserController::class, 'ticketsExport'])->name('users.tickets.export');
+        Route::resource('users', UserController::class);
     });
 
 Route::middleware(['auth', 'verified', 'role:super_admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('users/{user}/attendance', [UserController::class, 'attendance'])->name('users.attendance');
-        Route::get('users/{user}/attendance/export', [UserController::class, 'attendanceExport'])->name('users.attendance.export');
-        Route::get('users/{user}/tickets', [UserController::class, 'tickets'])->name('users.tickets');
-        Route::get('users/{user}/tickets/export', [UserController::class, 'ticketsExport'])->name('users.tickets.export');
-        Route::resource('users', UserController::class);
         Route::resource('companies', CompanyController::class);
         Route::resource('groups', GroupController::class);
         Route::resource('shifts', ShiftController::class);
-        Route::resource('holidays', \App\Http\Controllers\Admin\HolidayController::class)->except(['show']);
         Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });

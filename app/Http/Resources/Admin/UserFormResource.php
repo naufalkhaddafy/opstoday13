@@ -38,6 +38,11 @@ class UserFormResource extends JsonResource
             }
         }
 
+        $roles = array_column(RoleName::cases(), 'value');
+        if ($request->user() && $request->user()->hasRole(RoleName::Supv->value)) {
+            $roles = array_values(array_filter($roles, fn ($role) => $role !== RoleName::SuperAdmin->value));
+        }
+
         return [
             'user' => isset($this->resource['user'])
                 ? array_merge(
@@ -50,7 +55,7 @@ class UserFormResource extends JsonResource
             'shifts' => Shift::select('id', 'name', 'code')
                 ->get()
                 ->toArray(),
-            'roles' => array_column(RoleName::cases(), 'value'),
+            'roles' => $roles,
         ];
     }
 }

@@ -33,7 +33,13 @@ class VerificationController extends Controller
 
         $users = $this->userRepository->getUnverifiedUsers($companyId);
         
-        $roles = collect(RoleName::cases())->map(fn ($role) => $role->value)->toArray();
+        $roles = collect(RoleName::cases())->map(fn ($role) => $role->value);
+
+        if ($request->user()->hasRole(RoleName::Supv->value)) {
+            $roles = $roles->filter(fn ($role) => $role !== RoleName::SuperAdmin->value);
+        }
+
+        $roles = $roles->values()->toArray();
 
         return Inertia::render('admin/verifications/index', [
             'users' => $users,
@@ -51,6 +57,9 @@ class VerificationController extends Controller
         if ($request->user()->hasRole(RoleName::Supv->value)) {
             if ($user->company_id !== $request->user()->company_id) {
                 abort(403, 'Unauthorized action.');
+            }
+            if ($request->validated('role') === RoleName::SuperAdmin->value) {
+                abort(403, 'Cannot assign super_admin role.');
             }
         }
 

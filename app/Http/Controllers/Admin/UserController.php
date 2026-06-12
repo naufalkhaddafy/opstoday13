@@ -41,6 +41,10 @@ class UserController extends Controller
     {
         $filters = $request->only(['search', 'role', 'company_id', 'group_id']);
 
+        if ($request->user()->hasRole(RoleName::Supv->value)) {
+            $filters['exclude_role'] = RoleName::SuperAdmin->value;
+        }
+
         $paginator = $this->users->paginate($filters);
 
         return Inertia::render(
@@ -68,6 +72,10 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request): RedirectResponse
     {
+        if ($request->user()->hasRole(RoleName::Supv->value) && $request->validated('role') === RoleName::SuperAdmin->value) {
+            abort(403, 'Cannot create super_admin user.');
+        }
+
         $validated = $request->validated();
 
         // Extract shift data before processing user
@@ -108,6 +116,8 @@ class UserController extends Controller
      */
     public function edit(Request $request, User $user): Response
     {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
         // Muat relasi company & group sebelum dikirim ke Resource
         $user->load(['company', 'group']);
 
@@ -125,6 +135,12 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
+        if ($request->user()->hasRole(RoleName::Supv->value) && $request->validated('role') === RoleName::SuperAdmin->value) {
+            abort(403, 'Cannot assign super_admin role.');
+        }
+
         $validated = $request->validated();
 
         // Extract shift data before processing user
@@ -168,13 +184,22 @@ class UserController extends Controller
     /**
      * Hapus user.
      */
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user): RedirectResponse
     {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
         $this->users->delete($user);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User berhasil dihapus.']);
 
         return to_route('admin.users.index');
+    }
+
+    private function abortIfSuperAdminForSupv(User $user, Request $request): void
+    {
+        if ($request->user()->hasRole(RoleName::Supv->value) && $user->hasRole(RoleName::SuperAdmin->value)) {
+            abort(403, 'Unauthorized access to super_admin user.');
+        }
     }
 
     /**
@@ -313,6 +338,8 @@ class UserController extends Controller
         User $user,
         ShiftAssignmentResolver $shiftResolver
     ): Response {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
         $timezone = config('app.timezone');
         
         $year = (int) $request->input('year', now($timezone)->year);
@@ -344,6 +371,8 @@ class UserController extends Controller
         User $user,
         ShiftAssignmentResolver $shiftResolver
     ) {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
         $timezone = config('app.timezone');
         
         $year = (int) $request->input('year', now($timezone)->year);
@@ -380,6 +409,8 @@ class UserController extends Controller
      */
     public function tickets(Request $request, User $user): Response
     {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
         $timezone = config('app.timezone');
 
         $status = $request->input('status');
@@ -431,6 +462,8 @@ class UserController extends Controller
      */
     public function ticketsExport(Request $request, User $user)
     {
+        $this->abortIfSuperAdminForSupv($user, $request);
+
         $timezone = config('app.timezone');
 
         $status = $request->input('status');

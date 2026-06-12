@@ -34,6 +34,10 @@ class UserRepository implements UserRepositoryInterface
                 ! empty($filters['role']),
                 fn ($q) => $q->role($filters['role'])
             )
+            ->when(
+                ! empty($filters['exclude_role']),
+                fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->where('name', $filters['exclude_role']))
+            )
             ->latest()
             ->paginate(15)
             ->withQueryString();

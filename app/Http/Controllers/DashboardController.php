@@ -32,24 +32,38 @@ class DashboardController extends Controller
         }
 
         // SPV / SuperAdmin: existing admin overview
-        return $this->adminDashboard($today, $shiftResolver);
+        return $this->adminDashboard($user, $today, $shiftResolver);
     }
 
-    private function adminDashboard(CarbonImmutable $today, ShiftAssignmentResolver $shiftResolver): Response
+    private function adminDashboard($user, CarbonImmutable $today, ShiftAssignmentResolver $shiftResolver): Response
     {
-        $users = $this->users->activeForDashboard($today->toDateString(), $today->toDateString());
+        $companyId = $user->hasRole(RoleName::Supv->value) ? $user->company_id : null;
 
-        $ticketCounts = Ticket::query()
-            ->whereNull('disappeared_at')
-            ->selectRaw("
+        $users = $this->users->activeForDashboard($today->toDateString(), $today->toDateString(), $companyId);
+
+        $startOfMonth = $today->copy()->startOfMonth()->toDateString();
+        $endOfMonth = $today->copy()->endOfMonth()->toDateString();
+
+        $ticketQuery = Ticket::query()
+            ->whereNull('disappeared_at');
+
+        if ($companyId) {
+            $ticketQuery->whereHas('assignedUser', function ($q) use ($companyId) {
+                $q->where('company_id', $companyId);
+            });
+        }
+
+        $ticketCounts = $ticketQuery->selectRaw("
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed,
                 SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
                 SUM(CASE WHEN status = 'assigned' THEN 1 ELSE 0 END) as assigned,
                 SUM(CASE WHEN status = 'pending_on_hold' THEN 1 ELSE 0 END) as pending
             ")
-            ->whereYear('api_creation_date', $today->year)
-            ->whereMonth('api_creation_date', $today->month)
+            ->whereRaw("DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) BETWEEN ? AND ?", [
+                $startOfMonth,
+                $endOfMonth
+            ])
             ->first();
 
         return Inertia::render(
@@ -234,7 +248,7 @@ class DashboardController extends Controller
             $dateCheck = $dateCheck->subDay();
         }
 
-        // Tickets summary
+        // Tickets summary for this month
         $ticketCounts = Ticket::query()
             ->whereNull('disappeared_at')
             ->where('assigned_to_user_id', $user->id)
@@ -245,6 +259,10 @@ class DashboardController extends Controller
                 SUM(CASE WHEN status = 'assigned' THEN 1 ELSE 0 END) as assigned,
                 SUM(CASE WHEN status = 'pending_on_hold' THEN 1 ELSE 0 END) as pending
             ")
+            ->whereRaw("DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) BETWEEN ? AND ?", [
+                $startOfMonth->toDateString(),
+                $endOfMonth->toDateString()
+            ])
             ->first();
 
         return Inertia::render(

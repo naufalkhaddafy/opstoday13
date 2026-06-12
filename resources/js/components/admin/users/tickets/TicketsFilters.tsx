@@ -153,6 +153,17 @@ export function TicketsFilters({ filters, status_options, navigate, exportUrl }:
                 </Select>
 
                 <div className="w-px h-8 bg-border mx-2 hidden sm:block"></div>
+                
+                {(filters.status !== null || filters.search !== null || filters.month !== 'all') && (
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => navigate({ search: null, status: null, month: 'all', year: new Date().getFullYear() })}
+                        className="text-muted-foreground hover:text-foreground shrink-0"
+                    >
+                        <X className="mr-2 h-4 w-4" /> Reset
+                    </Button>
+                )}
+
                 <Button variant="outline" asChild className="shrink-0 group">
                     <a href={exportUrl} target="_blank" rel="noreferrer">
                         <Download className="mr-2 h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" /> Export Excel
