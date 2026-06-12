@@ -68,6 +68,6 @@ class AzureAuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->intended(route('home'));
     }
 }

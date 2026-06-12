@@ -52,7 +52,7 @@ class OnboardingController extends Controller
 
         // If they are already verified, go to dashboard
         if ($request->user()->is_verified) {
-            return redirect()->intended(route('dashboard'));
+            return redirect()->intended(route('home'));
         }
 
         return Inertia::render('auth/waiting-verification');

@@ -242,7 +242,7 @@ export default function PublicDashboard({
                 <div ref={headerRef}>
                     <BrandHeroHeader
                         badge="Live Operations Board"
-                        title="Computer Operations Dashboard"
+                        title="Computer Operations"
                         date={date}
                         actions={
                             <div className="flex items-center gap-2">
@@ -256,10 +256,10 @@ export default function PublicDashboard({
                                     onAutoRefreshToggle={() => setIsAutoRefresh(!isAutoRefresh)}
                                 />
                                 <Link
-                                    href="/login"
+                                    href="/dashboard"
                                     className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-[#FDD835]/50 bg-[#FDD835] px-4 text-xs font-semibold text-[#1B5E20] shadow-sm transition-all hover:bg-[#FFEB3B] hover:shadow-md"
                                 >
-                                    Login
+                                    Dashboard
                                 </Link>
                             </div>
                         }
@@ -312,10 +312,10 @@ export default function PublicDashboard({
                                 light
                             />
                             <Link
-                                href="/login"
+                                href="/dashboard"
                                 className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-[#FDD835]/50 bg-[#FDD835] px-4 text-xs font-semibold text-[#1B5E20] shadow-sm transition-all hover:bg-[#FFEB3B] hover:shadow-md"
                             >
-                                Login
+                                Dashboard
                             </Link>
                         </div>
                     </div>
