@@ -1,5 +1,9 @@
 FROM dunglas/frankenphp:php8.4-alpine AS base
 
+# Update install-php-extensions to latest version to fix PHP 8.4 compatibility
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions
+
 # Install required PHP extensions
 RUN install-php-extensions \
     pdo_mysql \
