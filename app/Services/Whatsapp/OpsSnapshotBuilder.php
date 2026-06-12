@@ -425,25 +425,13 @@ class OpsSnapshotBuilder
         $responseThreshold = SlaConstants::RESPONSE_TIME_GREEN;
         $resolutionThreshold = SlaConstants::RESOLUTION_TIME_GREEN;
 
-        $ticketsWithResponse = $closedTodayTickets->filter(fn($t) => ($t->response_time_seconds ?? 0) > 0);
-        $avgResponseMin = $ticketsWithResponse->isNotEmpty()
-            ? round($ticketsWithResponse->avg('response_time_seconds') / 60)
+        $avgResponseMin = $closedTodayTickets->isNotEmpty()
+            ? round($closedTodayTickets->avg(fn($t) => ($t->response_time_seconds ?? 0)) / 60)
             : 0;
 
-        $closedWithResolution = $closedTodayTickets->filter(function ($t) {
-            $created = $t->api_creation_date ?? $t->first_seen_at;
-            return $created && $t->completed_date;
-        });
-        $avgResolutionMin = 0;
-        if ($closedWithResolution->isNotEmpty()) {
-            $totalResMin = 0;
-            foreach ($closedWithResolution as $t) {
-                $created = CarbonImmutable::parse($t->api_creation_date ?? $t->first_seen_at);
-                $completed = CarbonImmutable::parse($t->completed_date);
-                $totalResMin += $created->diffInMinutes($completed);
-            }
-            $avgResolutionMin = round($totalResMin / $closedWithResolution->count());
-        }
+        $avgResolutionMin = $closedTodayTickets->isNotEmpty()
+            ? round($closedTodayTickets->avg(fn($t) => ((float)($t->resolution_time ?? 0)) * 60))
+            : 0;
 
         $lines[] = "⚡ Avg Response Time: ({$avgResponseMin}m)";
         $lines[] = "📊 Avg Resolution Time: ({$avgResolutionMin}m)";
@@ -465,8 +453,8 @@ class OpsSnapshotBuilder
             $lateCount = 0;
 
             foreach ($userClosed as $t) {
-                $responseMin = ($t->response_time_seconds ?? 0) / 60;
-                if ($responseMin > $responseThreshold) {
+                $resolutionMin = ((float)($t->resolution_time ?? 0)) * 60;
+                if ($resolutionMin > $resolutionThreshold) {
                     $lateCount++;
                 }
             }
