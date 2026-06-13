@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -123,9 +123,9 @@ export function AppSidebar() {
                 <NavMain items={dashboardItems} title="Main" />
                 <NavMain items={rosterItems} title="Operational" />
                 {(isSuperAdmin || auth?.user?.role === 'supv') && (
-                    <NavMain 
-                        items={managementItems.filter(item => isSuperAdmin || item.title === 'Account Verification' || item.title === 'Holidays' || item.title === 'Users')} 
-                        title="Master Data Management" 
+                    <NavMain
+                        items={managementItems.filter(item => isSuperAdmin || item.title === 'Account Verification' || item.title === 'Holidays' || item.title === 'Users')}
+                        title="Master Data Management"
                     />
                 )}
                 {isSuperAdmin && (
@@ -134,6 +134,16 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip="Back to Live Board">
+                            <Link href="/">
+                                <ArrowLeft />
+                                <span>Back to Live Board</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
