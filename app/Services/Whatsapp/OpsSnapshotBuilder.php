@@ -38,8 +38,8 @@ class OpsSnapshotBuilder
         $offDuty = [];
 
         foreach ($users as $user) {
-            $assignment = $this->shiftResolver->forWorkDate($user, $today);
-            $isWorkday = $assignment !== null && $assignment->isActiveOn($today);
+            $shift = $this->shiftResolver->shiftForWorkDate($user, $today);
+            $isWorkday = $shift !== null;
             $leave = $user->leaves->first(fn($l) => $today->between($l->start_date, $l->end_date));
 
             $attendanceDay = $user->attendanceDays
@@ -52,22 +52,23 @@ class OpsSnapshotBuilder
                 ? Carbon::parse($attendanceDay->check_out_at)->timezone($timezone)->format('H:i')
                 : null;
 
-            if ($leave) {
+            $s = [
+                'user' => $user,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'attendance' => $attendanceDay,
+                'isOff' => !$isWorkday,
+            ];
+
+            // Prioritize physical attendance over EVERYTHING (including leave or off-day)
+            if ($checkIn !== null) {
+                $scheduled[] = $s;
+            } elseif ($leave) {
                 $onLeave[] = ['user' => $user, 'type' => $leave->type];
             } elseif ($isWorkday) {
-                $scheduled[] = [
-                    'user' => $user,
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut,
-                    'attendance' => $attendanceDay,
-                ];
+                $scheduled[] = $s;
             } else {
-                $offDuty[] = [
-                    'user' => $user,
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut,
-                    'attendance' => $attendanceDay,
-                ];
+                $offDuty[] = $s;
             }
         }
 
@@ -116,7 +117,7 @@ class OpsSnapshotBuilder
             $lines[] = '';
             $lines[] = "Attendance (per Engineer):";
             foreach ($checkedIn as $s) {
-                $lines[] = $this->formatAttendanceLine($s, false, $timezone);
+                $lines[] = $this->formatAttendanceLine($s, $s['isOff'] ?? false, $timezone);
             }
         }
 
@@ -221,8 +222,8 @@ class OpsSnapshotBuilder
         $offDuty = [];
 
         foreach ($users as $user) {
-            $assignment = $this->shiftResolver->forWorkDate($user, $today);
-            $isWorkday = $assignment !== null && $assignment->isActiveOn($today);
+            $shift = $this->shiftResolver->shiftForWorkDate($user, $today);
+            $isWorkday = $shift !== null;
             $leave = $user->leaves->first(fn($l) => $today->between($l->start_date, $l->end_date));
 
             $attendanceDay = $user->attendanceDays
@@ -235,22 +236,23 @@ class OpsSnapshotBuilder
                 ? Carbon::parse($attendanceDay->check_out_at)->timezone($timezone)->format('H:i')
                 : null;
 
-            if ($leave) {
+            $s = [
+                'user' => $user,
+                'check_in' => $checkIn,
+                'check_out' => $checkOut,
+                'attendance' => $attendanceDay,
+                'isOff' => !$isWorkday,
+            ];
+
+            // Prioritize physical attendance over EVERYTHING (including leave or off-day)
+            if ($checkIn !== null) {
+                $scheduled[] = $s;
+            } elseif ($leave) {
                 $onLeave[] = ['user' => $user, 'type' => $leave->type];
             } elseif ($isWorkday) {
-                $scheduled[] = [
-                    'user' => $user,
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut,
-                    'attendance' => $attendanceDay,
-                ];
+                $scheduled[] = $s;
             } else {
-                $offDuty[] = [
-                    'user' => $user,
-                    'check_in' => $checkIn,
-                    'check_out' => $checkOut,
-                    'attendance' => $attendanceDay,
-                ];
+                $offDuty[] = $s;
             }
         }
 
@@ -301,7 +303,7 @@ class OpsSnapshotBuilder
         $totalScheduled = count($scheduled);
         $i = 0;
         foreach ($scheduled as $s) {
-            $lines[] = $this->formatAttendanceLine($s, false, $timezone);
+            $lines[] = $this->formatAttendanceLine($s, $s['isOff'] ?? false, $timezone, true);
             if (++$i < $totalScheduled) {
                 $lines[] = '';
             }
@@ -512,7 +514,7 @@ class OpsSnapshotBuilder
         ]);
     }
 
-    private function formatAttendanceLine(array $s, bool $isOff, string $timezone): string
+    private function formatAttendanceLine(array $s, bool $isOff, string $timezone, bool $isEvening = false): string
     {
         $name = $s['user']->name;
         $inTime = $s['check_in'] ?? '-';
@@ -552,6 +554,9 @@ class OpsSnapshotBuilder
                 return "─ {$name} – In: {$inTime}, Out: {$outTime} ✅ Perfect schedule (Worked: {$workedStr})";
             }
         } elseif ($s['check_in'] && !$s['check_out']) {
+            if ($isEvening) {
+                return "─ {$name}{$prefix} – In: {$inTime} ⏳ Still Working";
+            }
             return "─ {$name}{$prefix} – In: {$inTime}";
         } else {
             return "─ {$name}{$prefix} – In: -, Out: - ❌ No attendance data";
