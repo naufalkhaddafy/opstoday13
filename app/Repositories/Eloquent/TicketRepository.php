@@ -8,6 +8,7 @@ use App\Models\TicketAssignmentHistory;
 use App\Models\TicketSyncRun;
 use App\Models\User;
 use App\Repositories\Contracts\TicketRepositoryInterface;
+use App\Services\Analytics\AIEngineService;
 use Carbon\CarbonInterface;
 
 class TicketRepository implements TicketRepositoryInterface
@@ -19,11 +20,16 @@ class TicketRepository implements TicketRepositoryInterface
      */
     protected array $userIdCache = [];
 
+    public function __construct(
+        protected AIEngineService $aiEngine
+    ) {}
+
     public function upsertOpen(array $record, string $polledTechnicianId, TicketSyncRun $run): bool
     {
         $now = now();
         $ticket = Ticket::query()->where('ticket_no', $record['ticket_no'])->first();
         $isNew = $ticket === null;
+        $oldTitle = $ticket ? $ticket->title : null;
 
         if ($ticket === null) {
             $ticket = new Ticket();
@@ -88,6 +94,8 @@ class TicketRepository implements TicketRepositoryInterface
         $ticket->sync_batch_id = $run->id;
         $ticket->save();
 
+        $this->processAIPrediction($ticket, $oldTitle);
+
         return $isNew;
     }
 
@@ -96,6 +104,7 @@ class TicketRepository implements TicketRepositoryInterface
         $now = now();
         $ticket = Ticket::query()->where('ticket_no', $record['ticket_no'])->first();
         $isNew = $ticket === null;
+        $oldTitle = $ticket ? $ticket->title : null;
 
         if ($ticket === null) {
             $ticket = new Ticket();
@@ -127,6 +136,8 @@ class TicketRepository implements TicketRepositoryInterface
         // first_seen_at / in_progress_at / response_time_seconds stay null.
         $ticket->save();
 
+        $this->processAIPrediction($ticket, $oldTitle);
+
         return $isNew;
     }
 
@@ -157,6 +168,29 @@ class TicketRepository implements TicketRepositoryInterface
 
         if (! empty($record['work_group'])) {
             $ticket->work_group = $record['work_group'];
+        }
+    }
+
+    protected function processAIPrediction(Ticket $ticket, ?string $oldTitle): void
+    {
+        if (!$ticket->title) {
+            return;
+        }
+
+        $needsPrediction = $oldTitle !== $ticket->title || !$ticket->aiPrediction()->exists();
+
+        if ($needsPrediction) {
+            $aiResult = $this->aiEngine->analyzeTicket($ticket->title, '');
+            if ($aiResult) {
+                $ticket->aiPrediction()->updateOrCreate(
+                    ['ticket_id' => $ticket->id],
+                    [
+                        'category' => $aiResult['category'] ?? null,
+                        'keyword' => $aiResult['keyword'] ?? null,
+                        'confidence_score' => $aiResult['confidence_score'] ?? null,
+                    ]
+                );
+            }
         }
     }
 

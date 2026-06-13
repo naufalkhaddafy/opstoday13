@@ -120,6 +120,16 @@ services:
     networks:
       - opstoday13
 
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    networks:
+      - opstoday13
+
 volumes:
   mysql_data:
   redis_data:

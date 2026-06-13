@@ -84,24 +84,74 @@ class TicketTrendAnalyzer
     }
 
     /**
-     * @param string[] $titles
-     * @return array<string, int> Frequency of each phrase
+     * Parse raw titles into keywords (Legacy)
      */
     protected function extractPhrases(array $titles): array
     {
-        $frequencies = [];
-
+        $phrases = [];
         foreach ($titles as $title) {
             $words = $this->cleanAndTokenize($title);
-            
-            // Hanya ambil 1 kata pertama yang valid (non-stopword) dari setiap tiket
-            // supaya 1 tiket dengan kalimat panjang tidak membanjiri daftar trends
-            if (count($words) > 0) {
-                $this->incrementPhrase($frequencies, $words[0]);
+            if (empty($words)) continue;
+
+            $phrase = implode(' ', array_slice($words, 0, 2));
+            if (!isset($phrases[$phrase])) {
+                $phrases[$phrase] = 0;
             }
+            $phrases[$phrase]++;
+        }
+        return $phrases;
+    }
+
+    /**
+     * Analyze trends from pre-extracted AI keywords
+     *
+     * @param string[] $currentKeywords
+     * @param string[] $previousKeywords
+     * @param int $limit
+     * @return array
+     */
+    public function analyzeKeywords(array $currentKeywords, array $previousKeywords, int $limit = 5): array
+    {
+        $currentCounts = array_count_values(array_filter(array_map('trim', $currentKeywords)));
+        $previousCounts = array_count_values(array_filter(array_map('trim', $previousKeywords)));
+
+        arsort($currentCounts);
+
+        $trends = [];
+        $count = 0;
+
+        foreach ($currentCounts as $keyword => $currentCount) {
+            if ($count >= $limit) {
+                break;
+            }
+
+            $previousCount = $previousCounts[$keyword] ?? 0;
+            
+            $percentageChange = 0;
+            $trend = 'new'; // 'up', 'down', 'stable', 'new'
+
+            if ($previousCount > 0) {
+                $percentageChange = (($currentCount - $previousCount) / $previousCount) * 100;
+                if ($percentageChange > 0) {
+                    $trend = 'up';
+                } elseif ($percentageChange < 0) {
+                    $trend = 'down';
+                } else {
+                    $trend = 'stable';
+                }
+            }
+
+            $trends[] = [
+                'phrase' => ucwords(strtolower($keyword)),
+                'count' => $currentCount,
+                'trend' => $trend,
+                'percentage' => abs(round($percentageChange, 1))
+            ];
+
+            $count++;
         }
 
-        return $frequencies;
+        return $trends;
     }
 
     protected function cleanAndTokenize(string $text): array

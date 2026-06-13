@@ -247,22 +247,46 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
     ): array {
+        $getFormattedItems = function ($dFrom, $dTo) use ($companyId) {
+            $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId)
+                ->join('ticket_ai_predictions', 'tickets.id', '=', 'ticket_ai_predictions.ticket_id')
+                ->whereNotNull('ticket_ai_predictions.category')
+                ->select('ticket_ai_predictions.category', 'ticket_ai_predictions.keyword')
+                ->get();
+            
+            $items = [];
+            foreach ($predictions as $p) {
+                $cat = trim($p->category);
+                $kw = strtolower(trim((string)$p->keyword));
+                
+                if ($kw) {
+                    // Fix Duplicate: Pecah kata, hapus kata yang berulang, urutkan alfabetis agar seragam
+                    // Contoh: "printer rusak" dan "rusak printer" akan dihitung sebagai hal yang sama
+                    $words = array_filter(explode(' ', $kw));
+                    $words = array_unique($words);
+                    sort($words);
+                    $kw = implode(' ', $words);
+                    
+                    $items[] = $cat . " (" . ucwords($kw) . ")";
+                } else {
+                    $items[] = $cat . " (Kasus Umum)";
+                }
+            }
+            return $items;
+        };
+
         // Current period tickets
-        $currentTitles = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
-            ->pluck('title')
-            ->toArray();
+        $currentItems = $getFormattedItems($dateFrom, $dateTo);
 
         // Calculate previous period
         $daysDiff = $dateFrom->diffInDays($dateTo);
         $prevDateTo = $dateFrom->subDay();
         $prevDateFrom = $prevDateTo->subDays($daysDiff);
 
-        $previousTitles = $this->scopedTicketQuery($prevDateFrom, $prevDateTo, $companyId)
-            ->pluck('title')
-            ->toArray();
+        $previousItems = $getFormattedItems($prevDateFrom, $prevDateTo);
 
         $analyzer = new \App\Services\Analytics\TicketTrendAnalyzer();
-        return $analyzer->analyze($currentTitles, $previousTitles, 5);
+        return $analyzer->analyzeKeywords($currentItems, $previousItems, 5);
     }
 
     /**

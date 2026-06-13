@@ -75,4 +75,9 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketAssignmentHistory::class);
     }
+
+    public function aiPrediction()
+    {
+        return $this->hasOne(TicketAIPrediction::class);
+    }
 }

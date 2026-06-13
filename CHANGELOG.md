@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.0] - 2026-06-13
+
+### Added
+- **AI Engine Dockerization**: Introduced a `Dockerfile` for the AI Engine to enable true "Zero Touch" deployment, integrating it directly into `docker-compose.yml` within a secure, internal Docker network (no public port exposure).
+- **Auto-Retrain Support**: Configured `ai-engine/retrain.py` to directly fetch completed tickets from the Laravel MySQL database using `.env` credentials, replacing the old mock-data simulation.
+- **Force Re-evaluate Command**: Added a `--force` option to the `ops:backfill-ai-tickets` artisan command to safely wipe and recalculate predictions for all legacy tickets.
+
+### Changed
+- **Smarter Trend Labels**: Overhauled the Dashboard Trend logic to display highly specific combinations of `Category (Problem)` instead of letting one dominant keyword hijack the entire category.
+- **Advanced Keyword Extraction**: Modified the AI keyword extractor (`model.py`) to extract up to 3 words instead of 2. Crucial problem keywords (e.g., "rusak", "error", "mati", "gagal") are now explicitly preserved rather than treated as stop words.
+- **Zero-Touch Configs**: Centralized AI Engine configuration in `config/services.php`, allowing dynamic switching between `127.0.0.1` for local testing and `ai-engine` Docker DNS via `.env`.
+- **Cleanup**: Removed unused dummy data generation logic from `ai-engine/train.py`.
+
+### Fixed
+- **Trend Duplicate Grouping**: Implemented an alphabetical word sorting and deduplication mechanism for AI keywords in the dashboard. Cases like "printer rusak" and "rusak printer" are now seamlessly merged into a single trend.
+
 ## [v1.1.1] - 2026-06-13
 
 ### Changed

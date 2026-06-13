@@ -58,4 +58,8 @@ return [
         'tenant' => env('AZURE_TENANT_ID'),
     ],
 
+    'ai_engine' => [
+        'url' => env('AI_ENGINE_URL', 'http://127.0.0.1:8002'),
+    ],
+
 ];
