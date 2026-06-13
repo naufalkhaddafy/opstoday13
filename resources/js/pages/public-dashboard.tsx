@@ -637,6 +637,10 @@ export default function PublicDashboard({
                                                                             key={i}
                                                                             href={link.url}
                                                                             preserveScroll
+                                                                            preserveState
+                                                                            only={['tickets']}
+                                                                            onStart={() => setIsTicketsLoading(true)}
+                                                                            onFinish={() => setIsTicketsLoading(false)}
                                                                             className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
                                                                                 ? 'bg-[#2E7D32] text-white'
                                                                                 : 'border bg-background text-foreground hover:bg-muted'

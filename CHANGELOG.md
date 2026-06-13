@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Interactive Trend Filtering**: Items in the Top 10 Issue Trends panel are now clickable. Clicking an issue automatically scrolls down to the ticket table and instantly searches for tickets belonging to that specific sub-cluster topic.
 
 ### Changed
+- **Seamless Pagination UX**: Upgraded the Ticket Table pagination on the public dashboard to use Inertia's partial reloads (`preserveState` and `only`). Navigating between pages now seamlessly fetches only the ticket data and displays a smooth skeleton loader, preventing full-page refreshes.
 - **Dashboard UI Optimization**: Redesigned the `IssueTrendPanel` into a highly compact, 1-line layout. Perfectly balanced the container heights (`360px`) to align cleanly with the Donut and Bar charts without any visual clipping.
 - **Dynamic Chart Resizing**: Shrunk the Donut Chart size and implemented strict flex-box boundaries (`relative min-h-0`) to prevent `Chart.js` components from expanding beyond their layout constraints.
 - **Label Formatting Integrity**: Disabled forced title-casing in `TicketTrendAnalyzer` so that dashboard trends retain their exact database casing (e.g. preserving acronyms like "MDM" or "API").
