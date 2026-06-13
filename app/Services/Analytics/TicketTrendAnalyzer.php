@@ -17,7 +17,11 @@ class TicketTrendAnalyzer
         // Indonesian
         'di', 'ke', 'dari', 'dan', 'atau', 'untuk', 'yang', 'dengan', 'ini', 'itu', 'pada', 'jika',
         'karena', 'bisa', 'ada', 'tidak', 'belum', 'sudah', 'akan', 'tolong', 'bantu', 'bantuan',
-        'mohon', 'tanya', 'masalah', 'kendala', 'eror', 'gagal', 'cek', 'perlu', 'minta', 'buat','terus'
+        'mohon', 'tanya', 'masalah', 'kendala', 'eror', 'gagal', 'cek', 'perlu', 'minta', 'buat', 'terus',
+        'mau', 'muncul', 'kenapa', 'gimana', 'cara', 'apa', 'lagi', 'masih', 'udah', 'gak', 'ga', 'nggak',
+        'pas', 'saat', 'waktu', 'ketika', 'setelah', 'bikin', 'kasih', 'buka', 'tutup', 'nya', 'kok', 'sih',
+        'rusak', 'mati', 'lambat', 'lemot', 'lelet', 'cepat', 'baru', 'lama', 'tdk', 'blm', 'sdh', 'dgn',
+        'ganti', 'tambah', 'hapus', 'kurang', 'baik', 'benar', 'salah', 'ingin', 'harus', 'coba', 'lupa', 'akses', 'login', 'notif'
     ];
 
     /**

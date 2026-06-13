@@ -73,7 +73,7 @@ export function IssueTrendPanel({ trends, dateFrom, dateTo, className = '' }: Is
                     Top Issue Trends
                 </CardTitle>
                 <CardDescription className="text-xs">
-                    Peringkat 5 topik utama yang paling sering muncul
+                    Top 5 most frequent topics
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 space-y-2">
