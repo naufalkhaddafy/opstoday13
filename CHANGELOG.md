@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.1] - 2026-06-13
+
+### Added
+- **AI Trend Search Support**: The UI Search Field now natively searches against the AI-generated `cluster_label`, allowing users to easily filter tickets by specific AI trends (e.g. "Email & Akun").
+
+### Changed
+- **AI Engine Refactoring**: Replaced the arbitrary Unsupervised K-Means clustering algorithm with a deterministic "Hybrid Keyword Extraction" approach.
+- **Explicit Category Mapping**: The AI Engine (`model.py`) now maps known keywords to broad, human-readable IT categories (e.g., "Email & Akun", "Hardware PC/Laptop") for better and larger grouping.
+- **Fallback Extraction**: For unrecognized issues, the AI falls back to extracting exactly 1 top TF-IDF word to group tickets precisely.
+- **AI Database Schema**: Dropped `category`/`keyword` columns in favor of `cluster_id`/`cluster_label` in `ticket_ai_predictions` via a new migration, and updated the `TicketAIPrediction` model accordingly.
+
+### Fixed
+- **Command Response Parsing**: Fixed the `ops:backfill-ai-tickets` console command to parse the updated API response keys from the AI Engine smoothly.
+
 ## [v1.2.0] - 2026-06-13
 
 ### Added
