@@ -44,6 +44,8 @@ import { StatCardSkeleton, EngineerCardSkeleton, TableSkeleton } from '@/compone
 import { TicketStatusBadge } from '@/components/shared/TicketStatusBadge';
 import { DisciplineTable } from '@/components/leaderboard/DisciplineTable';
 import { LateTrendChart } from '@/components/charts/LateTrendChart';
+import { IssueTrendPanel } from '@/components/analytics/IssueTrendPanel';
+import { WorkGroupChart } from '@/components/charts/WorkGroupChart';
 
 const AUTO_REFRESH_INTERVAL_SECONDS = 60;
 
@@ -431,23 +433,32 @@ export default function PublicDashboard({
                                     </Deferred>
                                 </div>
 
-                                <Deferred data={["ticket_stats", "attendance"]} fallback={
+                                <Deferred data={["ticket_stats", "attendance", "analytics"]} fallback={
                                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                         <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
-                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
-                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
+                                        <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-2"><CardContent className="h-48"></CardContent></Card>
                                     </div>
                                 }>
-                                    {ticket_stats && attendance && (
+                                    {ticket_stats && attendance && analytics && (
                                         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                            <Card className="border-border/60 shadow-sm">
-                                                <CardHeader className="pb-2">
+                                            <Card className="border-border/60 shadow-sm flex flex-col h-full">
+                                                <CardHeader className="pb-0 shrink-0">
                                                     <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
                                                 </CardHeader>
-                                                <CardContent>
+                                                <CardContent className="flex-1 flex flex-col gap-4">
                                                     <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} />
+                                                    <div className="flex-1 w-full min-h-[140px]">
+                                                        <WorkGroupChart data={analytics.workGroupDistribution} />
+                                                    </div>
                                                 </CardContent>
                                             </Card>
+                                            <div className="lg:col-span-2">
+                                                <IssueTrendPanel 
+                                                    trends={analytics.issueTrends} 
+                                                    dateFrom={filters.date_from} 
+                                                    dateTo={filters.date_to} 
+                                                />
+                                            </div>
                                         </div>
                                     )}
                                 </Deferred>

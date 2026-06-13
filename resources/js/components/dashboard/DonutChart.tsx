@@ -8,7 +8,7 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 export function DonutChart({ segments, centerLabel, centerValue }: { segments: Segment[]; centerLabel: string; centerValue: number }) {
     if (centerValue === 0) {
         return (
-            <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+            <div className="flex h-36 items-center justify-center text-sm text-muted-foreground">
                 No data available
             </div>
         );
@@ -48,7 +48,7 @@ export function DonutChart({ segments, centerLabel, centerValue }: { segments: S
     };
 
     return (
-        <div className="flex h-48 items-center gap-6">
+        <div className="flex h-36 items-center gap-6">
             <div className="relative h-32 w-32 shrink-0">
                 <Doughnut data={data} options={options} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

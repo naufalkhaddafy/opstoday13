@@ -32,6 +32,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         if ($search) {
             $query->where(function (Builder $q) use ($search) {
                 $q->where('ticket_no', 'like', "%{$search}%")
+                  ->orWhere('title', 'like', "%{$search}%")
                   ->orWhere('assigned_to_name', 'like', "%{$search}%")
                   ->orWhereHas('assignedUser', function (Builder $uq) use ($search) {
                       $uq->where('name', 'like', "%{$search}%");
@@ -234,5 +235,59 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 'resolution_sla_hours' => $resolutionSlaHours,
             ],
         ];
+    }
+
+    /**
+     * Get top trending ticket keywords and their trends compared to previous period.
+     *
+     * @return array
+     */
+    public function getTrendingKeywords(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+    ): array {
+        // Current period tickets
+        $currentTitles = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+            ->pluck('title')
+            ->toArray();
+
+        // Calculate previous period
+        $daysDiff = $dateFrom->diffInDays($dateTo);
+        $prevDateTo = $dateFrom->subDay();
+        $prevDateFrom = $prevDateTo->subDays($daysDiff);
+
+        $previousTitles = $this->scopedTicketQuery($prevDateFrom, $prevDateTo, $companyId)
+            ->pluck('title')
+            ->toArray();
+
+        $analyzer = new \App\Services\Analytics\TicketTrendAnalyzer();
+        return $analyzer->analyze($currentTitles, $previousTitles, 5);
+    }
+
+    /**
+     * Get total tickets grouped by work_group
+     *
+     * @return array
+     */
+    public function getTicketsByWorkGroup(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+    ): array {
+        return $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+            ->whereNotNull('work_group')
+            ->selectRaw('work_group, COUNT(*) as total')
+            ->groupBy('work_group')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'name' => $item->work_group,
+                    'total' => (int) $item->total,
+                ];
+            })
+            ->toArray();
     }
 }

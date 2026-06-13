@@ -138,7 +138,17 @@ export type DashboardProps = {
     analytics?: {
         leaderboard: LeaderboardEntry[];
         lateTrend: Record<string, number>;
+        issueTrends: IssueTrendItem[];
+        workGroupDistribution: { name: string; total: number }[];
     };
+};
+
+export type IssueTrendItem = {
+    phrase: string;
+    count: number;
+    previous_count: number;
+    trend: 'up' | 'down' | 'stable' | 'new';
+    percentage: number;
 };
 
 export type LeaderboardEntry = {

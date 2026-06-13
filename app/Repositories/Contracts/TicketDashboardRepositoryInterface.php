@@ -54,4 +54,26 @@ interface TicketDashboardRepositoryInterface
         ?int $responseSlaSeconds = null,
         ?float $resolutionSlaHours = null,
     ): array;
+
+    /**
+     * Get top trending ticket keywords and their trends compared to previous period.
+     *
+     * @return array
+     */
+    public function getTrendingKeywords(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+    ): array;
+
+    /**
+     * Get total tickets grouped by work_group
+     *
+     * @return array
+     */
+    public function getTicketsByWorkGroup(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+    ): array;
 }

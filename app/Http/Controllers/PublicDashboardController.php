@@ -70,6 +70,8 @@ class PublicDashboardController extends Controller
                 'analytics' => fn () => [
                     'leaderboard' => $this->analyticsService->getDisciplineLeaderboard($dateFrom, $dateTo, $companyId),
                     'lateTrend' => $this->analyticsService->getLateTrend($dateFrom, $dateTo, $companyId),
+                    'issueTrends' => $this->tickets->getTrendingKeywords($dateFrom, $dateTo, $companyId),
+                    'workGroupDistribution' => $this->tickets->getTicketsByWorkGroup($dateFrom, $dateTo, $companyId),
                 ],
                 'companies' => $this->companies->all(),
                 'filters' => [
