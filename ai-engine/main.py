@@ -9,9 +9,8 @@ class TicketRequest(BaseModel):
     description: str = ""
 
 class TicketResponse(BaseModel):
-    category: str
-    keyword: str | None = None
-    confidence_score: float
+    cluster_id: int
+    cluster_label: str
 
 @app.post("/analyze-ticket", response_model=TicketResponse)
 def analyze_ticket(ticket: TicketRequest):
@@ -21,14 +20,13 @@ def analyze_ticket(ticket: TicketRequest):
     result = model.predict_category(text_to_analyze)
     
     return TicketResponse(
-        category=result["category"],
-        keyword=result["keyword"],
-        confidence_score=result["confidence"]
+        cluster_id=result["cluster_id"],
+        cluster_label=result["cluster_label"]
     )
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "model_loaded": model.get_model() is not None}
+    return {"status": "ok", "model_loaded": model.get_model_data() is not None}
 
 import asyncio
 import retrain

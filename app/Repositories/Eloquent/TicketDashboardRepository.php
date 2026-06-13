@@ -36,6 +36,9 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                   ->orWhere('assigned_to_name', 'like', "%{$search}%")
                   ->orWhereHas('assignedUser', function (Builder $uq) use ($search) {
                       $uq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('aiPrediction', function (Builder $aq) use ($search) {
+                      $aq->where('cluster_label', 'like', "%{$search}%");
                   });
             });
         }
@@ -250,27 +253,13 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $getFormattedItems = function ($dFrom, $dTo) use ($companyId) {
             $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId)
                 ->join('ticket_ai_predictions', 'tickets.id', '=', 'ticket_ai_predictions.ticket_id')
-                ->whereNotNull('ticket_ai_predictions.category')
-                ->select('ticket_ai_predictions.category', 'ticket_ai_predictions.keyword')
+                ->whereNotNull('ticket_ai_predictions.cluster_label')
+                ->select('ticket_ai_predictions.cluster_label')
                 ->get();
             
             $items = [];
             foreach ($predictions as $p) {
-                $cat = trim($p->category);
-                $kw = strtolower(trim((string)$p->keyword));
-                
-                if ($kw) {
-                    // Fix Duplicate: Pecah kata, hapus kata yang berulang, urutkan alfabetis agar seragam
-                    // Contoh: "printer rusak" dan "rusak printer" akan dihitung sebagai hal yang sama
-                    $words = array_filter(explode(' ', $kw));
-                    $words = array_unique($words);
-                    sort($words);
-                    $kw = implode(' ', $words);
-                    
-                    $items[] = $cat . " (" . ucwords($kw) . ")";
-                } else {
-                    $items[] = $cat . " (Kasus Umum)";
-                }
+                $items[] = trim((string)$p->cluster_label) ?: "Isu: Umum";
             }
             return $items;
         };

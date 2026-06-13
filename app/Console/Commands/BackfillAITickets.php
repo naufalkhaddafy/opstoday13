@@ -63,9 +63,8 @@ class BackfillAITickets extends Command
                     $ticket->aiPrediction()->updateOrCreate(
                         ['ticket_id' => $ticket->id],
                         [
-                            'category' => $aiResult['category'] ?? null,
-                            'keyword' => $aiResult['keyword'] ?? null,
-                            'confidence_score' => $aiResult['confidence_score'] ?? null,
+                            'cluster_id' => $aiResult['cluster_id'] ?? null,
+                            'cluster_label' => $aiResult['cluster_label'] ?? null,
                         ]
                     );
                 }

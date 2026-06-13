@@ -18,31 +18,32 @@ def retrain_from_db():
     
     try:
         conn = pymysql.connect(host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME)
-        # Mengambil tiket yang sudah selesai (Closed) dan memiliki kategori bawaan
-        query = "SELECT title, category FROM tickets WHERE status = 'Closed' AND category IS NOT NULL"
+        # Mengambil semua tiket untuk training Unsupervised (K-Means)
+        query = "SELECT title FROM tickets WHERE title IS NOT NULL"
         df_db = pd.read_sql(query, conn)
         conn.close()
         
         print(f"Found {len(df_db)} tickets from database.")
     except Exception as e:
         print(f"Database connection failed: {e}")
-        df_db = pd.DataFrame(columns=['title', 'category'])
+        df_db = pd.DataFrame(columns=['title'])
     
-    print("Combining with initial_data.csv...")
+    print("Combining with data_tickets.csv...")
     try:
-        df_csv = pd.read_csv("initial_data.csv")
-        
-        # Gabungkan data awal dengan data dari database
-        df_combined = pd.concat([df_csv, df_db], ignore_index=True)
-        
+        if os.path.exists("data_tickets.csv"):
+            df_csv = pd.read_csv("data_tickets.csv", encoding="latin1")
+            # Gabungkan data awal dengan data dari database
+            df_combined = pd.concat([df_csv, df_db], ignore_index=True)
+        else:
+            df_combined = df_db
+            
         # Pastikan tidak ada nilai null
         df_combined['text'] = df_combined['title'].fillna('')
         
         texts = df_combined['text'].tolist()
-        labels = df_combined['category'].tolist()
         
         print(f"Retraining model with {len(texts)} total tickets...")
-        model.train_new_model(texts, labels)
+        model.train_new_model(texts)
         print("Retraining complete! Model updated.")
     except Exception as e:
         print(f"Error retraining model: {e}")

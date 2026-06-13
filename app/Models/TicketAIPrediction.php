@@ -10,9 +10,8 @@ class TicketAIPrediction extends Model
 
     protected $fillable = [
         'ticket_id',
-        'category',
-        'keyword',
-        'confidence_score',
+        'cluster_id',
+        'cluster_label',
     ];
 
     public function ticket()

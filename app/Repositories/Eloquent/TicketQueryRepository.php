@@ -22,6 +22,9 @@ class TicketQueryRepository implements TicketQueryRepositoryInterface
                   ->orWhere('title', 'like', "%{$search}%")
                   ->orWhereHas('assignedUser', function (Builder $q2) use ($search) {
                       $q2->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('aiPrediction', function (Builder $q3) use ($search) {
+                      $q3->where('cluster_label', 'like', "%{$search}%");
                   });
             });
         }
