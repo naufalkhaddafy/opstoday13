@@ -38,7 +38,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                       $uq->where('name', 'like', "%{$search}%");
                   })
                   ->orWhereHas('aiPrediction', function (Builder $aq) use ($search) {
-                      $aq->where('cluster_label', 'like', "%{$search}%");
+                      $aq->where('cluster_label', 'like', "%{$search}%")
+                         ->orWhere('sub_cluster_label', 'like', "%{$search}%");
                   });
             });
         }
@@ -254,12 +255,19 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId)
                 ->join('ticket_ai_predictions', 'tickets.id', '=', 'ticket_ai_predictions.ticket_id')
                 ->whereNotNull('ticket_ai_predictions.cluster_label')
-                ->select('ticket_ai_predictions.cluster_label')
+                ->select('ticket_ai_predictions.cluster_label', 'ticket_ai_predictions.sub_cluster_label')
                 ->get();
             
             $items = [];
             foreach ($predictions as $p) {
-                $items[] = trim((string)$p->cluster_label) ?: "Isu: Umum";
+                $mainCategory = trim((string)$p->cluster_label);
+                $subCategory = trim((string)$p->sub_cluster_label);
+                
+                if ($mainCategory && $subCategory && $subCategory !== 'Unknown' && $subCategory !== 'Other') {
+                    $items[] = $mainCategory . ' - ' . $subCategory;
+                } else {
+                    $items[] = $mainCategory ?: "Isu: Umum";
+                }
             }
             return $items;
         };
@@ -275,7 +283,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $previousItems = $getFormattedItems($prevDateFrom, $prevDateTo);
 
         $analyzer = new \App\Services\Analytics\TicketTrendAnalyzer();
-        return $analyzer->analyzeKeywords($currentItems, $previousItems, 5);
+        return $analyzer->analyzeKeywords($currentItems, $previousItems, 10);
     }
 
     /**

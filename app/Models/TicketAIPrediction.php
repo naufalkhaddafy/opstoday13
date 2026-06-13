@@ -12,6 +12,8 @@ class TicketAIPrediction extends Model
         'ticket_id',
         'cluster_id',
         'cluster_label',
+        'sub_cluster_label',
+        'suggested_solution',
     ];
 
     public function ticket()

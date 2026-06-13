@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **AI Trend Search Support**: The UI Search Field now natively searches against the AI-generated `cluster_label`, allowing users to easily filter tickets by specific AI trends (e.g. "Email & Akun").
+- **Interactive Trend Filtering**: Items in the Top 10 Issue Trends panel are now clickable. Clicking an issue automatically scrolls down to the ticket table and instantly searches for tickets belonging to that specific sub-cluster topic.
 
 ### Changed
-- **AI Engine Refactoring**: Replaced the arbitrary Unsupervised K-Means clustering algorithm with a deterministic "Hybrid Keyword Extraction" approach.
+- **Dashboard UI Optimization**: Redesigned the `IssueTrendPanel` into a highly compact, 1-line layout. Perfectly balanced the container heights (`360px`) to align cleanly with the Donut and Bar charts without any visual clipping.
+- **Dynamic Chart Resizing**: Shrunk the Donut Chart size and implemented strict flex-box boundaries (`relative min-h-0`) to prevent `Chart.js` components from expanding beyond their layout constraints.
+- **Label Formatting Integrity**: Disabled forced title-casing in `TicketTrendAnalyzer` so that dashboard trends retain their exact database casing (e.g. preserving acronyms like "MDM" or "API").
 - **Explicit Category Mapping**: The AI Engine (`model.py`) now maps known keywords to broad, human-readable IT categories (e.g., "Email & Akun", "Hardware PC/Laptop") for better and larger grouping.
 - **Fallback Extraction**: For unrecognized issues, the AI falls back to extracting exactly 1 top TF-IDF word to group tickets precisely.
 - **AI Database Schema**: Dropped `category`/`keyword` columns in favor of `cluster_id`/`cluster_label` in `ticket_ai_predictions` via a new migration, and updated the `TicketAIPrediction` model accordingly.

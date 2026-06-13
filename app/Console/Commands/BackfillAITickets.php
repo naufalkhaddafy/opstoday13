@@ -57,14 +57,16 @@ class BackfillAITickets extends Command
         // Proses bertahap (chunk) agar memori server tidak penuh
         $query->chunkById(100, function ($tickets) use ($aiEngine, $bar) {
             foreach ($tickets as $ticket) {
-                $aiResult = $aiEngine->analyzeTicket($ticket->title, '');
+                $data = $aiEngine->analyzeTicket($ticket->title, '');
                 
-                if ($aiResult) {
+                if ($data) {
                     $ticket->aiPrediction()->updateOrCreate(
                         ['ticket_id' => $ticket->id],
                         [
-                            'cluster_id' => $aiResult['cluster_id'] ?? null,
-                            'cluster_label' => $aiResult['cluster_label'] ?? null,
+                            'cluster_id' => $data['cluster_id'] ?? 0,
+                            'cluster_label' => $data['cluster_label'] ?? 'Uncategorized',
+                            'sub_cluster_label' => $data['sub_cluster_label'] ?? null,
+                            'suggested_solution' => $data['suggested_solution'] ?? null,
                         ]
                     );
                 }

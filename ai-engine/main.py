@@ -11,6 +11,8 @@ class TicketRequest(BaseModel):
 class TicketResponse(BaseModel):
     cluster_id: int
     cluster_label: str
+    sub_cluster_label: str | None = None
+    suggested_solution: str | None = None
 
 @app.post("/analyze-ticket", response_model=TicketResponse)
 def analyze_ticket(ticket: TicketRequest):
@@ -21,7 +23,9 @@ def analyze_ticket(ticket: TicketRequest):
     
     return TicketResponse(
         cluster_id=result["cluster_id"],
-        cluster_label=result["cluster_label"]
+        cluster_label=result["cluster_label"],
+        sub_cluster_label=result.get("sub_cluster_label"),
+        suggested_solution=result.get("suggested_solution")
     )
 
 @app.get("/health")
