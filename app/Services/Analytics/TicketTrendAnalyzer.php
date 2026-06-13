@@ -21,7 +21,8 @@ class TicketTrendAnalyzer
         'mau', 'muncul', 'kenapa', 'gimana', 'cara', 'apa', 'lagi', 'masih', 'udah', 'gak', 'ga', 'nggak',
         'pas', 'saat', 'waktu', 'ketika', 'setelah', 'bikin', 'kasih', 'buka', 'tutup', 'nya', 'kok', 'sih',
         'rusak', 'mati', 'lambat', 'lemot', 'lelet', 'cepat', 'baru', 'lama', 'tdk', 'blm', 'sdh', 'dgn',
-        'ganti', 'tambah', 'hapus', 'kurang', 'baik', 'benar', 'salah', 'ingin', 'harus', 'coba', 'lupa', 'akses', 'login', 'notif'
+        'ganti', 'tambah', 'hapus', 'kurang', 'baik', 'benar', 'salah', 'ingin', 'harus', 'coba', 'lupa', 'akses', 'login', 'notif',
+        'masukan','kode','nomor'
     ];
 
     /**
@@ -92,14 +93,11 @@ class TicketTrendAnalyzer
 
         foreach ($titles as $title) {
             $words = $this->cleanAndTokenize($title);
-            $wordsCount = count($words);
-
-            if ($wordsCount === 0) continue;
-
-            // Generate Unigram (Wajib 1 kata)
-            for ($i = 0; $i < $wordsCount; $i++) {
-                // Unigram (1 kata)
-                $this->incrementPhrase($frequencies, $words[$i]);
+            
+            // Hanya ambil 1 kata pertama yang valid (non-stopword) dari setiap tiket
+            // supaya 1 tiket dengan kalimat panjang tidak membanjiri daftar trends
+            if (count($words) > 0) {
+                $this->incrementPhrase($frequencies, $words[0]);
             }
         }
 
