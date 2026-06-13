@@ -5,10 +5,10 @@ import { Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export function DonutChart({ segments, centerLabel, centerValue }: { segments: Segment[]; centerLabel: string; centerValue: number }) {
+export function DonutChart({ segments, centerLabel, centerValue, size = 'normal' }: { segments: Segment[]; centerLabel: string; centerValue: number; size?: 'sm' | 'normal' }) {
     if (centerValue === 0) {
         return (
-            <div className="flex h-36 items-center justify-center text-sm text-muted-foreground">
+            <div className={`flex ${size === 'sm' ? 'h-24' : 'h-36'} items-center justify-center text-sm text-muted-foreground`}>
                 No data available
             </div>
         );
@@ -47,17 +47,21 @@ export function DonutChart({ segments, centerLabel, centerValue }: { segments: S
         maintainAspectRatio: false,
     };
 
+    const containerHeight = size === 'sm' ? 'h-24' : 'h-36';
+    const chartSize = size === 'sm' ? 'h-24 w-24' : 'h-32 w-32';
+    const centerTextSize = size === 'sm' ? 'text-xl' : 'text-2xl';
+
     return (
-        <div className="flex h-36 items-center gap-6">
-            <div className="relative h-32 w-32 shrink-0">
+        <div className={`flex ${containerHeight} items-center gap-4`}>
+            <div className={`relative ${chartSize} shrink-0`}>
                 <Doughnut data={data} options={options} />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-2xl font-bold text-foreground">{centerValue}</span>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{centerLabel}</span>
+                    <span className={`${centerTextSize} font-bold text-foreground`}>{centerValue}</span>
+                    <span className="text-[9px] font-medium uppercase tracking-wider text-muted-foreground">{centerLabel}</span>
                 </div>
             </div>
 
-            <div className="flex flex-1 flex-col justify-center gap-3">
+            <div className="flex flex-1 flex-col justify-center gap-2">
                 {segments.map((segment) => {
                     if (segment.value === 0) return null;
                     return (

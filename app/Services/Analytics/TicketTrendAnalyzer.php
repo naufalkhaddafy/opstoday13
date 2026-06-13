@@ -142,7 +142,7 @@ class TicketTrendAnalyzer
             }
 
             $trends[] = [
-                'phrase' => ucwords(strtolower($keyword)),
+                'phrase' => $keyword,
                 'count' => $currentCount,
                 'trend' => $trend,
                 'percentage' => abs(round($percentageChange, 1))

@@ -136,7 +136,7 @@ export function WorkGroupChart({ data }: WorkGroupChartProps) {
     }
 
     return (
-        <div className="h-full w-full border-t pt-4">
+        <div className="h-full w-full border-t pt-4 relative min-h-0">
             <Bar data={chartData} options={options} />
         </div>
     );

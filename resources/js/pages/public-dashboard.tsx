@@ -213,6 +213,17 @@ export default function PublicDashboard({
         applyFilters({ status: value === 'all' ? null : value });
     };
 
+    const handleTrendClick = (phrase: string) => {
+        let searchVal = phrase;
+        if (phrase.includes(' - ')) {
+            searchVal = phrase.split(' - ').pop()?.trim() || phrase;
+        } else if (phrase.includes('-')) {
+            searchVal = phrase.split('-').pop()?.trim() || phrase;
+        }
+        setSearchQuery(searchVal);
+        document.getElementById('tickets-table-section')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     const handleExport = useCallback(() => {
         const params = new URLSearchParams();
         if (filters.date_from) params.set('date_from', filters.date_from);
@@ -441,22 +452,25 @@ export default function PublicDashboard({
                                 }>
                                     {ticket_stats && attendance && analytics && (
                                         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                            <Card className="border-border/60 shadow-sm flex flex-col h-full">
+                                            <Card className="border-border/60 shadow-sm flex flex-col h-[360px] overflow-hidden">
                                                 <CardHeader className="pb-0 shrink-0">
                                                     <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
                                                 </CardHeader>
                                                 <CardContent className="flex-1 flex flex-col gap-4">
-                                                    <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} />
-                                                    <div className="flex-1 w-full min-h-[140px]">
+                                                    <div className="shrink-0 -mt-2">
+                                                        <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} size="sm" />
+                                                    </div>
+                                                    <div className="flex-1 w-full min-h-0 relative">
                                                         <WorkGroupChart data={analytics.workGroupDistribution} />
                                                     </div>
                                                 </CardContent>
                                             </Card>
-                                            <div className="lg:col-span-2">
+                                            <div className="lg:col-span-2 h-[360px]">
                                                 <IssueTrendPanel 
                                                     trends={analytics.issueTrends} 
                                                     dateFrom={filters.date_from} 
                                                     dateTo={filters.date_to} 
+                                                    onItemClick={handleTrendClick}
                                                 />
                                             </div>
                                         </div>
@@ -501,7 +515,7 @@ export default function PublicDashboard({
                             </section>
 
                             {/* Section: Latest tickets table */}
-                            <section className="flex flex-col gap-4">
+                            <section id="tickets-table-section" className="flex flex-col gap-4">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <h2 className="flex items-center gap-2 text-lg font-semibold">
                                         <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Tickets in Period
