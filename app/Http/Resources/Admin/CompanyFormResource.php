@@ -18,7 +18,7 @@ class CompanyFormResource extends JsonResource
                 ? [
                     'id' => $this->resource['company']->id,
                     'name' => $this->resource['company']->name,
-                    'whatsapp_group_number' => $this->resource['company']->whatsapp_group_number,
+                    'whatsapp_groups' => $this->resource['company']->whatsapp_groups ?? [],
                 ]
                 : null,
         ];

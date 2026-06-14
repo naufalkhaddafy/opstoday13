@@ -57,10 +57,11 @@ class SendOpsSnapshotCommand extends Command
 
             foreach ($companies as $company) {
                 // Skip jika tidak ada nomor WA
-                if (empty($company->whatsapp_group_number)) {
+                $groups = $company->whatsapp_groups ?? [];
+                if (empty($groups)) {
                     $skipped++;
-                    $details[] = "⏭️ {$company->name} (Skipped - No WhatsApp number)";
-                    $this->line("Skipping {$company->name} (No WhatsApp number configured).");
+                    $details[] = "⏭️ {$company->name} (Skipped - No WhatsApp groups)";
+                    $this->line("Skipping {$company->name} (No WhatsApp groups configured).");
                     continue;
                 }
 
@@ -70,29 +71,26 @@ class SendOpsSnapshotCommand extends Command
                     ? $builder->buildMorning($company)
                     : $builder->buildEvening($company);
 
-                $chatId = $company->whatsapp_group_number;
+                foreach ($groups as $chatId) {
+                    // Auto-detect format chatId:
+                    if (!str_contains($chatId, '@')) {
+                        $chatId = strlen($chatId) > 15
+                            ? $chatId . '@g.us'
+                            : $chatId . '@c.us';
+                    }
 
-                // Auto-detect format chatId:
-                // - Sudah ada @  → pakai apa adanya
-                // - Angka panjang (>15 digit, bukan nomor HP) → grup (@g.us)
-                // - Nomor HP biasa → personal (@c.us)
-                if (!str_contains($chatId, '@')) {
-                    $chatId = strlen($chatId) > 15
-                        ? $chatId . '@g.us'
-                        : $chatId . '@c.us';
-                }
+                    $this->info("Sending to {$chatId}...");
+                    $success = $waha->sendText($chatId, $text);
 
-                $this->info("Sending to {$chatId}...");
-                $success = $waha->sendText($chatId, $text);
-
-                if ($success) {
-                    $sent++;
-                    $details[] = "✅ {$company->name} ({$chatId})";
-                    $this->info("✅ Sent to {$company->name}");
-                } else {
-                    $failed++;
-                    $details[] = "❌ {$company->name} ({$chatId})";
-                    $this->error("❌ Failed for {$company->name}");
+                    if ($success) {
+                        $sent++;
+                        $details[] = "✅ {$company->name} ({$chatId})";
+                        $this->info("✅ Sent to {$company->name} ({$chatId})");
+                    } else {
+                        $failed++;
+                        $details[] = "❌ {$company->name} ({$chatId})";
+                        $this->error("❌ Failed for {$company->name} ({$chatId})");
+                    }
                 }
             }
 

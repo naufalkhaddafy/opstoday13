@@ -9,7 +9,7 @@ export type AdminCompanyItem = {
     id: number;
     name: string;
     slug: string;
-    whatsapp_group_number: string | null;
+    whatsapp_groups: string[];
     users_count: number;
     created_at: string;
 };

@@ -18,7 +18,8 @@ class UpdateCompanyRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'whatsapp_group_number' => ['nullable', 'string', 'max:50'],
+            'whatsapp_groups' => ['nullable', 'array'],
+            'whatsapp_groups.*' => ['string', 'max:50'],
         ];
     }
 }

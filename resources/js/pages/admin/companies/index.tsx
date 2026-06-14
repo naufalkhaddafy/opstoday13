@@ -144,7 +144,7 @@ export default function CompanyIndex({ companies, filters }: IndexProps) {
                                                     </div>
                                                     <div className="text-xs text-muted-foreground pl-6">{company.slug}</div>
                                                 </td>
-                                                <td className="px-4 py-3">{company.whatsapp_group_number || '-'}</td>
+                                                <td className="px-4 py-3">{company.whatsapp_groups?.length > 0 ? company.whatsapp_groups.join(', ') : '-'}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <Badge variant="secondary">{company.users_count}</Badge>
                                                 </td>

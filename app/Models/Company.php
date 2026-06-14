@@ -10,11 +10,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['name', 'slug', 'whatsapp_group_number'])]
+#[Fillable(['name', 'slug', 'whatsapp_groups'])]
 class Company extends Model
 {
     /** @use HasFactory<CompanyFactory> */
     use HasFactory, LogsActivity;
+
+    protected function casts(): array
+    {
+        return [
+            'whatsapp_groups' => 'array',
+        ];
+    }
 
     /**
      * @return HasMany<User, $this>

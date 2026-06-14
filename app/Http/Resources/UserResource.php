@@ -28,7 +28,7 @@ class UserResource extends JsonResource
                 'id' => $this->company->id,
                 'name' => $this->company->name,
                 'slug' => $this->company->slug,
-                'whatsapp_group_number' => $this->company->whatsapp_group_number,
+                'whatsapp_groups' => $this->company->whatsapp_groups ?? [],
             ]),
             'group' => $this->whenLoaded('group', fn () => $this->group === null ? null : [
                 'id' => $this->group->id,

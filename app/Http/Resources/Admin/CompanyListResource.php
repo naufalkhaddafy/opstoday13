@@ -18,7 +18,7 @@ class CompanyListResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'whatsapp_group_number' => $this->whatsapp_group_number,
+            'whatsapp_groups' => $this->whatsapp_groups,
             'users_count' => $this->users_count ?? 0,
             'created_at' => $this->created_at,
         ];
