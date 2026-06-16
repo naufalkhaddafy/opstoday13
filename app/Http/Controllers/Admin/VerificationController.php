@@ -12,6 +12,7 @@ use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Jobs\SendUserVerifiedEmail;
 
 class VerificationController extends Controller
 {
@@ -64,6 +65,8 @@ class VerificationController extends Controller
         }
 
         $this->userRepository->verifyUser($user, $request->validated());
+
+        SendUserVerifiedEmail::dispatch($user, $request->user());
 
         return redirect()->back()->with('success', 'User ' . $user->name . ' has been verified.');
     }
