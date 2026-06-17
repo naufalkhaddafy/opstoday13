@@ -94,6 +94,32 @@ class AttendanceDayAggregator
             }
         }
 
+        // Safeguard 1: Jika user hanya melakukan tap OUT tanpa tap IN, pastikan metrik 0
+        // Tap OUT dibiarkan tetap ada agar HR bisa melihat jam pulangnya.
+        if ($checkIn === null && $checkOut !== null) {
+            $late = 0;
+            $early = 0;
+            $overtime = 0;
+        }
+
+        // Safeguard 2: Jika user salah tap, misalnya tap OUT sebelum tap IN (checkOut < checkIn)
+        // ATAU tap IN dan tap OUT dalam waktu yang sangat berdekatan (<= 5 menit),
+        // maka abaikan checkOut dan reset kalkulasi.
+        if ($checkIn !== null && $checkOut !== null) {
+            $duration = $checkIn->punched_at->diffInMinutes($checkOut->punched_at);
+            $isInvalidSequence = $checkOut->punched_at->lt($checkIn->punched_at);
+            
+            if ($isInvalidSequence || $duration <= 5) {
+                $checkOut = null;
+                $timing = null;
+                $late = 0;
+                $early = 0;
+                $overtime = 0;
+                // Ubah presence menjadi Tidak Lengkap karena out-nya dihapus
+                $presence = AttendancePresenceStatus::TidakLengkap;
+            }
+        }
+
         if ($logs->isEmpty()) {
             $existing = AttendanceDay::query()
                 ->where('user_id', $user->id)
@@ -193,7 +219,7 @@ class AttendanceDayAggregator
 
         $checkInAt = $checkInAt->timezone($this->timezone);
         $late = $checkInAt->greaterThan($shiftStart)
-            ? (int) $shiftStart->diffInMinutes($checkInAt)
+            ? (int) $shiftStart->startOfMinute()->diffInMinutes($checkInAt->startOfMinute())
             : 0;
 
         $early = 0;
@@ -202,7 +228,9 @@ class AttendanceDayAggregator
         if ($checkOutAt !== null) {
             $checkOutAt = $checkOutAt->timezone($this->timezone);
             $expectedDuration = (int) $shiftStart->diffInMinutes($shiftEnd);
-            $actualDuration = (int) $checkInAt->diffInMinutes($checkOutAt);
+            
+            // Mengabaikan detik agar perhitungan bulat (mencegah case "early 1 menit" padahal tap di menit yang sama)
+            $actualDuration = (int) $checkInAt->startOfMinute()->diffInMinutes($checkOutAt->startOfMinute());
 
             if ($actualDuration < $expectedDuration) {
                 $early = $expectedDuration - $actualDuration;
