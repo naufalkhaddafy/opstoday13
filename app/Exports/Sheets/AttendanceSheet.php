@@ -5,24 +5,27 @@ namespace App\Exports\Sheets;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\Attendance\DailyAttendanceSummarizer;
 use App\Services\Attendance\ShiftAssignmentResolver;
-use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\WithHeadings;
+use Illuminate\Contracts\View\View;
+use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class AttendanceSheet implements FromArray, WithTitle, WithHeadings
+class AttendanceSheet implements FromView, WithTitle, ShouldAutoSize
 {
     private $dateFrom;
     private $dateTo;
     private $companyId;
+    private $companyName;
 
-    public function __construct($dateFrom, $dateTo, $companyId)
+    public function __construct($dateFrom, $dateTo, $companyId, $companyName = null)
     {
         $this->dateFrom = $dateFrom;
         $this->dateTo = $dateTo;
         $this->companyId = $companyId;
+        $this->companyName = $companyName;
     }
 
-    public function array(): array
+    public function view(): View
     {
         $usersRepo = app(UserRepositoryInterface::class);
         $shiftResolver = app(ShiftAssignmentResolver::class);
@@ -32,50 +35,22 @@ class AttendanceSheet implements FromArray, WithTitle, WithHeadings
         
         $result = $summarizer->summarize($users, $this->dateFrom, $this->dateTo, $shiftResolver);
         
-        $rows = [];
-        foreach ($result['employees'] as $emp) {
-            $rows[] = [
-                $emp['id'],
-                $emp['name'],
-                $emp['shift_name'] . ' (' . $emp['shift_time'] . ')',
-                $emp['status'] ?? '-',
-                $emp['check_in'] ?? '-',
-                $emp['check_out'] ?? '-',
-                $emp['late_minutes'] ?? 0,
-                $emp['early_leave_minutes'] ?? 0,
-                $emp['extended_minutes'] ?? 0,
-                $emp['period_stats']['present_days'] ?? 0,
-                $emp['period_stats']['absent_days'] ?? 0,
-                $emp['period_stats']['sick_days'] ?? 0,
-                $emp['period_stats']['permit_days'] ?? 0,
-                $emp['period_stats']['leave_days'] ?? 0,
-            ];
-        }
-        return $rows;
-    }
+        $employees = $result['employees'] ?? [];
+        
+        $stats = $result['stats'] ?? [];
 
-    public function headings(): array
-    {
-        return [
-            'User ID',
-            'Name',
-            'Shift',
-            'Today Status',
-            'Today Check In',
-            'Today Check Out',
-            'Today Late (Min)',
-            'Today Early Leave (Min)',
-            'Today Extended (Min)',
-            'Period Present Days',
-            'Period Absent Days',
-            'Period Sick Days',
-            'Period Permit Days',
-            'Period Leave Days',
-        ];
+        return view('exports.public_dashboard.attendance_overview', [
+            'employees' => $employees,
+            'stats' => $stats,
+            'dateFrom' => $this->dateFrom,
+            'dateTo' => $this->dateTo,
+            'period' => \Carbon\CarbonPeriod::create($this->dateFrom, $this->dateTo),
+            'companyName' => $this->companyName,
+        ]);
     }
 
     public function title(): string
     {
-        return 'Attendance Summary';
+        return 'Attendance Overview';
     }
 }

@@ -8,22 +8,18 @@ use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 
-class TicketsSheet implements FromView, WithTitle, ShouldAutoSize
+class TopIssuesSheet implements FromView, WithTitle, ShouldAutoSize
 {
     private $dateFrom;
     private $dateTo;
     private $companyId;
-    private $search;
-    private $status;
     private $companyName;
 
-    public function __construct($dateFrom, $dateTo, $companyId, $search, $status, $companyName = null)
+    public function __construct($dateFrom, $dateTo, $companyId, $companyName = null)
     {
         $this->dateFrom = $dateFrom;
         $this->dateTo = $dateTo;
         $this->companyId = $companyId;
-        $this->search = $search;
-        $this->status = $status;
         $this->companyName = $companyName;
     }
 
@@ -31,33 +27,36 @@ class TicketsSheet implements FromView, WithTitle, ShouldAutoSize
     {
         $repo = app(TicketDashboardRepositoryInterface::class);
         
-        $paginator = $repo->paginateLatest(
+        // Trending keywords based on AI Predictions
+        $aiTrends = $repo->getTrendingKeywords(
             $this->dateFrom,
             $this->dateTo,
             $this->companyId,
-            100000,
-            $this->search,
-            null,
-            'desc',
-            $this->status
+            null
         );
         
-        $stats = $repo->globalStats(
+        // Tickets by Work Group (Standard Categories)
+        $workGroups = $repo->getTicketsByWorkGroup(
+            $this->dateFrom,
+            $this->dateTo,
+            $this->companyId
+        );
+        $globalStats = $repo->globalStats(
             $this->dateFrom,
             $this->dateTo,
             $this->companyId
         );
 
-        $engineers = $repo->engineerSummaries(
-            $this->dateFrom,
-            $this->dateTo,
-            $this->companyId
-        );
+        $stats = [
+            'total_tickets' => $globalStats['created_today'] ?? 0,
+            'top_trending_count' => count($aiTrends),
+            'top_workgroup_count' => count($workGroups),
+        ];
 
-        return view('exports.public_dashboard.tickets_overview', [
-            'tickets' => $paginator->items(),
+        return view('exports.public_dashboard.top_issues', [
+            'aiTrends' => $aiTrends,
+            'workGroups' => $workGroups,
             'stats' => $stats,
-            'engineers' => $engineers,
             'dateFrom' => $this->dateFrom,
             'dateTo' => $this->dateTo,
             'companyName' => $this->companyName,
@@ -66,6 +65,6 @@ class TicketsSheet implements FromView, WithTitle, ShouldAutoSize
 
     public function title(): string
     {
-        return 'Ticket Overview';
+        return 'Top 10 Issues';
     }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon, RefreshCw, Calendar as CalendarIcon } from 'lucide-react';
+import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon, RefreshCw, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,7 @@ export function DashboardHeaderFilters({
     isAutoRefresh,
     autoRefreshCountdown,
     onAutoRefreshToggle,
+    isExporting = false,
     light = false,
 }: {
     companies: CompanyOption[];
@@ -41,6 +42,7 @@ export function DashboardHeaderFilters({
     isAutoRefresh?: boolean;
     autoRefreshCountdown?: number;
     onAutoRefreshToggle?: () => void;
+    isExporting?: boolean;
     light?: boolean;
 }) {
     const [open, setOpen] = useState(false);
@@ -97,10 +99,11 @@ export function DashboardHeaderFilters({
                     type="button"
                     variant="outline"
                     onClick={onExport}
+                    disabled={isExporting}
                     className={`${btnClasses} ${light ? 'bg-white text-[#1B5E20] hover:bg-green-50 hover:shadow-md' : 'bg-white/95 text-[#1B5E20] hover:bg-white hover:shadow-md'}`}
                 >
-                    <Download className="h-3.5 w-3.5 text-[#2E7D32]" />
-                    <span className="hidden sm:inline">Export</span>
+                    {isExporting ? <Loader2 className="h-3.5 w-3.5 text-[#2E7D32] animate-spin" /> : <Download className="h-3.5 w-3.5 text-[#2E7D32]" />}
+                    <span className="hidden sm:inline">{isExporting ? 'Exporting...' : 'Export'}</span>
                 </Button>
                 <Button
                     type="button"

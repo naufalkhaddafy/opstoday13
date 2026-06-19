@@ -110,7 +110,7 @@ class TicketTrendAnalyzer
      * @param int $limit
      * @return array
      */
-    public function analyzeKeywords(array $currentKeywords, array $previousKeywords, int $limit = 5): array
+    public function analyzeKeywords(array $currentKeywords, array $previousKeywords, ?int $limit = 5): array
     {
         $currentCounts = array_count_values(array_filter(array_map('trim', $currentKeywords)));
         $previousCounts = array_count_values(array_filter(array_map('trim', $previousKeywords)));
@@ -121,7 +121,7 @@ class TicketTrendAnalyzer
         $count = 0;
 
         foreach ($currentCounts as $keyword => $currentCount) {
-            if ($count >= $limit) {
+            if ($limit !== null && $count >= $limit) {
                 break;
             }
 

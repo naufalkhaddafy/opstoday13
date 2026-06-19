@@ -26,9 +26,15 @@ class DashboardExport implements WithMultipleSheets
 
     public function sheets(): array
     {
+        $companyName = null;
+        if ($this->companyId) {
+            $companyName = \App\Models\Company::find($this->companyId)?->name;
+        }
+
         return [
-            new Sheets\TicketsSheet($this->dateFrom, $this->dateTo, $this->companyId, $this->search, $this->status),
-            new Sheets\AttendanceSheet($this->dateFrom, $this->dateTo, $this->companyId),
+            new Sheets\TicketsSheet($this->dateFrom, $this->dateTo, $this->companyId, $this->search, $this->status, $companyName),
+            new Sheets\AttendanceSheet($this->dateFrom, $this->dateTo, $this->companyId, $companyName),
+            new Sheets\TopIssuesSheet($this->dateFrom, $this->dateTo, $this->companyId, $companyName),
         ];
     }
 }

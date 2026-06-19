@@ -250,6 +250,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?int $limit = 10
     ): array {
         $getFormattedItems = function ($dFrom, $dTo) use ($companyId) {
             $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId)
@@ -283,7 +284,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $previousItems = $getFormattedItems($prevDateFrom, $prevDateTo);
 
         $analyzer = new \App\Services\Analytics\TicketTrendAnalyzer();
-        return $analyzer->analyzeKeywords($currentItems, $previousItems, 10);
+        return $analyzer->analyzeKeywords($currentItems, $previousItems, $limit);
     }
 
     /**
