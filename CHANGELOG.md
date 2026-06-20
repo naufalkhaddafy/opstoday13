@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.2] - 2026-06-21
+
+### Added
+- **Group Filter for Roster Export**: Roster Excel exports now accurately reflect the selected "Group" filter, only including employees within that specific group.
+- **Dynamic Export Subtitles**: The Roster Export Excel file now displays the selected Company and Group names directly in the header title (e.g., `Company: PT Berca | Group: IT Support`).
+- **Comprehensive User Exports**: Added dynamic header titles to `UserAttendanceExport` and `UserTicketsExport`, clearly stating the Employee's Name, Period, and exact Export Date.
+- **Team Ticket Workload Table**: Introduced a new breakdown table in the Public Dashboard's Ticket Overview export to show total tickets, statuses, and average resolution/response times per user.
+
+### Changed
+- **Export Styling Standardization**: Upgraded `UserAttendanceExport` and `UserTicketsExport` Excel formats to match the Roster layout, including Auto-Sizing columns, solid header colors, frozen panes, and centered alignments.
+- **Top Issues Export Tweaks**: Replaced the "Total Classified Issues" metric with "Total Tickets in Period" on the Top Issues Dashboard export for better clarity.
+- **Simplified Top 10 Styling**: Removed background color highlights and medal icons from the Top 10 Issues export list, reverting to a clean, professional numbered list.
+- **Export Button UX**: Download buttons across the dashboard now display a spinning loading state and disable themselves during Excel generation to prevent duplicate requests.
+
 ## [v1.2.1] - 2026-06-13
 
 ### Added

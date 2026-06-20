@@ -22,6 +22,8 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
     protected array $filters;
     protected int $daysInMonth;
     protected array $monthDays = [];
+    protected string $companyName;
+    protected string $groupName;
 
     /** @var string[] */
     private const DAY_NAMES_SHORT = [
@@ -36,11 +38,13 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
         10 => 'Oktober', 11 => 'November', 12 => 'Desember',
     ];
 
-    public function __construct(int $month, int $year, array $filters = [])
+    public function __construct(int $month, int $year, array $filters = [], string $companyName = 'All Companies', string $groupName = 'All Groups')
     {
         $this->month = $month;
         $this->year = $year;
         $this->filters = $filters;
+        $this->companyName = $companyName;
+        $this->groupName = $groupName;
 
         $timezone = config('app.timezone');
         $startOfMonth = CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
@@ -56,11 +60,20 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
         }
     }
 
-    /**
-     * @return array<int, string>
-     */
     public function headings(): array
     {
+        $monthName = self::MONTH_NAMES[$this->month] ?? '';
+        $exportDate = CarbonImmutable::now(config('app.timezone'))->format('d M Y H:i:s');
+        
+        $filterStr = [];
+        if ($this->companyName !== 'All Companies') $filterStr[] = $this->companyName;
+        if ($this->groupName !== 'All Groups') $filterStr[] = $this->groupName;
+        $filterText = count($filterStr) > 0 ? " | " . implode(' - ', $filterStr) : '';
+
+        $titleRow1 = ["Roster Kerja Karyawan - {$monthName} {$this->year}{$filterText}"];
+        $titleRow2 = ["Tanggal Export: {$exportDate}"];
+        $titleRow3 = [];
+
         $headings = ['No', 'Nama Karyawan', 'ID Karyawan', 'Perusahaan'];
 
         foreach ($this->monthDays as $day) {
@@ -68,7 +81,12 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
             $headings[] = $day['day'] . "\n" . $dayName;
         }
 
-        return $headings;
+        return [
+            $titleRow1,
+            $titleRow2,
+            $titleRow3,
+            $headings
+        ];
     }
 
     /**
@@ -116,8 +134,21 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
         $lastCol = $this->getColumnLetter(4 + $this->daysInMonth);
         $lastRow = $sheet->getHighestRow();
 
-        // Header row styling
+        // Title Row Styling
         $sheet->getStyle("A1:{$lastCol}1")->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->mergeCells("A1:{$lastCol}1");
+
+        $sheet->getStyle("A2:{$lastCol}2")->applyFromArray([
+            'font' => ['italic' => true, 'size' => 11],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+        ]);
+        $sheet->mergeCells("A2:{$lastCol}2");
+
+        // Header row styling (Now Row 4)
+        $sheet->getStyle("A4:{$lastCol}4")->applyFromArray([
             'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -130,25 +161,29 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
             ],
         ]);
 
-        // All cells border
-        $sheet->getStyle("A1:{$lastCol}{$lastRow}")->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => 'D1D5DB'],
+        // All cells border (Row 4 downwards)
+        if ($lastRow >= 4) {
+            $sheet->getStyle("A4:{$lastCol}{$lastRow}")->applyFromArray([
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => Border::BORDER_THIN,
+                        'color' => ['rgb' => 'D1D5DB'],
+                    ],
                 ],
-            ],
-            'alignment' => [
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-        ]);
+                'alignment' => [
+                    'vertical' => Alignment::VERTICAL_CENTER,
+                ],
+            ]);
+        }
 
-        // Center shift cells (column E onward)
+        // Center shift cells (column E onward, row 5 downwards)
         $colE = $this->getColumnLetter(5);
-        $sheet->getStyle("{$colE}2:{$lastCol}{$lastRow}")->applyFromArray([
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'font' => ['size' => 9],
-        ]);
+        if ($lastRow >= 5) {
+            $sheet->getStyle("{$colE}5:{$lastCol}{$lastRow}")->applyFromArray([
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'font' => ['size' => 9],
+            ]);
+        }
 
         // Set fixed width for day columns
         for ($i = 5; $i <= 4 + $this->daysInMonth; $i++) {
@@ -156,24 +191,26 @@ class RosterExport implements FromArray, WithHeadings, WithStyles, WithTitle, Sh
             $sheet->getColumnDimension($colLetter)->setWidth(6);
         }
 
-        // Freeze first row + first 4 columns
-        $sheet->freezePane('E2');
+        // Freeze first 4 rows + first 4 columns
+        $sheet->freezePane('E5');
 
         // Set row height for header
-        $sheet->getRowDimension(1)->setRowHeight(35);
+        $sheet->getRowDimension(4)->setRowHeight(35);
 
         // Weekend column coloring
         foreach ($this->monthDays as $index => $day) {
             if ($day['day_of_week_iso'] >= 6) {
                 $colLetter = $this->getColumnLetter(5 + $index);
-                $sheet->getStyle("{$colLetter}1:{$colLetter}{$lastRow}")->applyFromArray([
-                    'fill' => [
-                        'fillType' => Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => $day['day_of_week_iso'] === 7 ? 'FEE2E2' : 'FEF3C7'],
-                    ],
-                ]);
+                if ($lastRow >= 5) {
+                    $sheet->getStyle("{$colLetter}5:{$colLetter}{$lastRow}")->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => $day['day_of_week_iso'] === 7 ? 'FEE2E2' : 'FEF3C7'],
+                        ],
+                    ]);
+                }
                 // Re-apply header color for weekend columns
-                $sheet->getStyle("{$colLetter}1")->applyFromArray([
+                $sheet->getStyle("{$colLetter}4")->applyFromArray([
                     'fill' => [
                         'fillType' => Fill::FILL_SOLID,
                         'startColor' => ['rgb' => $day['day_of_week_iso'] === 7 ? 'DC2626' : 'D97706'],
