@@ -22,6 +22,7 @@ class RosterExportController extends Controller
         $filters = [
             'search' => $request->input('search'),
             'company_id' => $request->input('company_id', 'all'),
+            'group_id' => $request->input('group_id', 'all'),
         ];
 
         $monthNames = [
@@ -31,8 +32,24 @@ class RosterExportController extends Controller
             10 => 'Oktober', 11 => 'November', 12 => 'Desember',
         ];
 
+        $companyName = 'All Companies';
+        if ($filters['company_id'] !== 'all') {
+            $company = \App\Models\Company::find($filters['company_id']);
+            if ($company) {
+                $companyName = $company->name;
+            }
+        }
+
+        $groupName = 'All Groups';
+        if ($filters['group_id'] !== 'all') {
+            $group = \App\Models\Group::find($filters['group_id']);
+            if ($group) {
+                $groupName = $group->name;
+            }
+        }
+
         $filename = 'Roster_' . ($monthNames[$month] ?? $month) . "_{$year}.xlsx";
 
-        return Excel::download(new RosterExport($month, $year, $filters), $filename);
+        return Excel::download(new RosterExport($month, $year, $filters, $companyName, $groupName), $filename);
     }
 }

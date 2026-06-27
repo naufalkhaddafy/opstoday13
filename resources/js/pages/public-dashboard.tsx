@@ -75,6 +75,7 @@ export default function PublicDashboard({
     const [activeTab, setActiveTab] = useState('service-desk');
     const [isAutoRefresh, setIsAutoRefresh] = useState(false);
     const [autoRefreshCountdown, setAutoRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL_SECONDS);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -225,6 +226,7 @@ export default function PublicDashboard({
     };
 
     const handleExport = useCallback(() => {
+        setIsExporting(true);
         const params = new URLSearchParams();
         if (filters.date_from) params.set('date_from', filters.date_from);
         if (filters.date_to) params.set('date_to', filters.date_to);
@@ -233,6 +235,9 @@ export default function PublicDashboard({
         if (filters.status) params.set('status', filters.status);
 
         window.location.href = `/export?${params.toString()}`;
+        
+        // Disable spinner after a few seconds assuming download has started
+        setTimeout(() => setIsExporting(false), 3000);
     }, [filters]);
 
     const ticketSegments: Segment[] = ticket_stats ? [
@@ -264,6 +269,7 @@ export default function PublicDashboard({
                                     filters={filters}
                                     onApply={applyFilters}
                                     onExport={handleExport}
+                                    isExporting={isExporting}
                                     isAutoRefresh={isAutoRefresh}
                                     autoRefreshCountdown={autoRefreshCountdown}
                                     onAutoRefreshToggle={() => setIsAutoRefresh(!isAutoRefresh)}
@@ -319,6 +325,7 @@ export default function PublicDashboard({
                                 filters={filters}
                                 onApply={applyFilters}
                                 onExport={handleExport}
+                                isExporting={isExporting}
                                 isAutoRefresh={isAutoRefresh}
                                 autoRefreshCountdown={autoRefreshCountdown}
                                 onAutoRefreshToggle={() => setIsAutoRefresh(!isAutoRefresh)}

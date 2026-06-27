@@ -61,6 +61,8 @@ class DailyAttendanceSummarizer
             $lastDayLate = 0;
             $lastDayEarly = 0;
             $lastDayExtended = 0;
+            
+            $dailyDetails = [];
 
             foreach ($period as $date) {
                 $immutableDate = CarbonImmutable::instance($date);
@@ -161,6 +163,10 @@ class DailyAttendanceSummarizer
                     }
                 }
 
+                $dailyDetails[$date->toDateString()] = [
+                    'status' => $dayStatus,
+                ];
+
                 // If this is the last day of the period, save for badge
                 if ($date->isSameDay($dateTo)) {
                     $lastDayStatus = $dayStatus;
@@ -187,6 +193,7 @@ class DailyAttendanceSummarizer
                 'early_leave_minutes' => $lastDayEarly,
                 'extended_minutes' => $lastDayExtended,
                 'period_stats' => $periodStats,
+                'daily_details' => $dailyDetails,
             ];
         }
 

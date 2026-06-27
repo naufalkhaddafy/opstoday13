@@ -121,6 +121,7 @@ class PublicDashboardController extends Controller
         $search = $request->input('search');
         $status = $request->input('status');
 
-        return (new \App\Exports\DashboardExport($dateFrom, $dateTo, $companyId, $search, $status))->download('dashboard-export.xlsx');
+        $fileName = 'dashboard-export-' . $dateFrom->format('Y-m-d') . '-to-' . $dateTo->format('Y-m-d') . '.xlsx';
+        return (new \App\Exports\DashboardExport($dateFrom, $dateTo, $companyId, $search, $status))->download($fileName);
     }
 }

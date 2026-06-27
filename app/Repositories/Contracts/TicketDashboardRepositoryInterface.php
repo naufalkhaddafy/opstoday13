@@ -64,6 +64,7 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?int $limit = 10
     ): array;
 
     /**
