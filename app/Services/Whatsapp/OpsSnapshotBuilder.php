@@ -114,9 +114,13 @@ class OpsSnapshotBuilder
         $checkedIn = array_filter($scheduled, fn($s) => $s['check_in'] !== null);
 
         if (count($checkedIn) > 0) {
+            $working = array_filter($checkedIn, fn($s) => $s['check_out'] === null);
+            $completed = array_filter($checkedIn, fn($s) => $s['check_out'] !== null);
+            $sortedCheckedIn = array_merge($working, $completed);
+
             $lines[] = '';
             $lines[] = "Attendance (per Engineer):";
-            foreach ($checkedIn as $s) {
+            foreach ($sortedCheckedIn as $s) {
                 $lines[] = $this->formatAttendanceLine($s, $s['isOff'] ?? false, $timezone);
             }
         }
@@ -141,15 +145,7 @@ class OpsSnapshotBuilder
         $lines[] = "📊 Total Tickets (This Morning): " . $totalTickets
             . " (Completed Today: {$completedCount}, Assigned: {$assignedCount}, In Progress: {$inProgressCount})";
 
-        // No ticket assigned (excluding those who already closed a ticket today)
-        $usersWithActiveTickets = $activeTickets->pluck('assigned_to_user_id')->unique()->toArray();
-        $usersWithClosedTickets = $closedTodayTickets->pluck('assigned_to_user_id')->unique()->toArray();
-        $usersWithAnyTickets = array_unique(array_merge($usersWithActiveTickets, $usersWithClosedTickets));
 
-        $noTicketUsers = $users->filter(fn($u) => !in_array($u->id, $usersWithAnyTickets));
-        if ($noTicketUsers->isNotEmpty()) {
-            $lines[] = "⛔ No Ticket Assigned: " . $noTicketUsers->pluck('name')->implode(', ');
-        }
 
         // Assigned per engineer
         $assignedTickets = $activeTickets->where('status', 'assigned');
@@ -320,15 +316,7 @@ class OpsSnapshotBuilder
         $lines[] = "📊 Total Tickets: " . $totalTickets
             . " (Completed Today: {$completedCount}, Assigned: {$assignedCount}, In Progress: {$inProgressCount})";
 
-        // No ticket assigned (excluding those who already closed a ticket today)
-        $usersWithActiveTickets = $activeTickets->pluck('assigned_to_user_id')->unique()->toArray();
-        $usersWithClosedTickets = $closedTodayTickets->pluck('assigned_to_user_id')->unique()->toArray();
-        $usersWithAnyTickets = array_unique(array_merge($usersWithActiveTickets, $usersWithClosedTickets));
 
-        $noTicketUsers = $users->filter(fn($u) => !in_array($u->id, $usersWithAnyTickets));
-        if ($noTicketUsers->isNotEmpty()) {
-            $lines[] = "⛔ No Ticket Assigned: " . $noTicketUsers->pluck('name')->implode(', ');
-        }
 
         // Assigned per engineer
         $assignedTickets = $activeTickets->where('status', 'assigned');
