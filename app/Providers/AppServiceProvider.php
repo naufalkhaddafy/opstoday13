@@ -45,6 +45,10 @@ use App\Repositories\Eloquent\TicketQueryRepository;
 use App\Repositories\Eloquent\ActivityLogRepository;
 use App\Repositories\Contracts\HolidayRepositoryInterface;
 use App\Repositories\Eloquent\HolidayRepository;
+use App\Repositories\Contracts\SettingRepositoryInterface;
+use App\Repositories\Eloquent\SettingRepository;
+use App\Models\Setting;
+use App\Observers\SettingObserver;
 use App\Services\Fingerprint\HttpFingerprintClient;
 use App\Services\Sihepi\HttpSihepiTicketClient;
 use Carbon\CarbonImmutable;
@@ -79,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TicketSyncRunRepositoryInterface::class, TicketSyncRunRepository::class);
         $this->app->bind(ActivityLogRepositoryInterface::class, ActivityLogRepository::class);
         $this->app->bind(HolidayRepositoryInterface::class, HolidayRepository::class);
+        $this->app->bind(SettingRepositoryInterface::class, SettingRepository::class);
     }
 
     /**
@@ -96,6 +101,7 @@ class AppServiceProvider extends ServiceProvider
         Shift::observe(ShiftObserver::class);
         Ticket::observe(TicketObserver::class);
         Holiday::observe(HolidayObserver::class);
+        Setting::observe(SettingObserver::class);
 
         Event::listen(
             \SocialiteProviders\Manager\SocialiteWasCalled::class,

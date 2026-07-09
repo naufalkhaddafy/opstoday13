@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\SettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])
@@ -45,4 +46,9 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::resource('shifts', ShiftController::class);
         Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+        Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('settings/test', [SettingController::class, 'testCommand'])->name('settings.test');
+        Route::get('settings/test-status', [SettingController::class, 'checkCommandStatus'])->name('settings.test-status');
     });

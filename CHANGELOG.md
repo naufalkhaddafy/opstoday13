@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.1] - 2026-07-09
+
+### Added
+- **System Configuration Module**: Introduced a comprehensive System Configuration page allowing super admins to dynamically manage SLA variables, Scheduler crons, and other settings directly from the UI without modifying `.env` or database manually.
+- **Real-Time AI Progress Tracking**: Integrated a live progress bar and pseudo-terminal console within the new "AI Integrations" tab. The UI now actively polls Redis to display the real-time execution progress of the `ops:backfill-ai-tickets` background command.
+- **In-App Command Testing**: Added action buttons inside the Scheduler tab to manually trigger background jobs immediately (e.g., Morning/Evening WhatsApp Snapshots, Ticket Syncs) and receive direct UI feedback upon completion.
+
+### Changed
+- **Unified Settings UI**: Merged the 'SLA' and 'Attendance' settings into a single, cohesive 'SLA KPC' configuration group. Tabs in the configuration page are now rendered dynamically based on database groups.
+- **Command Execution Architecture**: Restructured `SettingController` to execute UI test commands synchronously (`Artisan::call`) to guarantee reliable WhatsApp Snapshot delivery on Windows, while preserving asynchronous, non-blocking execution (`Process::start`) exclusively for long-running AI Backfill tasks.
+
+### Fixed
+- **Redis Cache Serialization**: Resolved persistent `__PHP_Incomplete_Class` exceptions by standardizing the `SettingRepository` cache layer to strictly use pure associative arrays, preventing Eloquent Model deserialization crashes when using Redis.
+
 ## [v1.2.2] - 2026-06-21
 
 ### Added
