@@ -51,6 +51,7 @@ class SettingController extends Controller
             'ops:send-snapshot morning',
             'ops:send-snapshot evening',
             'tickets:sync-open',
+            'tickets:sync-completed',
             'attendance:sync',
             'ops:backfill-ai-tickets --force',
         ];

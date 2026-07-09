@@ -35,7 +35,7 @@ class BackfillAITickets extends Command
         $query = Ticket::query()->whereNotNull('title');
 
         if ($days > 0) {
-            $dateLimit = now()->subDays($days);
+            $dateLimit = now()->subDays($days)->format('Y-m-d H:i:s');
             $query->whereRaw("COALESCE(api_creation_date, first_seen_at, status_changed_at) >= ?", [$dateLimit]);
         }
         
@@ -54,11 +54,15 @@ class BackfillAITickets extends Command
         $total = $query->count();
         
         if ($total === 0) {
-            $this->info("Semua tiket sudah memiliki Kategori AI. Tidak ada yang perlu diproses.");
+            $msg = $days > 0 
+                ? "Tidak ada tiket yang ditemukan dalam {$days} hari terakhir." 
+                : "Semua tiket sudah memiliki Kategori AI. Tidak ada yang perlu diproses.";
+            
+            $this->info($msg);
             \Illuminate\Support\Facades\Cache::put('cmd_progress:ops_backfill', [
                 'status' => 'completed',
                 'progress' => 100,
-                'message' => 'Selesai! Tidak ada tiket lama yang perlu diproses.',
+                'message' => 'Selesai! ' . $msg,
             ], 120);
             return 0;
         }
@@ -70,7 +74,7 @@ class BackfillAITickets extends Command
         \Illuminate\Support\Facades\Cache::put('cmd_progress:ops_backfill', [
             'status' => 'running',
             'progress' => 0,
-            'message' => "Memulai proses prediksi untuk {$total} tiket...",
+            'message' => "[Filter: {$days} Hari] Memulai proses prediksi untuk {$total} tiket...",
         ], 600);
 
         $processed = 0;

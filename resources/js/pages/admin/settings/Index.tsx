@@ -69,13 +69,13 @@ export default function SettingsIndex({ grouped_settings }: Props) {
 
     const startPolling = (key: string) => {
         if (pollInterval) clearInterval(pollInterval);
-        
+
         const interval = setInterval(() => {
             axios.get(`/admin/settings/test-status?key=${key}`)
                 .then((res: { data: any }) => {
                     const data = res.data;
                     setProgressStatus(data);
-                    
+
                     if (data.status === 'completed' || data.status === 'error') {
                         clearInterval(interval);
                         setTestingCmd(null);
@@ -88,7 +88,7 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                     setPollInterval(null);
                 });
         }, 1500);
-        
+
         setPollInterval(interval);
     };
 
@@ -114,7 +114,7 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                             </div>
                         </div>
                     </CardHeader>
-                    
+
                     <CardContent>
                         <form onSubmit={submit} className="space-y-6">
                             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -123,7 +123,7 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                         <TabsTrigger key={group} value={group}>{group}</TabsTrigger>
                                     ))}
                                 </TabsList>
-                                
+
                                 {Object.keys(grouped_settings).map((group) => (
                                     <TabsContent key={group} value={group} className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -161,36 +161,45 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                     <Server className="h-4 w-4" /> System Tests
                                                 </h4>
                                                 <div className="flex flex-wrap gap-3">
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="secondary" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
                                                         size="sm"
                                                         disabled={testingCmd === 'ops:send-snapshot morning'}
                                                         onClick={() => handleTestCommand('ops:send-snapshot morning')}
                                                     >
                                                         <Play className="mr-2 h-3 w-3" /> Test Morning WA
                                                     </Button>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="secondary" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
                                                         size="sm"
                                                         disabled={testingCmd === 'ops:send-snapshot evening'}
                                                         onClick={() => handleTestCommand('ops:send-snapshot evening')}
                                                     >
                                                         <Play className="mr-2 h-3 w-3" /> Test Evening WA
                                                     </Button>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="secondary" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
                                                         size="sm"
                                                         disabled={testingCmd === 'tickets:sync-open'}
                                                         onClick={() => handleTestCommand('tickets:sync-open')}
                                                     >
-                                                        <Play className="mr-2 h-3 w-3" /> Test Sync Tickets
+                                                        <Play className="mr-2 h-3 w-3" /> Test Sync Open Tickets
                                                     </Button>
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="secondary" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        disabled={testingCmd === 'tickets:sync-completed'}
+                                                        onClick={() => handleTestCommand('tickets:sync-completed')}
+                                                    >
+                                                        <Play className="mr-2 h-3 w-3" /> Test Sync Completed Tickets
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
                                                         size="sm"
                                                         disabled={testingCmd === 'attendance:sync'}
                                                         onClick={() => handleTestCommand('attendance:sync')}
@@ -214,9 +223,9 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                     Fitur ini akan mensinkronisasikan dan memprediksi kembali kategori (*cluster/sub-cluster*) pada tiket lama yang belum memiliki kategori AI. Proses ini berjalan secara asinkron di belakang layar.
                                                 </p>
                                                 <div className="flex gap-3">
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="secondary" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
                                                         size="sm"
                                                         disabled={testingCmd === 'ops:backfill-ai-tickets --force'}
                                                         onClick={() => handleTestCommand('ops:backfill-ai-tickets --force')}
