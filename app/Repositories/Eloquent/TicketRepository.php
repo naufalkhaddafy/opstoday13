@@ -90,6 +90,13 @@ class TicketRepository implements TicketRepositoryInterface
             $ticket->response_time_seconds = $this->secondsBetween($ticket->first_seen_at, $now);
         }
 
+        // Handle direct transition to "Pending On Hold" when in_progress_at is null
+        if ($ticket->status === TicketStatus::PendingOnHold && $ticket->in_progress_at === null) {
+            $baseTime = $ticket->first_seen_at ?? $now;
+            $ticket->in_progress_at = $baseTime->copy()->addMinute();
+            $ticket->response_time_seconds = $this->secondsBetween($ticket->first_seen_at, $ticket->in_progress_at);
+        }
+
         $ticket->last_synced_at = $now;
         $ticket->sync_batch_id = $run->id;
         $ticket->save();
@@ -165,6 +172,10 @@ class TicketRepository implements TicketRepositoryInterface
         $ticket->computer_name = $record['computer_name'] ?? $ticket->computer_name;
         $ticket->requested_for = $record['requested_for'] ?? $ticket->requested_for;
         $ticket->requested_by = $record['requested_by'] ?? $ticket->requested_by;
+        
+        if (array_key_exists('api_creation_date', $record)) {
+            $ticket->api_creation_date = $record['api_creation_date'] ?? $ticket->api_creation_date;
+        }
 
         if (! empty($record['work_group'])) {
             $ticket->work_group = $record['work_group'];

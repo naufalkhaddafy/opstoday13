@@ -147,33 +147,33 @@ class OpsSnapshotBuilder
 
 
 
-        // Assigned per engineer
-        $assignedTickets = $activeTickets->where('status', 'assigned');
-        if ($assignedTickets->isNotEmpty()) {
-            $assignedPerUser = $assignedTickets->groupBy('assigned_to_user_id');
-            $parts = [];
-            foreach ($assignedPerUser as $userId => $uTickets) {
-                $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
-                $parts[] = "{$userName} (" . $uTickets->count() . ")";
-            }
-            $lines[] = "📝 Assigned Tickets per Engineer: " . implode(', ', $parts);
-        } else {
-            $lines[] = "📝 Assigned Tickets per Engineer: -";
-        }
+        // Assigned per engineer (Disabled for morning snapshot)
+        // $assignedTickets = $activeTickets->where('status', 'assigned');
+        // if ($assignedTickets->isNotEmpty()) {
+        //     $assignedPerUser = $assignedTickets->groupBy('assigned_to_user_id');
+        //     $parts = [];
+        //     foreach ($assignedPerUser as $userId => $uTickets) {
+        //         $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
+        //         $parts[] = "{$userName} (" . $uTickets->count() . ")";
+        //     }
+        //     $lines[] = "📝 Assigned Tickets per Engineer: " . implode(', ', $parts);
+        // } else {
+        //     $lines[] = "📝 Assigned Tickets per Engineer: -";
+        // }
 
-        // Pending / On Hold per engineer
-        $pending = $activeTickets->where('status', 'pending_on_hold');
-        if ($pending->isNotEmpty()) {
-            $pendingPerUser = $pending->groupBy('assigned_to_user_id');
-            $pendingParts = [];
-            foreach ($pendingPerUser as $userId => $userTickets) {
-                $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
-                $pendingParts[] = "{$userName} (" . $userTickets->count() . ")";
-            }
-            $lines[] = "⏸️ Pending / On Hold per Engineer: " . implode(', ', $pendingParts);
-        } else {
-            $lines[] = "⏸️ Pending / On Hold per Engineer: -";
-        }
+        // Pending / On Hold per engineer (Disabled for morning snapshot)
+        // $pending = $activeTickets->where('status', 'pending_on_hold');
+        // if ($pending->isNotEmpty()) {
+        //     $pendingPerUser = $pending->groupBy('assigned_to_user_id');
+        //     $pendingParts = [];
+        //     foreach ($pendingPerUser as $userId => $userTickets) {
+        //         $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
+        //         $pendingParts[] = "{$userName} (" . $userTickets->count() . ")";
+        //     }
+        //     $lines[] = "⏸️ Pending / On Hold per Engineer: " . implode(', ', $pendingParts);
+        // } else {
+        //     $lines[] = "⏸️ Pending / On Hold per Engineer: -";
+        // }
 
         // Aging Tickets > N days
         $agingDays = SlaConstants::AGING_DAYS;
@@ -318,33 +318,33 @@ class OpsSnapshotBuilder
 
 
 
-        // Assigned per engineer
-        $assignedTickets = $activeTickets->where('status', 'assigned');
-        if ($assignedTickets->isNotEmpty()) {
-            $assignedPerUser = $assignedTickets->groupBy('assigned_to_user_id');
-            $parts = [];
-            foreach ($assignedPerUser as $userId => $uTickets) {
-                $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
-                $parts[] = "{$userName} (" . $uTickets->count() . ")";
-            }
-            $lines[] = "📝 Assigned Tickets per Engineer: " . implode(', ', $parts);
-        } else {
-            $lines[] = "📝 Assigned Tickets per Engineer: -";
-        }
+        // Assigned per engineer (Disabled for evening snapshot)
+        // $assignedTickets = $activeTickets->where('status', 'assigned');
+        // if ($assignedTickets->isNotEmpty()) {
+        //     $assignedPerUser = $assignedTickets->groupBy('assigned_to_user_id');
+        //     $parts = [];
+        //     foreach ($assignedPerUser as $userId => $uTickets) {
+        //         $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
+        //         $parts[] = "{$userName} (" . $uTickets->count() . ")";
+        //     }
+        //     $lines[] = "📝 Assigned Tickets per Engineer: " . implode(', ', $parts);
+        // } else {
+        //     $lines[] = "📝 Assigned Tickets per Engineer: -";
+        // }
 
-        // Pending / On Hold per engineer
-        $pending = $activeTickets->where('status', 'pending_on_hold');
-        if ($pending->isNotEmpty()) {
-            $pendingPerUser = $pending->groupBy('assigned_to_user_id');
-            $pendingParts = [];
-            foreach ($pendingPerUser as $userId => $userTickets) {
-                $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
-                $pendingParts[] = "{$userName} (" . $userTickets->count() . ")";
-            }
-            $lines[] = "⏸️ Pending / On Hold per Engineer: " . implode(', ', $pendingParts);
-        } else {
-            $lines[] = "⏸️ Pending / On Hold per Engineer: -";
-        }
+        // Pending / On Hold per engineer (Disabled for evening snapshot)
+        // $pending = $activeTickets->where('status', 'pending_on_hold');
+        // if ($pending->isNotEmpty()) {
+        //     $pendingPerUser = $pending->groupBy('assigned_to_user_id');
+        //     $pendingParts = [];
+        //     foreach ($pendingPerUser as $userId => $userTickets) {
+        //         $userName = $users->firstWhere('id', $userId)?->name ?? 'Unknown';
+        //         $pendingParts[] = "{$userName} (" . $userTickets->count() . ")";
+        //     }
+        //     $lines[] = "⏸️ Pending / On Hold per Engineer: " . implode(', ', $pendingParts);
+        // } else {
+        //     $lines[] = "⏸️ Pending / On Hold per Engineer: -";
+        // }
 
         // Aging Tickets > N days
         $agingDays = SlaConstants::AGING_DAYS;
@@ -416,11 +416,17 @@ class OpsSnapshotBuilder
         $resolutionThreshold = SlaConstants::RESOLUTION_TIME_GREEN;
 
         $avgResponseMin = $closedTodayTickets->isNotEmpty()
-            ? round($closedTodayTickets->avg(fn($t) => ($t->response_time_seconds ?? 0)) / 60)
+            ? round($closedTodayTickets->avg(function ($t) {
+                $sec = $t->response_time_seconds ?? 0;
+                return $sec <= 0 ? 60 : $sec; // 60 seconds = 1 minute
+            }) / 60)
             : 0;
 
         $avgResolutionMin = $closedTodayTickets->isNotEmpty()
-            ? round($closedTodayTickets->avg(fn($t) => ((float)($t->resolution_time ?? 0)) * 60))
+            ? round($closedTodayTickets->avg(function ($t) {
+                $min = ((float)($t->resolution_time ?? 0)) * 60;
+                return $min <= 0 ? 1 : $min; // Minimum 1 minute
+            }))
             : 0;
 
         $lines[] = "⚡ Avg Response Time: ({$avgResponseMin}m)";
@@ -428,8 +434,8 @@ class OpsSnapshotBuilder
 
         $lines[] = '';
 
-        // Engineer SLA Performance
-        $lines[] = "🎯 Engineer SLA Performance (Today's Closed)";
+        // Engineer SLA Performance (Disabled individual stats)
+        // $lines[] = "🎯 Engineer SLA Performance (Today's Closed)";
         $totalSlaTickets = 0;
         $totalLateSla = 0;
 
@@ -453,8 +459,8 @@ class OpsSnapshotBuilder
 
             $slaIcon = $slaPercent >= 90 ? '🟢' : ($slaPercent >= 70 ? '🟡' : '🔴');
 
-            $lines[] = "{$slaIcon} {$user->name}: {$slaPercent}% SLA";
-            $lines[] = "└ {$count}/{$count} tiket ({$lateCount} late)";
+            // $lines[] = "{$slaIcon} {$user->name}: {$slaPercent}% SLA";
+            // $lines[] = "└ {$count}/{$count} tiket ({$lateCount} late)";
 
             $totalSlaTickets += $count;
             $totalLateSla += $lateCount;

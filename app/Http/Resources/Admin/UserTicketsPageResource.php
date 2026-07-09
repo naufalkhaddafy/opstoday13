@@ -24,14 +24,18 @@ class UserTicketsPageResource extends JsonResource
         $year = $this->resource['year'] ?? null;
 
         $responseTimes = $tickets
-            ->pluck('response_time_seconds')
-            ->filter(fn ($value) => $value !== null);
+            ->filter(fn ($t) => $t->status !== TicketStatus::Assigned)
+            ->map(function ($t) {
+                $val = $t->response_time_seconds;
+                return ($val === null || $val <= 0) ? 60 : $val;
+            });
 
         $resolutionTimes = $tickets
-            ->pluck('resolution_time')
-            ->filter(fn ($value) => $value !== null && is_numeric($value))
-            ->map(fn ($value) => (float) $value)
-            ->filter(fn (float $value) => $value > 0);
+            ->filter(fn ($t) => $t->status === TicketStatus::Closed)
+            ->map(function ($t) {
+                $val = (float) ($t->resolution_time ?? 0);
+                return $val <= 0 ? (1.0 / 60.0) : $val;
+            });
 
         return [
             'user' => [

@@ -87,17 +87,15 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
         $responseAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
             ->whereNotNull('assigned_to_user_id')
-            ->whereNotNull('response_time_seconds')
-            ->selectRaw('assigned_to_user_id, AVG(response_time_seconds) as avg_seconds')
+            ->where('status', '!=', TicketStatus::Assigned->value)
+            ->selectRaw('assigned_to_user_id, AVG(CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) as avg_seconds')
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_seconds', 'assigned_to_user_id');
 
         $resolutionAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
-            ->whereNotNull('resolution_time')
-            ->whereRaw('CAST(resolution_time AS DECIMAL(10,2)) > 0')
-            ->selectRaw('assigned_to_user_id, AVG(CAST(resolution_time AS DECIMAL(10,2))) as avg_hours')
+            ->selectRaw('assigned_to_user_id, AVG(CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) as avg_hours')
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_hours', 'assigned_to_user_id');
 
@@ -188,23 +186,21 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
             // Response SLA
             $responseStats = (clone $baseQuery)
-                ->whereNotNull('response_time_seconds')
+                ->where('status', '!=', TicketStatus::Assigned->value)
                 ->selectRaw('
                     COUNT(*) as total_responded,
-                    SUM(CASE WHEN response_time_seconds <= ? THEN 1 ELSE 0 END) as met_response_sla,
-                    AVG(response_time_seconds) as avg_response_seconds
+                    SUM(CASE WHEN (CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) <= ? THEN 1 ELSE 0 END) as met_response_sla,
+                    AVG(CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) as avg_response_seconds
                 ', [$responseSlaSeconds])
                 ->first();
 
             // Resolution SLA
             $resolutionStats = (clone $baseQuery)
                 ->where('status', TicketStatus::Closed->value)
-                ->whereNotNull('resolution_time')
-                ->whereRaw('CAST(resolution_time AS DECIMAL(10,2)) > 0')
                 ->selectRaw('
                     COUNT(*) as total_resolved,
-                    SUM(CASE WHEN CAST(resolution_time AS DECIMAL(10,2)) <= ? THEN 1 ELSE 0 END) as met_resolution_sla,
-                    AVG(CAST(resolution_time AS DECIMAL(10,2))) as avg_resolution_hours
+                    SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_resolution_sla,
+                    AVG(CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) as avg_resolution_hours
                 ', [$resolutionSlaHours])
                 ->first();
 
