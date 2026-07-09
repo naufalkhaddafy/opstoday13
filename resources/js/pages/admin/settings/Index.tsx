@@ -44,7 +44,7 @@ export default function SettingsIndex({ grouped_settings }: Props) {
     const [testingCmd, setTestingCmd] = useState<string | null>(null);
     const [progressStatus, setProgressStatus] = useState<{ status: string, progress: number, message: string } | null>(null);
     const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
-    const [activeTab, setActiveTab] = useState<string>(Object.keys(grouped_settings)[0] || 'AI');
+    const [activeTab, setActiveTab] = useState<string>(Object.keys(grouped_settings)[0] || 'AI Integrations');
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -122,7 +122,6 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                     {Object.keys(grouped_settings).map((group) => (
                                         <TabsTrigger key={group} value={group}>{group}</TabsTrigger>
                                     ))}
-                                    <TabsTrigger value="AI">AI Integrations</TabsTrigger>
                                 </TabsList>
                                 
                                 {Object.keys(grouped_settings).map((group) => (
@@ -155,7 +154,7 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                             ))}
                                         </div>
 
-                                        {/* Testing Action Buttons inside relevant tabs */}
+                                        {/* Testing Action Buttons inside Scheduler tab */}
                                         {group === 'Scheduler' && (
                                             <div className="mt-8 p-4 bg-muted/50 rounded-lg border border-border">
                                                 <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -204,50 +203,51 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                 </p>
                                             </div>
                                         )}
+
+                                        {/* AI Backfill Button inside AI Integrations tab */}
+                                        {group === 'AI Integrations' && (
+                                            <div className="mt-8 p-4 bg-muted/50 rounded-lg border border-border">
+                                                <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                                                    <Bot className="h-4 w-4" /> Prediksi AI & Backfill
+                                                </h4>
+                                                <p className="text-sm text-muted-foreground mb-4">
+                                                    Fitur ini akan mensinkronisasikan dan memprediksi kembali kategori (*cluster/sub-cluster*) pada tiket lama yang belum memiliki kategori AI. Proses ini berjalan secara asinkron di belakang layar.
+                                                </p>
+                                                <div className="flex gap-3">
+                                                    <Button 
+                                                        type="button" 
+                                                        variant="secondary" 
+                                                        size="sm"
+                                                        disabled={testingCmd === 'ops:backfill-ai-tickets --force'}
+                                                        onClick={() => handleTestCommand('ops:backfill-ai-tickets --force')}
+                                                    >
+                                                        <Play className="mr-2 h-3 w-3" /> Mulai Backfill AI
+                                                    </Button>
+                                                </div>
+
+                                                {/* Tampilan Progress Bar Live */}
+                                                {progressStatus && progressStatus.status !== 'idle' && (
+                                                    <div className="mt-6 space-y-2 p-4 bg-background border border-border rounded-md shadow-sm">
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="font-semibold text-brand-600">
+                                                                {progressStatus.status === 'completed' ? 'Selesai' : 'Sedang Berjalan...'}
+                                                            </span>
+                                                            <span className="text-muted-foreground">{progressStatus.progress ?? 0}%</span>
+                                                        </div>
+                                                        <Progress value={progressStatus.progress ?? 0} className="h-2" />
+                                                        <div className="mt-2 text-xs font-mono bg-muted p-2 rounded text-muted-foreground h-16 overflow-y-auto">
+                                                            {'> '} {progressStatus.message || 'Waiting for process to start...'}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </TabsContent>
                                 ))}
 
-                                {/* Tab Khusus AI Integrations */}
-                                <TabsContent value="AI" className="space-y-4">
-                                    <div className="p-4 bg-muted/50 rounded-lg border border-border">
-                                        <h4 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                                            <Bot className="h-4 w-4" /> Prediksi AI & Backfill
-                                        </h4>
-                                        <p className="text-sm text-muted-foreground mb-4">
-                                            Fitur ini akan mensinkronisasikan dan memprediksi kembali kategori (*cluster/sub-cluster*) pada tiket lama yang belum memiliki kategori AI. Proses ini berjalan secara asinkron di belakang layar.
-                                        </p>
-                                        <div className="flex gap-3">
-                                            <Button 
-                                                type="button" 
-                                                variant="secondary" 
-                                                size="sm"
-                                                disabled={testingCmd === 'ops:backfill-ai-tickets --force'}
-                                                onClick={() => handleTestCommand('ops:backfill-ai-tickets --force')}
-                                            >
-                                                <Play className="mr-2 h-3 w-3" /> Mulai Backfill AI (Force)
-                                            </Button>
-                                        </div>
-
-                                        {/* Tampilan Progress Bar Live */}
-                                        {progressStatus && progressStatus.status !== 'idle' && (
-                                            <div className="mt-6 space-y-2 p-4 bg-background border border-border rounded-md shadow-sm">
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="font-semibold text-brand-600">
-                                                        {progressStatus.status === 'completed' ? 'Selesai' : 'Sedang Berjalan...'}
-                                                    </span>
-                                                    <span className="text-muted-foreground">{progressStatus.progress ?? 0}%</span>
-                                                </div>
-                                                <Progress value={progressStatus.progress ?? 0} className="h-2" />
-                                                <div className="mt-2 text-xs font-mono bg-muted p-2 rounded text-muted-foreground h-16 overflow-y-auto">
-                                                    {'> '} {progressStatus.message || 'Waiting for process to start...'}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </TabsContent>
                             </Tabs>
 
-                            {activeTab !== 'AI' && (
+                            {activeTab !== 'AI Integrations' && (
                                 <div className="flex justify-end pt-6 border-t mt-6">
                                     <Button type="submit" disabled={processing || !isDirty}>
                                         <Save className="mr-2 h-4 w-4" /> Simpan Perubahan

@@ -27,6 +27,9 @@ class SettingSeeder extends Seeder
             ['group' => 'Scheduler', 'key' => 'sync_open_tickets_interval', 'value' => '1', 'type' => 'integer', 'description' => 'Interval sinkronisasi tiket open (menit)'],
             ['group' => 'Scheduler', 'key' => 'sync_attendance_interval', 'value' => '1', 'type' => 'integer', 'description' => 'Interval sinkronisasi absensi (menit)'],
             ['group' => 'Scheduler', 'key' => 'sync_completed_tickets_cron', 'value' => '0 6,18 * * *', 'type' => 'string', 'description' => 'Cron interval sinkronisasi tiket completed'],
+
+            // AI Configuration Group
+            ['group' => 'AI Integrations', 'key' => 'ai_backfill_days', 'value' => '30', 'type' => 'integer', 'description' => 'Batas waktu (hari) untuk proses Backfill AI'],
         ];
 
         foreach ($settings as $setting) {

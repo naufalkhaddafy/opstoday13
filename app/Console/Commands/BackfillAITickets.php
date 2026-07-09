@@ -13,7 +13,7 @@ class BackfillAITickets extends Command
      *
      * @var string
      */
-    protected $signature = 'ops:backfill-ai-tickets {--limit=0 : Batasi jumlah tiket yang diproses (0 = semua)} {--force : Hapus prediksi sebelumnya dan ulangi dari awal}';
+    protected $signature = 'ops:backfill-ai-tickets {--limit=0 : Batasi jumlah tiket yang diproses (0 = semua)} {--force : Hapus prediksi sebelumnya dan ulangi dari awal} {--days= : Batasi tiket berdasarkan jumlah hari ke belakang (opsional, default dari setting database)}';
 
     /**
      * The console command description.
@@ -29,15 +29,23 @@ class BackfillAITickets extends Command
     {
         $limit = (int) $this->option('limit');
         $force = $this->option('force');
+        $daysOpt = $this->option('days');
+        $days = $daysOpt !== null ? (int) $daysOpt : (int) app(\App\Repositories\Contracts\SettingRepositoryInterface::class)->get('ai_backfill_days', 30);
+        
+        $query = Ticket::query()->whereNotNull('title');
+
+        if ($days > 0) {
+            $dateLimit = now()->subDays($days);
+            $query->whereRaw("COALESCE(api_creation_date, first_seen_at, status_changed_at) >= ?", [$dateLimit]);
+        }
         
         if ($force) {
-            $this->info("Menghapus semua prediksi AI sebelumnya...");
-            \App\Models\TicketAIPrediction::truncate();
+            $this->info("Menghapus prediksi AI sebelumnya" . ($days > 0 ? " (untuk {$days} hari terakhir)..." : "..."));
+            $ticketIds = (clone $query)->pluck('id');
+            \App\Models\TicketAIPrediction::whereIn('ticket_id', $ticketIds)->delete();
+        } else {
+            $query->whereDoesntHave('aiPrediction');
         }
-
-        $query = Ticket::query()
-            ->whereNotNull('title')
-            ->whereDoesntHave('aiPrediction');
         
         if ($limit > 0) {
             $query->limit($limit);

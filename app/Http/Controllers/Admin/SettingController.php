@@ -66,8 +66,15 @@ class SettingController extends Controller
                 'message' => 'Sedang menyiapkan AI Engine...',
             ], 600);
             
-            // Run async for AI Backfill
-            Process::path(base_path())->start("php artisan {$command}");
+            // Run async for AI Backfill (Cross-Platform Detached Process)
+            $base = base_path();
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                pclose(popen("start /B cmd /C \"cd /d {$base} && php artisan {$command} > NUL 2> NUL\"", "r"));
+            } else {
+                // Compatible with FrankenPHP/Alpine which might not have `nohup`
+                exec("cd {$base} && php artisan {$command} > /dev/null 2>&1 &");
+            }
+
             Inertia::flash('toast', ['type' => 'success', 'message' => "Command {$command} started in background."]);
             return back();
         }
