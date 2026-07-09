@@ -256,13 +256,11 @@ export default function SettingsIndex({ grouped_settings }: Props) {
 
                             </Tabs>
 
-                            {activeTab !== 'AI Integrations' && (
                                 <div className="flex justify-end pt-6 border-t mt-6">
                                     <Button type="submit" disabled={processing || !isDirty}>
                                         <Save className="mr-2 h-4 w-4" /> Simpan Perubahan
                                     </Button>
                                 </div>
-                            )}
                         </form>
                     </CardContent>
                 </Card>

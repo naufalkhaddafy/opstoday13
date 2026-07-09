@@ -61,22 +61,26 @@ class SettingController extends Controller
         }
 
         if ($command === 'ops:backfill-ai-tickets --force') {
+            // Ambil setting batas hari dari database lalu sertakan secara eksplisit ke command
+            $days = $this->settings->get('ai_backfill_days', 30);
+            $finalCommand = "{$command} --days={$days}";
+
             Cache::put('cmd_progress:ops_backfill', [
                 'status' => 'starting',
                 'progress' => 0,
-                'message' => 'Sedang menyiapkan AI Engine...',
+                'message' => 'Sedang menyiapkan AI Engine..',
             ], 600);
             
             // Run async for AI Backfill (Cross-Platform Detached Process)
             $base = base_path();
             if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                pclose(popen("start /B cmd /C \"cd /d {$base} && php artisan {$command} > NUL 2> NUL\"", "r"));
+                pclose(popen("start /B cmd /C \"cd /d {$base} && php artisan {$finalCommand} > NUL 2> NUL\"", "r"));
             } else {
                 // Compatible with FrankenPHP/Alpine which might not have `nohup`
-                exec("cd {$base} && php artisan {$command} > /dev/null 2>&1 &");
+                exec("cd {$base} && php artisan {$finalCommand} > /dev/null 2>&1 &");
             }
 
-            Inertia::flash('toast', ['type' => 'success', 'message' => "Command {$command} started in background."]);
+            Inertia::flash('toast', ['type' => 'success', 'message' => "Command {$finalCommand} started in background."]);
             return back();
         }
 
