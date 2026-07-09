@@ -2,12 +2,12 @@
 
 namespace App\Services\Whatsapp;
 
-use App\Helpers\SlaConstants;
 use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Repositories\Contracts\AttendanceDayRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -19,6 +19,7 @@ class OpsSnapshotBuilder
         private readonly UserRepositoryInterface $users,
         private readonly AttendanceDayRepositoryInterface $attendanceDays,
         private readonly ShiftAssignmentResolver $shiftResolver,
+        private readonly SettingRepositoryInterface $settings,
     ) {}
 
     /**
@@ -176,7 +177,7 @@ class OpsSnapshotBuilder
         // }
 
         // Aging Tickets > N days
-        $agingDays = SlaConstants::AGING_DAYS;
+        $agingDays = (int) $this->settings->get('sla_aging_days', 3);
         $agingDate = $today->subDays($agingDays);
         $agingTickets = $activeTickets->filter(function ($t) use ($agingDate) {
             $createdAt = $t->api_creation_date ?? $t->first_seen_at;
@@ -270,7 +271,7 @@ class OpsSnapshotBuilder
 
         $lines = [];
         $companyName = $company->name ?? 'Team';
-        $workTarget = SlaConstants::WORK_DURATION_HOURS;
+        $workTarget = (int) $this->settings->get('sla_work_duration_hours', 8);
 
         // Header
         $lines[] = "📝 *[Evening Ops Snapshot – {$companyName} Team | {$dateStr} | 19.00 WITA]*";
@@ -347,7 +348,7 @@ class OpsSnapshotBuilder
         // }
 
         // Aging Tickets > N days
-        $agingDays = SlaConstants::AGING_DAYS;
+        $agingDays = (int) $this->settings->get('sla_aging_days', 3);
         $agingDate = $today->subDays($agingDays);
         $agingTickets = $activeTickets->filter(function ($t) use ($agingDate) {
             $createdAt = $t->api_creation_date ?? $t->first_seen_at;
@@ -367,7 +368,7 @@ class OpsSnapshotBuilder
         }
 
         // High Ticket Load (>=N in 24 hours)
-        $highLoadThreshold = SlaConstants::HIGH_TICKET_LOAD;
+        $highLoadThreshold = (int) $this->settings->get('sla_high_ticket_load', 10);
         $last24h = CarbonImmutable::now($timezone)->subHours(24);
         
         $recentTickets = Ticket::query()
@@ -412,8 +413,8 @@ class OpsSnapshotBuilder
         $lines[] = '';
 
         // Avg Response Time & Resolution Time
-        $responseThreshold = SlaConstants::RESPONSE_TIME_GREEN;
-        $resolutionThreshold = SlaConstants::RESOLUTION_TIME_GREEN;
+        $responseThreshold = (int) $this->settings->get('sla_response_time_green', 60);
+        $resolutionThreshold = (int) $this->settings->get('sla_resolution_time_green', 120);
 
         $avgResponseMin = $closedTodayTickets->isNotEmpty()
             ? round($closedTodayTickets->avg(function ($t) {
