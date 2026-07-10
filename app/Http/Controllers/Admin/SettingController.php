@@ -60,6 +60,7 @@ class SettingController extends Controller
             return back()->with('toast', ['type' => 'error', 'message' => 'Command not allowed.']);
         }
 
+        // Pengecualian: AI Backfill tetap menggunakan exec karena memakan waktu berjam-jam (rawan timeout di Queue Worker standar)
         if ($command === 'ops:backfill-ai-tickets --force') {
             // Ambil setting batas hari dari database lalu sertakan secara eksplisit ke command
             $days = $this->settings->get('ai_backfill_days', 30);
@@ -84,19 +85,35 @@ class SettingController extends Controller
             return back();
         }
 
-        // Jalankan perintah lainnya secara synchronous agar tuntas (seperti kirim WA)
-        try {
-            Artisan::call($command);
-            Inertia::flash('toast', ['type' => 'success', 'message' => "Command {$command} executed successfully."]);
-        } catch (\Exception $e) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => "Command failed: " . $e->getMessage()]);
-        }
+        // Untuk fitur test scheduler lainnya (Sinkronisasi Tiket, WA, Absensi)
+        // Kita menggunakan Laravel Job Queue (berjalan di background)
+        $cacheKey = str_replace([':', ' ', '-'], '_', $command);
+        
+        Cache::put("cmd_progress:{$cacheKey}", [
+            'status' => 'starting',
+            'progress' => 0,
+            'message' => 'Menambahkan perintah ke antrean (Queue)...',
+        ], 600);
 
+        \App\Jobs\RunAsyncCommandJob::dispatch($command, $cacheKey);
+        
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Command {$command} diantrekan (Queue) di background."]);
         return back();
     }
 
     public function checkCommandStatus(Request $request)
     {
+        $keys = $request->input('keys');
+        if ($keys) {
+            $keyArray = explode(',', $keys);
+            $results = [];
+            foreach ($keyArray as $k) {
+                $results[$k] = Cache::get("cmd_progress:{$k}", ['status' => 'idle']);
+            }
+            return response()->json($results);
+        }
+
+        // Fallback untuk backward compatibility
         $key = $request->input('key', 'ops_backfill');
         return response()->json(Cache::get("cmd_progress:{$key}", ['status' => 'idle']));
     }

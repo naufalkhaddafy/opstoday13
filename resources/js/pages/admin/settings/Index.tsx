@@ -1,6 +1,6 @@
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Save, Play, Clock, Server, CheckCircle2, Bot } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Play, Clock, Server, CheckCircle2, Bot, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,7 @@ export default function SettingsIndex({ grouped_settings }: Props) {
     });
 
     const [testingCmd, setTestingCmd] = useState<string | null>(null);
-    const [progressStatus, setProgressStatus] = useState<{ status: string, progress: number, message: string } | null>(null);
+    const [activeJobs, setActiveJobs] = useState<{ [key: string]: any }>({});
     const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
     const [activeTab, setActiveTab] = useState<string>(Object.keys(grouped_settings)[0] || 'AI Integrations');
 
@@ -53,50 +53,88 @@ export default function SettingsIndex({ grouped_settings }: Props) {
         });
     };
 
+    useEffect(() => {
+        // Coba lanjutkan polling jika ada proses yang sedang berjalan sebelum refresh
+        const keysStr = localStorage.getItem('active_test_cmd_keys');
+        if (keysStr) {
+            const keys = JSON.parse(keysStr);
+            if (keys && keys.length > 0) {
+                startPolling(keys);
+            }
+        }
+
+        return () => {
+            if (pollInterval) clearInterval(pollInterval);
+        };
+    }, []);
+
     const handleTestCommand = (command: string) => {
         setTestingCmd(command);
+        
+        let key = '';
+        if (command.includes('backfill-ai-tickets')) {
+            key = 'ops_backfill';
+        } else {
+            key = command.replace(/[: \-]/g, '_');
+        }
+
+        // Initialize state for this specific job
+        setActiveJobs(prev => ({
+            ...prev,
+            [key]: { status: 'starting', progress: 0, message: 'Menyiapkan...' }
+        }));
+        
         router.post('/admin/settings/test', { command }, {
             preserveScroll: true,
             onFinish: () => {
-                if (command === 'ops:backfill-ai-tickets --force') {
-                    startPolling('ops_backfill');
-                } else {
-                    setTestingCmd(null);
+                const keysStr = localStorage.getItem('active_test_cmd_keys');
+                let keys = keysStr ? JSON.parse(keysStr) : [];
+                if (!keys.includes(key)) {
+                    keys.push(key);
+                    localStorage.setItem('active_test_cmd_keys', JSON.stringify(keys));
                 }
+                startPolling(keys);
             },
         });
     };
 
-    const startPolling = (key: string) => {
+    const startPolling = (keys: string[]) => {
         if (pollInterval) clearInterval(pollInterval);
+        if (!keys || keys.length === 0) return;
 
         const interval = setInterval(() => {
-            axios.get(`/admin/settings/test-status?key=${key}`)
+            axios.get(`/admin/settings/test-status?keys=${keys.join(',')}`)
                 .then((res: { data: any }) => {
                     const data = res.data;
-                    setProgressStatus(data);
+                    
+                    setActiveJobs(prev => ({
+                        ...prev,
+                        ...data
+                    }));
 
-                    if (data.status === 'completed' || data.status === 'error') {
-                        clearInterval(interval);
-                        setTestingCmd(null);
-                        setPollInterval(null);
+                    let updatedKeys = [...keys];
+                    let shouldUpdateStorage = false;
+
+                    for (const k of keys) {
+                        if (data[k] && (data[k].status === 'completed' || data[k].status === 'error')) {
+                            // Stop polling this specific key
+                            updatedKeys = updatedKeys.filter(uk => uk !== k);
+                            shouldUpdateStorage = true;
+                        }
+                    }
+
+                    if (shouldUpdateStorage) {
+                        localStorage.setItem('active_test_cmd_keys', JSON.stringify(updatedKeys));
+                        startPolling(updatedKeys);
                     }
                 })
                 .catch(() => {
-                    clearInterval(interval);
-                    setTestingCmd(null);
-                    setPollInterval(null);
+                    // Ignore transient errors
                 });
         }, 1500);
 
         setPollInterval(interval);
     };
-
-    useEffect(() => {
-        return () => {
-            if (pollInterval) clearInterval(pollInterval);
-        };
-    }, [pollInterval]);
 
     return (
         <>
@@ -207,9 +245,12 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                         <Play className="mr-2 h-3 w-3" /> Test Sync Attendance
                                                     </Button>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground mt-3">
-                                                    * These buttons execute the background tasks immediately. Check your WhatsApp or System Logs for results.
-                                                </p>
+                                                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 text-xs rounded-md border border-blue-100 dark:border-blue-900/50 flex items-start gap-2">
+                                                    <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                                                    <p>
+                                                        <strong>Catatan:</strong> Tombol tes di atas akan mengirimkan perintah ke sistem antrean (Job Queue). Proses berjalan di latar belakang (asinkron) sehingga Anda bebas berpindah halaman tanpa memutus proses. Hasil eksekusi akan tampil di terminal log di bawah.
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
 
@@ -233,28 +274,38 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                         <Play className="mr-2 h-3 w-3" /> Mulai Backfill AI
                                                     </Button>
                                                 </div>
-
-                                                {/* Tampilan Progress Bar Live */}
-                                                {progressStatus && progressStatus.status !== 'idle' && (
-                                                    <div className="mt-6 space-y-2 p-4 bg-background border border-border rounded-md shadow-sm">
-                                                        <div className="flex justify-between items-center text-sm">
-                                                            <span className="font-semibold text-brand-600">
-                                                                {progressStatus.status === 'completed' ? 'Selesai' : 'Sedang Berjalan...'}
-                                                            </span>
-                                                            <span className="text-muted-foreground">{progressStatus.progress ?? 0}%</span>
-                                                        </div>
-                                                        <Progress value={progressStatus.progress ?? 0} className="h-2" />
-                                                        <div className="mt-2 text-xs font-mono bg-muted p-2 rounded text-muted-foreground h-16 overflow-y-auto">
-                                                            {'> '} {progressStatus.message || 'Waiting for process to start...'}
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </TabsContent>
                                 ))}
 
                             </Tabs>
+
+                            {/* Tampilan Progress Bar Live (Global untuk semua test) */}
+                            {Object.entries(activeJobs).length > 0 && (
+                                <div className="mt-6 space-y-4">
+                                    {Object.entries(activeJobs).map(([jobKey, jobStatus]) => {
+                                        if (!jobStatus || jobStatus.status === 'idle') return null;
+                                        return (
+                                            <div key={jobKey} className="p-4 bg-background border border-border rounded-md shadow-sm">
+                                                <div className="flex justify-between items-center text-sm mb-2">
+                                                    <span className="font-semibold text-brand-600 flex items-center gap-2">
+                                                        {jobKey.replace(/_/g, ' ').toUpperCase()} 
+                                                        — 
+                                                        {jobStatus.status === 'completed' ? 'Selesai' : 
+                                                         jobStatus.status === 'error' ? 'Gagal' : 'Sedang Berjalan...'}
+                                                    </span>
+                                                    <span className="text-muted-foreground">{jobStatus.progress ?? 0}%</span>
+                                                </div>
+                                                <Progress value={jobStatus.progress ?? 0} className="h-2" />
+                                                <div className="mt-2 text-xs font-mono bg-muted p-3 rounded-md text-muted-foreground max-h-48 overflow-y-auto whitespace-pre-wrap">
+                                                    {'> '} {jobStatus.message || 'Waiting for process to start...'}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
                                 <div className="flex justify-end pt-6 border-t mt-6">
                                     <Button type="submit" disabled={processing || !isDirty}>
