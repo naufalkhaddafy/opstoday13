@@ -139,8 +139,13 @@ class TicketRepository implements TicketRepositoryInterface
         $ticket->last_synced_at = $now;
         $ticket->sync_batch_id = $run->id;
 
-        // For historical backfill (never tracked while open), response time is ignored:
-        // first_seen_at / in_progress_at / response_time_seconds stay null.
+        // Jika tiket pernah terpantau (first_seen_at ada) tapi langsung di-close
+        // tanpa pernah terekam In Progress, kita catat waktu tutupnya sebagai waktu respons.
+        if ($ticket->first_seen_at !== null && $ticket->in_progress_at === null) {
+            $ticket->in_progress_at = $ticket->status_changed_at ?? $now;
+            $ticket->response_time_seconds = $this->secondsBetween($ticket->first_seen_at, $ticket->in_progress_at);
+        }
+
         $ticket->save();
 
         $this->processAIPrediction($ticket, $oldTitle);
