@@ -47,6 +47,8 @@ use App\Repositories\Contracts\HolidayRepositoryInterface;
 use App\Repositories\Eloquent\HolidayRepository;
 use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Repositories\Eloquent\SettingRepository;
+use App\Repositories\Contracts\SessionRepositoryInterface;
+use App\Repositories\Eloquent\SessionRepository;
 use App\Models\Setting;
 use App\Observers\SettingObserver;
 use App\Services\Fingerprint\HttpFingerprintClient;
@@ -84,6 +86,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ActivityLogRepositoryInterface::class, ActivityLogRepository::class);
         $this->app->bind(HolidayRepositoryInterface::class, HolidayRepository::class);
         $this->app->bind(SettingRepositoryInterface::class, SettingRepository::class);
+        $this->app->bind(SessionRepositoryInterface::class, SessionRepository::class);
     }
 
     /**

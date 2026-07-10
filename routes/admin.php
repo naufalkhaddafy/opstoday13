@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\ActiveSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])
@@ -51,4 +52,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::post('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings/test', [SettingController::class, 'testCommand'])->name('settings.test');
         Route::get('settings/test-status', [SettingController::class, 'checkCommandStatus'])->name('settings.test-status');
+
+        Route::get('active-sessions', [ActiveSessionController::class, 'index'])->name('active-sessions.index');
+        Route::delete('active-sessions/{id}', [ActiveSessionController::class, 'destroy'])->name('active-sessions.destroy');
     });

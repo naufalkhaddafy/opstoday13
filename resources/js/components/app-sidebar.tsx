@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft, Settings } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft, Settings, MonitorSmartphone } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -109,6 +109,11 @@ const systemLogItems: NavItem[] = [
         href: '/admin/settings',
         icon: Settings,
     },
+    {
+        title: 'Active Sessions',
+        href: '/admin/active-sessions',
+        icon: MonitorSmartphone,
+    },
 ];
 
 export function AppSidebar() {
@@ -134,7 +139,7 @@ export function AppSidebar() {
                     />
                 )}
                 {isSuperAdmin && (
-                    <NavMain items={systemLogItems} title="System Logs" />
+                    <NavMain items={systemLogItems} title="Systems Management" />
                 )}
             </SidebarContent>
 
