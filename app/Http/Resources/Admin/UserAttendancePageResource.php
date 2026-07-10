@@ -101,6 +101,7 @@ class UserAttendancePageResource extends JsonResource
                     $summary['total_present']++;
                     $summary['total_scheduled']++;
                 } elseif ($presence === 'tidak_lengkap') {
+                    $summary['total_present']++; // Lupa check out tetap dihitung hadir secara persentase
                     $summary['total_incomplete']++;
                     $summary['total_scheduled']++;
                 } elseif ($presence === 'absen' || $presence === 'tidak_hadir') {
