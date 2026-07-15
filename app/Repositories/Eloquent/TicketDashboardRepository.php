@@ -98,7 +98,18 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_hours', 'assigned_to_user_id');
 
-        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs) {
+        $globalActiveCounts = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereNotNull('assigned_to_user_id')
+            ->whereIn('status', [TicketStatus::Assigned->value, TicketStatus::InProgress->value, TicketStatus::PendingOnHold->value])
+            ->when($companyId, function (Builder $query) use ($companyId) {
+                $query->whereHas('assignedUser', fn (Builder $userQuery) => $userQuery->where('company_id', $companyId));
+            })
+            ->selectRaw('assigned_to_user_id, COUNT(*) as total')
+            ->groupBy('assigned_to_user_id')
+            ->pluck('total', 'assigned_to_user_id');
+
+        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $globalActiveCounts) {
             $byStatus = ($statusCounts[$engineer->id] ?? collect())->pluck('total', 'status_value');
 
             $assigned = (int) ($byStatus[TicketStatus::Assigned->value] ?? 0);
@@ -118,6 +129,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 'in_progress' => $inProgress,
                 'completed_today' => $completed,
                 'total' => $assigned + $pending + $inProgress + $completed,
+                'global_active_tickets' => (int) ($globalActiveCounts[$engineer->id] ?? 0),
                 'avg_response_time_seconds' => $avgResponse !== null ? (int) round((float) $avgResponse) : null,
                 'avg_resolution_time_hours' => $avgResolution !== null ? round((float) $avgResolution, 2) : null,
             ];

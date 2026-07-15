@@ -18,9 +18,10 @@ type EngineerCardProps = {
     variant?: 'tickets' | 'attendance' | 'combined';
     periodDateStr?: string;
     companyName?: string;
+    slaHighTicketLoad?: number;
 };
 
-export function EngineerCard({ engineer, attendance, variant = 'combined', periodDateStr, companyName }: EngineerCardProps) {
+export function EngineerCard({ engineer, attendance, variant = 'combined', periodDateStr, companyName, slaHighTicketLoad }: EngineerCardProps) {
     const initials = engineer.name
         .split(' ')
         .slice(0, 2)
@@ -38,6 +39,11 @@ export function EngineerCard({ engineer, attendance, variant = 'combined', perio
 
     const showAttendanceTop = variant !== 'tickets';
     const showTicketBars = variant !== 'attendance';
+
+    const activeTickets = engineer.global_active_tickets;
+    const capacityTotal = slaHighTicketLoad ?? null;
+    const workloadPercent = capacityTotal ? Math.min(100, Math.round((activeTickets / capacityTotal) * 100)) : 0;
+    const workloadColor = workloadPercent >= 100 ? 'bg-rose-500' : workloadPercent >= 80 ? 'bg-amber-500' : 'bg-emerald-500';
 
     return (
         <Card className="border-border/60 shadow-sm">
@@ -96,9 +102,25 @@ export function EngineerCard({ engineer, attendance, variant = 'combined', perio
                 <div className="mt-4 border-t pt-3">
                     {showTicketBars && (
                         <>
-                            <div className="mb-2 flex items-center justify-between">
-                                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tickets in Period</span>
-                                <span className="text-lg font-bold text-foreground">{engineer.total}</span>
+                            <div className="mb-3 flex flex-col gap-1">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Tickets in Period</span>
+                                    <span className="text-lg font-bold text-foreground">{engineer.total}</span>
+                                </div>
+                                {capacityTotal !== null && (
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                            <span>Workload Capacity</span>
+                                            <span>{activeTickets} / {capacityTotal} Active</span>
+                                        </div>
+                                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                                            <div
+                                                className={`h-full rounded-full transition-all ${workloadColor}`}
+                                                style={{ width: `${workloadPercent}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="space-y-2">
                                 {bars.map((bar) => (

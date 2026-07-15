@@ -509,6 +509,7 @@ export default function PublicDashboard({
                                                         engineer={engineer}
                                                         attendance={attendanceByUserId.get(engineer.id) ?? null}
                                                         variant="tickets"
+                                                        slaHighTicketLoad={filters.slaHighTicketLoad}
                                                     />
                                                 ))}
                                             </div>

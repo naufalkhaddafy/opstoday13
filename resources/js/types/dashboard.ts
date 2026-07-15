@@ -74,6 +74,7 @@ export type EngineerSummary = {
     pending: number;
     in_progress: number;
     completed_today: number;
+    global_active_tickets: number;
     total: number;
     avg_response_time_seconds: number | null;
     avg_response_time_label: string | null;
@@ -110,6 +111,7 @@ export type DashboardFilters = {
     sort_by: string | null;
     sort_dir: string;
     status: string | null;
+    slaHighTicketLoad: number;
     defaults: {
         company_id: number | null;
         date_from: string;

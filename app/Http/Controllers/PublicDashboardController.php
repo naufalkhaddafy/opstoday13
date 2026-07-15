@@ -82,6 +82,7 @@ class PublicDashboardController extends Controller
                     'sort_by' => $sortBy,
                     'sort_dir' => $sortDir,
                     'status' => $status,
+                    'slaHighTicketLoad' => (int) (\App\Models\Setting::where('key', 'sla_high_ticket_load')->value('value') ?? 10),
                     'defaults' => [
                         'company_id' => null,
                         'date_from' => $today->toDateString(),
