@@ -430,8 +430,17 @@ class OpsSnapshotBuilder
             }))
             : 0;
 
-        $lines[] = "⚡ Avg Response Time: ({$avgResponseMin}m)";
-        $lines[] = "📊 Avg Resolution Time: ({$avgResolutionMin}m)";
+        $formatMinutes = function ($minutes) {
+            if ($minutes >= 60) {
+                $h = intdiv((int)$minutes, 60);
+                $m = (int)$minutes % 60;
+                return $m > 0 ? "{$h}h {$m}m" : "{$h}h";
+            }
+            return "{$minutes}m";
+        };
+
+        $lines[] = "⚡ Avg Response Time: (" . $formatMinutes($avgResponseMin) . ")";
+        $lines[] = "📊 Avg Resolution Time: (" . $formatMinutes($avgResolutionMin) . ")";
 
         $lines[] = '';
 
