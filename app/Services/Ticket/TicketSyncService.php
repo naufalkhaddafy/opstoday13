@@ -167,6 +167,9 @@ class TicketSyncService
                 }
             }
 
+            // Bersihkan otomatis tiket-tiket NSS/huruf lama yang masih nyangkut, setelah API selesai
+            $this->ticketRepository->sweepDisappearedStringTickets();
+
             return $this->syncRunRepository->finish(
                 $run,
                 TicketSyncRunStatus::Success,

@@ -134,8 +134,10 @@ class TicketRepository implements TicketRepositoryInterface
         $ticket->work_group = $record['work_group'] ?? $ticket->work_group;
         $ticket->api_creation_date = $record['api_creation_date'] ?? $ticket->api_creation_date;
         $ticket->completed_date = $record['completed_date'] ?? $ticket->completed_date;
+        
         $ticket->resolution_time = $record['resolution_time'] ?? $ticket->resolution_time;
         $ticket->disappeared_at = null;
+        
         $ticket->last_synced_at = $now;
         $ticket->sync_batch_id = $run->id;
 
@@ -163,7 +165,41 @@ class TicketRepository implements TicketRepositoryInterface
             $query->whereNotIn('ticket_no', $seenTicketNos);
         }
 
-        return $query->update(['disappeared_at' => now()]);
+        $disappearingTickets = $query->get();
+        $count = 0;
+        $now = now();
+
+        foreach ($disappearingTickets as $ticket) {
+            // Jika ticket_no mengandung huruf (misal NSS-123, INC-456, dll)
+            if (preg_match('/[a-zA-Z]/', $ticket->ticket_no)) {
+                $this->forceCloseStringTicket($ticket, $now);
+            } else {
+                $ticket->disappeared_at = $now;
+                $count++;
+            }
+            $ticket->save();
+        }
+
+        return $count;
+    }
+
+    public function sweepDisappearedStringTickets(): int
+    {
+        $tickets = Ticket::query()
+            ->whereNotNull('disappeared_at')
+            ->where('status', '!=', TicketStatus::Closed->value)
+            ->get();
+
+        $count = 0;
+        foreach($tickets as $ticket) {
+            if (preg_match('/[a-zA-Z]/', $ticket->ticket_no)) {
+                $this->forceCloseStringTicket($ticket, $ticket->disappeared_at);
+                $ticket->save();
+                $count++;
+            }
+        }
+        
+        return $count;
     }
 
     /**
@@ -226,12 +262,27 @@ class TicketRepository implements TicketRepositoryInterface
         return $this->userIdCache[$employeeId] = $userId === null ? null : (int) $userId;
     }
 
-    protected function secondsBetween(?CarbonInterface $from, CarbonInterface $to): int
+    protected function secondsBetween(?\Carbon\CarbonInterface $from, \Carbon\CarbonInterface $to): int
     {
         if ($from === null) {
             return 0;
         }
 
         return max(0, $from->diffInSeconds($to, true));
+    }
+
+    protected function forceCloseStringTicket(Ticket $ticket, \Carbon\CarbonInterface $closeTime): void
+    {
+        $ticket->status = TicketStatus::Closed;
+        $ticket->status_changed_at = $closeTime;
+        
+        $start = $ticket->in_progress_at ?? $ticket->first_seen_at ?? $closeTime;
+        $diffInSeconds = max(0, $start->diffInSeconds($closeTime));
+        $ticket->resolution_time = round($diffInSeconds / 3600, 2);
+        
+        $ticket->api_creation_date = $closeTime->toDateString();
+        $ticket->completed_date = $closeTime->toDateString();
+        
+        $ticket->disappeared_at = null;
     }
 }

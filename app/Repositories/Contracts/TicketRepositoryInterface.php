@@ -29,4 +29,12 @@ interface TicketRepositoryInterface
      * @return int Number of tickets newly marked as disappeared.
      */
     public function markDisappeared(array $seenTicketNos): int;
+    
+    /**
+     * Sweep through old tickets that have disappeared and contain letters in their ticket_no,
+     * forcing them to be closed.
+     * 
+     * @return int Number of tickets cleaned up.
+     */
+    public function sweepDisappearedStringTickets(): int;
 }
