@@ -111,11 +111,19 @@ export function WorkGroupChart({ data }: WorkGroupChartProps) {
                 ticks: {
                     color: 'rgba(0,0,0,0.5)',
                     font: {
-                        size: 8,
+                        size: 9,
                     },
-                    maxRotation: 0,
+                    maxRotation: 45,
                     minRotation: 0,
-                    autoSkip: false,
+                    autoSkip: true,
+                    maxTicksLimit: 8,
+                    callback: function(value: any) {
+                        const label = labels[value as number] || String(value);
+                        if (typeof label === 'string' && label.length > 12) {
+                            return label.substring(0, 12) + '...';
+                        }
+                        return label;
+                    }
                 },
                 grid: {
                     display: false,
