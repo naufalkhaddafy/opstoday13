@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.3] - 2026-07-25
+
+### Added
+- **Work Group Filter on Public Dashboard**: Added a new "Work Group" dropdown in the public dashboard's filter pane. This pulls data dynamically from the `Group` master data and accurately filters the entire dashboard (attendance, ticket metrics, KPIs, and engineer summaries) by scoping to the assigned user's group rather than the ticket's static work group field.
+
 ## [v1.3.2] - 2026-07-24
 
 ### Added
