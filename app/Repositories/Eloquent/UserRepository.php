@@ -117,11 +117,16 @@ class UserRepository implements UserRepositoryInterface
         $user->syncRoles([$data['role']]);
     }
 
-    public function activeForDashboard(string $dateFrom, string $dateTo, ?int $companyId = null): \Illuminate\Database\Eloquent\Collection
+    public function activeForDashboard(string $dateFrom, string $dateTo, ?int $companyId = null, ?string $workGroup = null): \Illuminate\Database\Eloquent\Collection
     {
         return User::query()
             ->where('is_active', true)
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($workGroup, function ($q) use ($workGroup) {
+                $q->whereHas('group', function ($gq) use ($workGroup) {
+                    $gq->where('name', $workGroup);
+                });
+            })
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::SuperAdmin->value))
             ->with([
                 'leaves' => fn ($q) => $q->approved()->where(function ($sub) use ($dateFrom, $dateTo) {

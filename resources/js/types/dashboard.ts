@@ -105,6 +105,7 @@ export type CompanyOption = { id: number; name: string };
 
 export type DashboardFilters = {
     company_id: number | null;
+    work_group: string | null;
     date_from: string;
     date_to: string;
     search: string | null;
@@ -114,6 +115,7 @@ export type DashboardFilters = {
     slaHighTicketLoad: number;
     defaults: {
         company_id: number | null;
+        work_group: string | null;
         date_from: string;
         date_to: string;
         search: string | null;
@@ -130,6 +132,7 @@ export type DashboardProps = {
     ticket_stats?: TicketStats;
     kpi_stats?: KpiStats;
     companies: CompanyOption[];
+    workGroups: string[];
     filters: DashboardFilters;
     engineers?: EngineerSummary[];
     tickets?: {

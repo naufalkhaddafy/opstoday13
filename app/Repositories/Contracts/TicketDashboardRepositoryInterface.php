@@ -20,6 +20,7 @@ interface TicketDashboardRepositoryInterface
         ?string $sortBy = null,
         ?string $sortDir = 'desc',
         ?string $status = null,
+        ?string $workGroup = null,
     ): LengthAwarePaginator;
 
     /**
@@ -31,6 +32,7 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?string $workGroup = null,
     ): Collection;
 
     /**
@@ -42,6 +44,7 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?string $workGroup = null,
     ): array;
 
     /**
@@ -53,6 +56,7 @@ interface TicketDashboardRepositoryInterface
         ?int $companyId = null,
         ?int $responseSlaSeconds = null,
         ?float $resolutionSlaHours = null,
+        ?string $workGroup = null,
     ): array;
 
     /**
@@ -64,7 +68,8 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?int $limit = 10
+        ?int $limit = 10,
+        ?string $workGroup = null,
     ): array;
 
     /**
@@ -76,5 +81,13 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?string $workGroup = null,
     ): array;
+
+    /**
+     * Get unique available work groups
+     *
+     * @return array<int, string>
+     */
+    public function getAvailableWorkGroups(): array;
 }

@@ -55,27 +55,31 @@ class PublicDashboardController extends Controller
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir', 'desc');
         $status = $request->input('status');
+        $workGroupInput = $request->input('work_group');
+        $workGroup = $workGroupInput && $workGroupInput !== 'all' ? $workGroupInput : null;
 
         return Inertia::render(
             'public-dashboard',
             PublicDashboardPageResource::make([
-                'users' => fn () => $this->users->activeForDashboard($dateFrom->toDateString(), $dateTo->toDateString(), $companyId),
+                'users' => fn () => $this->users->activeForDashboard($dateFrom->toDateString(), $dateTo->toDateString(), $companyId, $workGroup),
                 'attendanceDate' => $dateTo,
                 'today' => $today,
                 'shiftResolver' => $shiftResolver,
-                'tickets' => fn () => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10, $search, $sortBy, $sortDir, $status),
-                'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId),
-                'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId),
-                'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId),
+                'tickets' => fn () => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10, $search, $sortBy, $sortDir, $status, $workGroup),
+                'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId, $workGroup),
+                'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId, $workGroup),
+                'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId, null, null, $workGroup),
                 'analytics' => fn () => [
                     'leaderboard' => $this->analyticsService->getDisciplineLeaderboard($dateFrom, $dateTo, $companyId),
                     'lateTrend' => $this->analyticsService->getLateTrend($dateFrom, $dateTo, $companyId),
-                    'issueTrends' => $this->tickets->getTrendingKeywords($dateFrom, $dateTo, $companyId),
-                    'workGroupDistribution' => $this->tickets->getTicketsByWorkGroup($dateFrom, $dateTo, $companyId),
+                    'issueTrends' => $this->tickets->getTrendingKeywords($dateFrom, $dateTo, $companyId, 10, $workGroup),
+                    'workGroupDistribution' => $this->tickets->getTicketsByWorkGroup($dateFrom, $dateTo, $companyId, $workGroup),
                 ],
                 'companies' => $this->companies->all(),
+                'workGroups' => fn () => $this->tickets->getAvailableWorkGroups(),
                 'filters' => [
                     'company_id' => $companyId,
+                    'work_group' => $workGroup,
                     'date_from' => $dateFrom->toDateString(),
                     'date_to' => $dateTo->toDateString(),
                     'search' => $search,
@@ -85,6 +89,7 @@ class PublicDashboardController extends Controller
                     'slaHighTicketLoad' => (int) (\App\Models\Setting::where('key', 'sla_high_ticket_load')->value('value') ?? 10),
                     'defaults' => [
                         'company_id' => null,
+                        'work_group' => null,
                         'date_from' => $today->toDateString(),
                         'date_to' => $today->toDateString(),
                         'search' => null,

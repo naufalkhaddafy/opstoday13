@@ -24,8 +24,9 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?string $sortBy = null,
         ?string $sortDir = 'desc',
         ?string $status = null,
+        ?string $workGroup = null,
     ): LengthAwarePaginator {
-        $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+        $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->with('assignedUser:id,name,employee_id');
 
         if ($search) {
@@ -68,30 +69,36 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?string $workGroup = null,
     ): Collection {
         /** @var Collection<int, User> $engineers */
         $engineers = User::query()
             ->where('is_active', true)
             ->where('employee_id', 'like', 'Z%')
             ->when($companyId, fn (Builder $query) => $query->where('company_id', $companyId))
+            ->when($workGroup, function ($q) use ($workGroup) {
+                $q->whereHas('group', function ($gq) use ($workGroup) {
+                    $gq->where('name', $workGroup);
+                });
+            })
             ->orderBy('name')
             ->get(['id', 'name', 'employee_id']);
 
-        $statusCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+        $statusCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->selectRaw('assigned_to_user_id, status as status_value, COUNT(*) as total')
             ->groupBy('assigned_to_user_id', 'status')
             ->get()
             ->groupBy('assigned_to_user_id');
 
-        $responseAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+        $responseAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', '!=', TicketStatus::Assigned->value)
             ->selectRaw('assigned_to_user_id, AVG(CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) as avg_seconds')
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_seconds', 'assigned_to_user_id');
 
-        $resolutionAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+        $resolutionAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
             ->selectRaw('assigned_to_user_id, AVG(CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) as avg_hours')
@@ -140,8 +147,9 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?string $workGroup = null,
     ): array {
-        $byStatus = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+        $byStatus = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->selectRaw('status as status_value, COUNT(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status_value');
@@ -168,11 +176,17 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId,
+        ?string $workGroup = null,
     ): Builder {
         return Ticket::query()
             ->whereNull('disappeared_at')
             ->when($companyId, function (Builder $query) use ($companyId) {
                 $query->whereHas('assignedUser', fn (Builder $userQuery) => $userQuery->where('company_id', $companyId));
+            })
+            ->when($workGroup, function (Builder $query) use ($workGroup) {
+                $query->whereHas('assignedUser.group', function (Builder $gq) use ($workGroup) {
+                    $gq->where('name', $workGroup);
+                });
             })
             ->whereRaw(self::TICKET_DATE_EXPRESSION.' BETWEEN ? AND ?', [
                 $dateFrom->toDateString(),
@@ -189,12 +203,13 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?int $companyId = null,
         ?int $responseSlaSeconds = null,
         ?float $resolutionSlaHours = null,
+        ?string $workGroup = null,
     ): array {
         $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
         $responseSlaSeconds ??= ((int) $settings->get('sla_response_time_green', 60)) * 60;
         $resolutionSlaHours ??= ((int) $settings->get('sla_resolution_time_green', 120)) / 60;
-        $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $responseSlaSeconds, $resolutionSlaHours) {
-            $baseQuery = $this->scopedTicketQuery($start, $end, $companyId);
+        $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $workGroup, $responseSlaSeconds, $resolutionSlaHours) {
+            $baseQuery = $this->scopedTicketQuery($start, $end, $companyId, $workGroup);
 
             // Response SLA
             $responseStats = (clone $baseQuery)
@@ -258,10 +273,11 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?int $limit = 10
+        ?int $limit = 10,
+        ?string $workGroup = null,
     ): array {
-        $getFormattedItems = function ($dFrom, $dTo) use ($companyId) {
-            $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId)
+        $getFormattedItems = function ($dFrom, $dTo) use ($companyId, $workGroup) {
+            $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId, $workGroup)
                 ->join('ticket_ai_predictions', 'tickets.id', '=', 'ticket_ai_predictions.ticket_id')
                 ->whereNotNull('ticket_ai_predictions.cluster_label')
                 ->select('ticket_ai_predictions.cluster_label', 'ticket_ai_predictions.sub_cluster_label')
@@ -304,8 +320,9 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
+        ?string $workGroup = null,
     ): array {
-        return $this->scopedTicketQuery($dateFrom, $dateTo, $companyId)
+        return $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('work_group')
             ->selectRaw('work_group, COUNT(*) as total')
             ->groupBy('work_group')
@@ -318,6 +335,14 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                     'total' => (int) $item->total,
                 ];
             })
+            ->toArray();
+    }
+
+    public function getAvailableWorkGroups(): array
+    {
+        return \App\Models\Group::query()
+            ->orderBy('name')
+            ->pluck('name')
             ->toArray();
     }
 }

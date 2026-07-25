@@ -26,6 +26,7 @@ import { CompanyOption, DashboardFilters } from '@/types/dashboard';
 
 export function DashboardHeaderFilters({
     companies,
+    workGroups = [],
     filters,
     onApply,
     onExport,
@@ -36,6 +37,7 @@ export function DashboardHeaderFilters({
     light = false,
 }: {
     companies: CompanyOption[];
+    workGroups?: string[];
     filters: DashboardFilters;
     onApply: (next: Partial<DashboardFilters>) => void;
     onExport: () => void;
@@ -49,6 +51,7 @@ export function DashboardHeaderFilters({
 
     const isFiltered =
         filters.company_id !== filters.defaults.company_id ||
+        filters.work_group !== filters.defaults.work_group ||
         filters.date_from !== filters.defaults.date_from ||
         filters.date_to !== filters.defaults.date_to ||
         filters.search !== filters.defaults.search ||
@@ -63,6 +66,7 @@ export function DashboardHeaderFilters({
     const handleReset = () => {
         onApply({
             company_id: null,
+            work_group: null,
             date_from: filters.defaults.date_from,
             date_to: filters.defaults.date_to,
             search: null,
@@ -164,6 +168,29 @@ export function DashboardHeaderFilters({
                                     {companies.map((company) => (
                                         <SelectItem key={company.id} value={String(company.id)}>
                                             {company.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Work Group */}
+                        <div className="space-y-2">
+                            <Label htmlFor="work-group-filter" className="flex items-center gap-2 text-sm font-medium text-foreground">
+                                <Building2 className="h-4 w-4 text-[#2E7D32]" /> Work Group
+                            </Label>
+                            <Select
+                                value={filters.work_group ? filters.work_group : 'all'}
+                                onValueChange={(value) => onApply({ work_group: value === 'all' ? null : value })}
+                            >
+                                <SelectTrigger id="work-group-filter" className="h-10 w-full">
+                                    <SelectValue placeholder="All work groups" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All work groups</SelectItem>
+                                    {workGroups.map((group) => (
+                                        <SelectItem key={group} value={group}>
+                                            {group}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

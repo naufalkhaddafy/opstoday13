@@ -56,6 +56,7 @@ export default function PublicDashboard({
     kpi_stats,
     companies,
     filters,
+    workGroups,
     engineers,
     tickets,
     analytics,
@@ -127,6 +128,7 @@ export default function PublicDashboard({
             const dateFrom = next.date_from ?? filters.date_from;
             const dateTo = next.date_to ?? filters.date_to;
             const search = next.search !== undefined ? next.search : filters.search;
+            const workGroup = next.work_group !== undefined ? next.work_group : filters.work_group;
             const sortBy = next.sort_by !== undefined ? next.sort_by : filters.sort_by;
             const sortDir = next.sort_dir !== undefined ? next.sort_dir : filters.sort_dir;
             const status = next.status !== undefined ? next.status : filters.status;
@@ -134,6 +136,7 @@ export default function PublicDashboard({
             // If all filters match defaults, navigate to clean URL '/'
             const isDefault =
                 !companyId &&
+                !workGroup &&
                 dateFrom === filters.defaults.date_from &&
                 dateTo === filters.defaults.date_to &&
                 !search &&
@@ -144,6 +147,7 @@ export default function PublicDashboard({
             const isTicketOnlyChange =
                 (next.search !== undefined || next.sort_by !== undefined || next.sort_dir !== undefined || next.status !== undefined) &&
                 next.company_id === undefined &&
+                next.work_group === undefined &&
                 next.date_from === undefined &&
                 next.date_to === undefined;
 
@@ -170,6 +174,9 @@ export default function PublicDashboard({
             };
             if (companyId) {
                 params.company_id = String(companyId);
+            }
+            if (workGroup) {
+                params.work_group = workGroup;
             }
             if (search) {
                 params.search = search;
@@ -231,6 +238,7 @@ export default function PublicDashboard({
         if (filters.date_from) params.set('date_from', filters.date_from);
         if (filters.date_to) params.set('date_to', filters.date_to);
         if (filters.company_id) params.set('company_id', String(filters.company_id));
+        if (filters.work_group) params.set('work_group', filters.work_group);
         if (filters.search) params.set('search', filters.search);
         if (filters.status) params.set('status', filters.status);
 
@@ -266,6 +274,7 @@ export default function PublicDashboard({
                             <div className="flex items-center gap-2">
                                 <DashboardHeaderFilters
                                     companies={companies}
+                                    workGroups={workGroups}
                                     filters={filters}
                                     onApply={applyFilters}
                                     onExport={handleExport}
@@ -322,6 +331,7 @@ export default function PublicDashboard({
                         <div className="flex items-center gap-2">
                             <DashboardHeaderFilters
                                 companies={companies}
+                                workGroups={workGroups}
                                 filters={filters}
                                 onApply={applyFilters}
                                 onExport={handleExport}
