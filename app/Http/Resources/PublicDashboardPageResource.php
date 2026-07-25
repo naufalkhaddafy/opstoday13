@@ -84,7 +84,7 @@ class PublicDashboardPageResource extends JsonResource
                 'id' => $company->id,
                 'name' => $company->name,
             ])->values()->all(),
-            'workGroups' => \Inertia\Inertia::defer(fn() => is_callable($this->resource['workGroups']) ? $this->resource['workGroups']() : $this->resource['workGroups']),
+            'workGroups' => is_callable($this->resource['workGroups']) ? $this->resource['workGroups']() : $this->resource['workGroups'],
             'filters' => $filters,
             'engineers' => \Inertia\Inertia::defer(function () use ($engineersClosure) {
                 return $engineersClosure()

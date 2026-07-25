@@ -14,7 +14,7 @@ class AttendanceAnalyticsService
     /**
      * @return Collection<int, array>
      */
-    public function getDisciplineLeaderboard(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId): Collection
+    public function getDisciplineLeaderboard(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId, ?string $workGroup = null): Collection
     {
         $query = AttendanceDay::query()
             ->with('user:id,name,employee_id,company_id')
@@ -22,6 +22,12 @@ class AttendanceAnalyticsService
 
         if ($companyId) {
             $query->where('company_id', $companyId);
+        }
+
+        if ($workGroup) {
+            $query->whereHas('user.group', function ($gq) use ($workGroup) {
+                $gq->where('name', $workGroup);
+            });
         }
 
         $records = $query->get();
@@ -99,7 +105,7 @@ class AttendanceAnalyticsService
     /**
      * @return array<string, int>
      */
-    public function getLateTrend(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId): array
+    public function getLateTrend(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId, ?string $workGroup = null): array
     {
         $query = AttendanceDay::query()
             ->whereBetween('work_date', [$dateFrom->toDateString(), $dateTo->toDateString()])
@@ -107,6 +113,12 @@ class AttendanceAnalyticsService
 
         if ($companyId) {
             $query->where('company_id', $companyId);
+        }
+
+        if ($workGroup) {
+            $query->whereHas('user.group', function ($gq) use ($workGroup) {
+                $gq->where('name', $workGroup);
+            });
         }
 
         $records = $query->selectRaw('DATE(work_date) as date, SUM(late_minutes) as total_late')
