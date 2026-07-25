@@ -357,7 +357,7 @@ export default function PublicDashboard({
                                     <ArrowUp className="h-5 w-5 text-[#2E7D32]" /> Team KPI & Performance {selectedCompany && `- ${selectedCompany}`}
                                 </h2>
                                 <p className="-mt-2 text-sm text-muted-foreground">
-                                    Global performance metrics and SLAs for {isSingleDay ? 'the selected date' : formatPeriodLabel(filters.date_from, filters.date_to)}.
+                                    Global performance metrics and Compliance for {isSingleDay ? 'the selected date' : formatPeriodLabel(filters.date_from, filters.date_to)}.
                                 </p>
                                 <Deferred data={["kpi_stats", "engineers"]} fallback={
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -368,15 +368,15 @@ export default function PublicDashboard({
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                                             <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                                 <KpiCard
-                                                    title="Response SLA"
+                                                    title="Response Compliance"
                                                     value={kpi_stats.current.response_sla_percent}
                                                     isPercentage
                                                     trendCurrent={kpi_stats.current.response_sla_percent}
                                                     trendPrevious={kpi_stats.previous.response_sla_percent}
-                                                    subtitle={`Target: < ${kpi_stats.targets.response_sla_seconds / 60} mins`}
+                                                    subtitle={`Target: < ${kpi_stats.targets.response_sla_seconds / 3600} hours`}
                                                 />
                                                 <KpiCard
-                                                    title="Resolution SLA"
+                                                    title="Resolution Compliance"
                                                     value={kpi_stats.current.resolution_sla_percent}
                                                     isPercentage
                                                     trendCurrent={kpi_stats.current.resolution_sla_percent}
