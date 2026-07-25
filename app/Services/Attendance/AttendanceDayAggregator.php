@@ -49,7 +49,7 @@ class AttendanceDayAggregator
 
         // Jika shift kosong (karena libur/jadwal null) tapi ada check in, coba fallback ke logika resolver
         if ($shift === null && $checkIn !== null) {
-            $resolved = $this->workDateResolver->resolve($user, $checkIn->punched_at);
+            $resolved = $this->workDateResolver->resolve($user, $checkIn->punched_at, null, $checkOut?->punched_at);
             if ($resolved !== null && $resolved['shift'] !== null) {
                 $shift = $resolved['shift'];
             }
@@ -64,14 +64,25 @@ class AttendanceDayAggregator
             foreach ($realShifts as $realShift) {
                 [$start, $end] = $realShift->windowForWorkDate($workDate, $this->timezone);
                 $diff = abs($checkIn->punched_at->diffInMinutes($start));
+                $diffEnd = 0;
+                if ($checkOut !== null) {
+                    $diffEnd = abs($checkOut->punched_at->diffInMinutes($end));
+                }
+                
                 $matchingShifts[] = [
                     'shift' => $realShift,
                     'diff' => $diff,
+                    'diffEnd' => $diffEnd,
                 ];
             }
 
             if (! empty($matchingShifts)) {
-                usort($matchingShifts, fn ($a, $b) => $a['diff'] <=> $b['diff']);
+                usort($matchingShifts, function ($a, $b) {
+                    if ($a['diff'] === $b['diff']) {
+                        return $a['diffEnd'] <=> $b['diffEnd'];
+                    }
+                    return $a['diff'] <=> $b['diff'];
+                });
                 $shift = $matchingShifts[0]['shift'];
             }
         }
@@ -206,9 +217,6 @@ class AttendanceDayAggregator
         return $now->gte($cutoff);
     }
 
-    /**
-     * @return array{0: int, 1: int, 2: int}
-     */
     protected function calculateMinutes(
         Shift $shift,
         CarbonImmutable $workDate,

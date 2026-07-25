@@ -28,9 +28,12 @@ class AttendanceWorkDateResolver
     /**
      * @return array{work_date: CarbonImmutable, shift: Shift}|null
      */
-    public function resolve(User $user, CarbonImmutable $punchedAt, ?string $status = null): ?array
+    public function resolve(User $user, CarbonImmutable $punchedAt, ?string $status = null, ?CarbonImmutable $punchedOutAt = null): ?array
     {
         $punchedAt = $punchedAt->timezone($this->timezone);
+        if ($punchedOutAt) {
+            $punchedOutAt = $punchedOutAt->timezone($this->timezone);
+        }
 
         if ($status !== null && strtolower($status) === 'keluar') {
             $lastIn = \App\Models\AttendanceLog::where('user_id', $user->id)
@@ -127,11 +130,23 @@ class AttendanceWorkDateResolver
 
                         if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
                             $diff = abs($punchedAt->diffInMinutes($start));
-                            if ($diff < $bestOverallDiff) {
+                            $diffEnd = $punchedOutAt ? abs($punchedOutAt->diffInMinutes($end)) : 0;
+                            
+                            $isBetter = false;
+                            if ($bestOverallMatch === null) {
+                                $isBetter = true;
+                            } elseif ($diff < $bestOverallDiff) {
+                                $isBetter = true;
+                            } elseif ($diff === $bestOverallDiff && $diffEnd < ($bestOverallMatch['diffEnd'] ?? PHP_INT_MAX)) {
+                                $isBetter = true;
+                            }
+
+                            if ($isBetter) {
                                 $bestOverallDiff = $diff;
                                 $bestOverallMatch = [
                                     'work_date' => $workDate->startOfDay(),
                                     'shift' => $realShift,
+                                    'diffEnd' => $diffEnd,
                                 ];
                             }
                         }
@@ -160,7 +175,7 @@ class AttendanceWorkDateResolver
             }
         }
 
-        return $this->fallbackByRule($user, $punchedAt);
+        return $this->fallbackByRule($user, $punchedAt, $punchedOutAt);
     }
 
     /**
@@ -239,7 +254,7 @@ class AttendanceWorkDateResolver
     /**
      * @return array{work_date: CarbonImmutable, shift: Shift}|null
      */
-    protected function fallbackByRule(User $user, CarbonImmutable $punchedAt): ?array
+    protected function fallbackByRule(User $user, CarbonImmutable $punchedAt, ?CarbonImmutable $punchedOutAt = null): ?array
     {
         // First check if there's an explicit exception for today.
         $dateStr = $punchedAt->toDateString();
@@ -293,11 +308,23 @@ class AttendanceWorkDateResolver
 
                     if ($punchedAt->gte($matchStart) && $punchedAt->lt($matchEnd)) {
                         $diff = abs($punchedAt->diffInMinutes($start));
-                        if ($diff < $bestOverallDiff) {
+                        $diffEnd = $punchedOutAt ? abs($punchedOutAt->diffInMinutes($end)) : 0;
+                        
+                        $isBetter = false;
+                        if ($bestOverallMatch === null) {
+                            $isBetter = true;
+                        } elseif ($diff < $bestOverallDiff) {
+                            $isBetter = true;
+                        } elseif ($diff === $bestOverallDiff && $diffEnd < ($bestOverallMatch['diffEnd'] ?? PHP_INT_MAX)) {
+                            $isBetter = true;
+                        }
+
+                        if ($isBetter) {
                             $bestOverallDiff = $diff;
                             $bestOverallMatch = [
                                 'work_date' => $workDate->startOfDay(),
                                 'shift' => $realShift,
+                                'diffEnd' => $diffEnd,
                             ];
                         }
                     }

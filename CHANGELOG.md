@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.3.4] - 2026-07-25
+
+### Fixed
+- **Shift Auto-Match Tie-Breaker**: Fixed an issue where users were being assigned an incorrect shift (e.g., 8-17 instead of 8-12) if multiple shifts started at the exact same time, causing massive false "Early Leave" penalties (e.g., 300 minutes). The system now intelligently uses the user's `Check-Out` time as a tie-breaker to accurately assign the shift that best matches their actual work duration.
+- **Dropdown Filter Blinking**: Resolved a UI glitch on the Public Dashboard where the selected text inside the "Work Group" dropdown would temporarily disappear or flash during partial Inertia data fetching. The data is now loaded synchronously on initial render.
+
 ## [v1.3.3] - 2026-07-25
 
 ### Added
