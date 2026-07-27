@@ -44,6 +44,9 @@ class AttendanceDayAggregator
             $checkIn = $logs->first();
         }
 
+        // Ambil log keluar: cari yang berstatus 'keluar' paling akhir
+        $checkOut = $logs->filter(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Keluar)->last();
+
         // Auto-match: jika shift adalah placeholder generik, cocokkan ke shift riil terdekat
         $placeholderCodes = ['steady', 'shift'];
 
@@ -86,9 +89,6 @@ class AttendanceDayAggregator
                 $shift = $matchingShifts[0]['shift'];
             }
         }
-
-        // Ambil log keluar: cari yang berstatus 'keluar' paling akhir
-        $checkOut = $logs->filter(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Keluar)->last();
 
         $hasAbsen = $logs->contains(fn (AttendanceLog $log) => $log->status === AttendanceLogStatus::Absen);
 
