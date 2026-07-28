@@ -1,5 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AlertCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Shift = {
     id: number;
@@ -22,6 +24,7 @@ type AttendanceLog = {
     late_minutes: number;
     early_leave_minutes: number;
     overtime_minutes: number;
+    is_exception?: boolean;
 };
 
 type AttendanceTableProps = {
@@ -172,12 +175,42 @@ export function AttendanceTable({ logs, currentMonthName, isLoading }: Attendanc
                                             </td>
                                             <td className="px-4 py-3.5">
                                                 {log.shift ? (
-                                                    <div className="flex flex-col">
-                                                        <span className="text-foreground font-normal">{log.shift.name}</span>
+                                                    <div className="flex flex-col gap-0.5">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <span className="text-foreground font-normal">{log.shift.name}</span>
+                                                            {log.is_exception && (
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 font-medium cursor-help flex items-center gap-0.5">
+                                                                            <AlertCircle className="w-2.5 h-2.5" />
+                                                                            <span>Override</span>
+                                                                        </Badge>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent side="top">
+                                                                        <p className="text-xs font-medium">Jadwal Khusus (Override)</p>
+                                                                    </TooltipContent>
+                                                                </Tooltip>
+                                                            )}
+                                                        </div>
                                                         <span className="text-[11px] text-muted-foreground">({log.shift.start_time} - {log.shift.end_time})</span>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-muted-foreground/60 text-xs">-</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-muted-foreground/60 text-xs">-</span>
+                                                        {log.is_exception && (
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 font-medium cursor-help flex items-center gap-0.5">
+                                                                        <AlertCircle className="w-2.5 h-2.5" />
+                                                                        <span>Override (Off)</span>
+                                                                    </Badge>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent side="top">
+                                                                    <p className="text-xs font-medium">Jadwal Khusus Libur (Override)</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </td>
                                             <td className="px-4 py-3.5 text-center font-mono text-xs">

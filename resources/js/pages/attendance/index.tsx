@@ -35,6 +35,7 @@ type AttendanceLog = {
     early_leave_minutes: number;
     overtime_minutes: number;
     is_holiday: boolean;
+    is_exception?: boolean;
 };
 
 type Summary = {
@@ -60,6 +61,7 @@ type CurrentShift = {
     start_time: string;
     end_time: string;
     days: number[];
+    is_exception?: boolean;
 } | null;
 
 type AttendanceProps = {

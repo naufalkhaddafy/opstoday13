@@ -69,7 +69,18 @@ class UserAttendancePageResource extends JsonResource
             // Check active shift assignment
             $assignment = $shiftResolver->forWorkDate($user, $date);
             $shift = $shiftResolver->shiftForWorkDate($user, $date);
-            $isWorkday = $assignment !== null && $assignment->isActiveOn($date);
+
+            $isException = false;
+            if ($user->relationLoaded('exceptions')) {
+                $exception = $user->exceptions->first(fn($e) => $e->date->toDateString() === $dateString);
+                $isException = $exception !== null;
+            } else {
+                $isException = \App\Models\UserShiftException::where('user_id', $user->id)
+                    ->where('date', $dateString)
+                    ->exists();
+            }
+
+            $isWorkday = $shift !== null;
             $isHoliday = $holidayRepo->isHoliday($dateString);
             
             $dbRecord = $attendanceDays->get($dateString);
@@ -158,6 +169,7 @@ class UserAttendancePageResource extends JsonResource
                     'start_time' => substr($shift->start_time, 0, 5),
                     'end_time' => substr($shift->end_time, 0, 5),
                 ] : null,
+                'is_exception' => $isException,
                 'check_in_at' => $checkIn,
                 'check_out_at' => $checkOut,
                 'presence_status' => $presence,
@@ -170,8 +182,18 @@ class UserAttendancePageResource extends JsonResource
         }
         
         $today = \Carbon\CarbonImmutable::now($timezone);
+        $todayStr = $today->toDateString();
+        $isTodayException = false;
+        if ($user->relationLoaded('exceptions')) {
+            $isTodayException = $user->exceptions->first(fn($e) => $e->date->toDateString() === $todayStr) !== null;
+        } else {
+            $isTodayException = \App\Models\UserShiftException::where('user_id', $user->id)
+                ->where('date', $todayStr)
+                ->exists();
+        }
+
         $currentAssignment = $shiftResolver->forWorkDate($user, $today);
-        $currentShift = $currentAssignment ? $shiftResolver->shiftForWorkDate($user, $today) : null;
+        $currentShift = $shiftResolver->shiftForWorkDate($user, $today);
         
         return [
             'user' => [
@@ -187,6 +209,7 @@ class UserAttendancePageResource extends JsonResource
                 'code' => $currentShift->code,
                 'start_time' => substr($currentShift->start_time, 0, 5),
                 'end_time' => substr($currentShift->end_time, 0, 5),
+                'is_exception' => $isTodayException,
                 'days' => (function () use ($currentAssignment) {
                     $days = [];
                     if ($currentAssignment && is_array($currentAssignment->schedule)) {
@@ -199,7 +222,7 @@ class UserAttendancePageResource extends JsonResource
                     sort($days);
                     return $days;
                 })(),
-            ] : (function () use ($currentAssignment) {
+            ] : (function () use ($currentAssignment, $isTodayException) {
                 if (! $currentAssignment || ! is_array($currentAssignment->schedule)) {
                     return null;
                 }
@@ -218,6 +241,7 @@ class UserAttendancePageResource extends JsonResource
                     'code' => 'Custom',
                     'start_time' => '-',
                     'end_time' => '-',
+                    'is_exception' => $isTodayException,
                     'days' => $days,
                 ];
             })(),

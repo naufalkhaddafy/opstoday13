@@ -20,6 +20,7 @@ type CurrentShift = {
     start_time: string;
     end_time: string;
     days: number[];
+    is_exception?: boolean;
 } | null;
 
 type AttendanceHeaderProps = {

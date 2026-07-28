@@ -45,6 +45,9 @@ class UserAttendanceExport implements FromArray, WithTitle, WithHeadings, WithSt
 
         foreach ($this->logs as $log) {
             $shiftLabel = $log['shift'] ? $log['shift']['name'] . ' (' . $log['shift']['start_time'] . ' - ' . $log['shift']['end_time'] . ')' : '-';
+            if (!empty($log['is_exception'])) {
+                $shiftLabel .= ' [Override]';
+            }
             
             $status = $statusLabels[$log['presence_status']] ?? ucfirst($log['presence_status']);
 
