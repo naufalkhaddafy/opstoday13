@@ -184,7 +184,7 @@ class DailyAttendanceSummarizer
                 'id' => $user->id,
                 'name' => $user->name,
                 'shift_name' => $lastDayShift?->name ?? 'Libur',
-                'shift_time' => $lastDayShift ? substr($lastDayShift->start_time, 0, 5).' - '.substr($lastDayShift->end_time, 0, 5) : '-',
+                'shift_time' => $lastDayShift ? (strtolower($lastDayShift->code) === 'event' ? 'Tanpa Jam Tetap' : substr($lastDayShift->start_time, 0, 5).' - '.substr($lastDayShift->end_time, 0, 5)) : '-',
                 'status' => $lastDayStatus,
                 'check_in' => $lastDayCheckIn,
                 'check_out' => $lastDayCheckOut,

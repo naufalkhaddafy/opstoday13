@@ -223,6 +223,22 @@ class AttendanceDayAggregator
         CarbonImmutable $checkInAt,
         ?CarbonImmutable $checkOutAt,
     ): array {
+        if (strtolower($shift->code) === 'event' || str_contains(strtolower($shift->name), 'event')) {
+            $overtime = 0;
+
+            if ($checkOutAt !== null) {
+                $checkInAt = $checkInAt->timezone($this->timezone);
+                $checkOutAt = $checkOutAt->timezone($this->timezone);
+                $actualDuration = (int) $checkInAt->startOfMinute()->diffInMinutes($checkOutAt->startOfMinute());
+
+                if ($actualDuration > 540) {
+                    $overtime = $actualDuration - 540;
+                }
+            }
+
+            return [0, 0, $overtime];
+        }
+
         [$shiftStart, $shiftEnd] = $this->workDateResolver->shiftBounds($shift, $workDate);
 
         $checkInAt = $checkInAt->timezone($this->timezone);

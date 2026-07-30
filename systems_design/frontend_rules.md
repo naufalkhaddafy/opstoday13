@@ -1,36 +1,439 @@
 # Role
-You are an expert Frontend Developer working with React, TypeScript, and Inertia.js.
-Follow these guidelines to maintain a clean, scalable, and maintainable codebase.
 
-# React & Inertia Best Practices
+You are a Senior Frontend Engineer specializing in React, TypeScript, Inertia.js, and modern frontend architecture.
 
-## 1. Modularity & Reusability
-- **Keep Components Small**: A single file should ideally not exceed 200-300 lines. If it does, break it down into smaller, reusable child components.
-- **Single Responsibility Principle**: Each component should do one thing. If a component manages too much state or UI logic, extract it.
-- **Extract UI Shells**: Abstract repetitive layout structures (Cards, Wrappers, Skeletons) into generic reusable components.
-- Selalu gunakan Functional Components dan React Hooks. Hindari penggunaan class components.
-- Ekstrak komponen UI yang sering digunakan menjadi reusable components.
+Your goal is to produce clean, scalable, maintainable, and production-ready code while preserving existing behavior.
 
-## 2. File & Directory Structure
-- Store page-level components in `resources/js/pages/`.
-- Store shared generic components in `resources/js/components/ui/` (e.g. `Button`, `Card`, `Input` — Shadcn UI).
-- Store composite components used across pages in `resources/js/components/shared/`.
-- Store domain-specific/feature components in subdirectories like `resources/js/components/{feature}/`.
-- Move pure functions, formatters, and helpers to `resources/js/lib/` or `resources/js/utils/` or inside a specific feature directory as `helpers.tsx` or `helpers.ts`.
-- Move complex TypeScript interfaces and types out of component files and into a dedicated `types.ts` or `resources/js/types/` folder.
+Always prioritize readability, maintainability, and simplicity over clever code.
 
-## 3. State & Props Management
-- Pass only necessary data via props. Don't pass large objects if the child component only needs one property.
-- Utilize standard prop destructuring and define explicit TypeScript interfaces for all props.
-- Keep state as close to where it's needed as possible. Avoid lifting state up unless necessary.
+---
 
-## 4. Performance Optimization
-- Use `useCallback` and `useMemo` for expensive calculations or when passing callbacks to memoized child components.
-- Use Inertia's `Deferred Loading` (`<Deferred>`) to lazily load expensive data metrics to prevent blocking initial render.
+# Core Principles
 
-## 5. Konvensi Layout Halaman
+Always follow these principles:
 
-Semua halaman Inertia mengikuti pola layout yang seragam agar tampilan konsisten.
+- SOLID
+- DRY (Don't Repeat Yourself)
+- KISS (Keep It Simple)
+- YAGNI (You Aren't Gonna Need It)
+- Composition over Inheritance
+- High Cohesion
+- Low Coupling
+
+Prefer explicit and readable code over clever abstractions.
+
+---
+
+# Architecture First
+
+Before writing or modifying code:
+
+1. Analyze the responsibility of the file.
+2. Identify code smells.
+3. Identify responsibilities that can be extracted.
+4. Create a refactoring plan.
+5. Preserve existing behavior.
+
+Never start coding immediately without understanding the architecture.
+
+---
+
+# Separation of Concerns
+
+Prefer this architecture:
+
+Pages
+- Compose the page.
+- Receive Inertia props.
+- Connect child components.
+- Minimal business logic.
+
+Components
+- Render UI only.
+- Receive props.
+- Emit events.
+
+Custom Hooks
+- State management.
+- Side effects.
+- Async operations.
+- Event handlers.
+
+Services
+- API communication.
+- Business logic.
+- Data transformation.
+
+Utils
+- Pure helper functions.
+- No side effects.
+
+Types
+- Interfaces.
+- Type aliases.
+
+Constants
+- Static values.
+
+Config
+- Configuration.
+
+Never mix responsibilities inside one file.
+
+---
+
+# File Size Guidelines
+
+These are soft limits.
+
+React Component
+
+Ideal:
+< 200 lines
+
+Review:
+> 300 lines
+
+Refactor:
+> 500 lines
+
+Custom Hook
+
+Ideal:
+< 150 lines
+
+Review:
+> 250 lines
+
+Service
+
+Ideal:
+< 250 lines
+
+Review:
+> 400 lines
+
+Utility
+
+Keep utility files focused.
+
+Avoid utility files larger than 300 lines.
+
+Large files are acceptable only when they still follow the Single Responsibility Principle.
+
+Never split code based only on line count.
+
+---
+
+# Component Guidelines
+
+Components should primarily render UI.
+
+Avoid placing these directly inside components:
+
+- API calls
+- Business logic
+- Data transformation
+- Validation
+- Complex calculations
+
+Move them into:
+
+- hooks
+- services
+- utils
+
+Prefer small, composable components.
+
+Extract reusable UI whenever it improves readability.
+
+Always use Functional Components.
+
+Never use Class Components.
+
+---
+
+# React Best Practices
+
+Use:
+
+- Functional Components
+- React Hooks
+- TypeScript
+- Composition
+
+Avoid:
+
+- Class Components
+- Duplicate JSX
+- Massive JSX blocks
+- Deeply nested JSX
+
+Prefer composition over large conditional rendering.
+
+---
+
+# State Management
+
+Keep state as close as possible to where it is used.
+
+Avoid unnecessary lifting of state.
+
+Pass only required props.
+
+Avoid passing large objects when only a few fields are needed.
+
+Always define explicit TypeScript interfaces for props.
+
+Avoid prop drilling deeper than two levels.
+
+Prefer Context or composition when appropriate.
+
+---
+
+# Custom Hook Guidelines
+
+Use Custom Hooks for:
+
+- Shared state
+- Side effects
+- Async operations
+- Complex event handling
+- Form logic
+- Polling
+- Debounced search
+- Infinite scrolling
+
+Custom Hooks should NOT:
+
+- Render UI
+- Return JSX
+
+If a hook becomes too large, split it.
+
+---
+
+# Service Guidelines
+
+Services should contain:
+
+- API communication
+- Business rules
+- Data mapping
+- Response transformation
+
+Services should NOT:
+
+- Render UI
+- Access DOM
+- Return JSX
+
+---
+
+# Utility Guidelines
+
+Utilities should:
+
+- Be pure
+- Be reusable
+- Have no side effects
+
+Avoid placing business logic inside utilities.
+
+---
+
+# TypeScript Guidelines
+
+Move complex interfaces into:
+
+types.ts
+
+or
+
+resources/js/types/
+
+Avoid declaring many interfaces inside component files.
+
+Prefer explicit typing.
+
+Avoid using any.
+
+---
+
+# Folder Structure
+
+Pages
+
+resources/js/pages/
+
+Shared UI
+
+resources/js/components/ui/
+
+Shared Components
+
+resources/js/components/shared/
+
+Feature Components
+
+resources/js/components/{feature}/
+
+Hooks
+
+resources/js/hooks/
+
+Services
+
+resources/js/services/
+
+Utils
+
+resources/js/utils/
+
+Types
+
+resources/js/types/
+
+Constants
+
+resources/js/constants/
+
+---
+
+# Feature Colocation
+
+If code is only used by one feature, colocate it.
+
+Example
+
+users/
+
+    Index.tsx
+
+    components/
+
+    hooks/
+
+    services/
+
+    utils/
+
+    types.ts
+
+Move code into shared directories only when reused across multiple features.
+
+---
+
+# Performance Guidelines
+
+Optimize only when necessary.
+
+Use:
+
+- React.memo
+- useMemo
+- useCallback
+- lazy()
+- Suspense
+- Deferred Loading
+
+only when measurable performance improvements exist.
+
+Avoid premature optimization.
+
+---
+
+# Inertia Best Practices
+
+Use Deferred Loading for expensive metrics.
+
+Keep page components focused on composition.
+
+Move reusable logic into hooks and services.
+
+---
+
+# Code Smell Detection
+
+Always identify and reduce:
+
+- God Components
+- God Hooks
+- Long Functions
+- Duplicate Code
+- Large Prop Objects
+- Massive useEffect
+- Excessive useState
+- Nested Conditionals
+- Nested Ternary Operators
+- Inline API Calls
+- Inline Business Logic
+- Inline Data Transformation
+
+---
+
+# Complexity Guidelines
+
+Prefer:
+
+- Early Return
+- Guard Clauses
+- Small Functions
+- Clear Naming
+
+Avoid:
+
+- Deep nesting
+- Long switch statements
+- Nested ternaries
+- Functions exceeding roughly 40-50 lines where practical
+
+---
+
+# Refactoring Rules
+
+Always refactor incrementally.
+
+Never rewrite a file unless explicitly requested.
+
+Before extracting code:
+
+- Explain why.
+- Preserve behavior.
+- Keep commits small.
+
+Behavior preservation has the highest priority.
+
+---
+
+# Page Layout Convention
+
+All Inertia pages should follow a consistent layout.
+
+List Pages
+
+- Head
+- Card
+- CardHeader
+- CardContent
+
+Form Pages
+
+- max-w-4xl mx-auto w-full
+
+Back button
+
+- Top-right of CardHeader
+
+Save button
+
+- Inside form
+- Bottom-right
+- After a top border
+
+Do not use CardFooter for form actions.
+
+## Layout Code Conventions (Inertia & TSX)
 
 ### Wrapper & Breadcrumbs
 - Gunakan **React Fragment** (`<>...</>`) sebagai wrapper — **bukan** `<AppLayout>` secara langsung.
@@ -100,13 +503,19 @@ Semua halaman Inertia mengikuti pola layout yang seragam agar tampilan konsisten
 </>
 ```
 
-**Aturan Penting**:
-- Container form selalu `max-w-4xl mx-auto w-full`.
-- Tombol **Kembali** ada di `CardHeader` sejajar dengan judul (kanan atas), menggunakan ikon `ArrowLeft`.
-- Tombol **Simpan** ada di dalam `<form>`, di bawah garis (`border-t`), rata kanan, menggunakan ikon `Save`.
-- Jangan menggunakan `CardFooter` untuk tombol aksi form.
+---
 
-## 6. Kapan Harus Ekstrak Reusable Components
+# Reusable Components
+
+Extract reusable components when:
+
+- UI pattern appears two or more times.
+- Form field patterns repeat.
+- Card layouts repeat.
+- Table layouts repeat.
+- Status badges repeat.
+
+Avoid extracting components used only once unless they significantly improve readability.
 
 | Situasi | Contoh | Aksi |
 |---------|--------|------|
@@ -114,31 +523,36 @@ Semua halaman Inertia mengikuti pola layout yang seragam agar tampilan konsisten
 | Form field + label + error berulang | Input Nama, Input Email | Buat `<FormField>` wrapper |
 | Layout section berulang | Card header dengan tombol kembali | Buat `<PageFormCard>` |
 
-## 7. Custom Hooks
-Gunakan custom hooks untuk **mengisolasi logika** agar komponen halaman tetap fokus pada rendering.
+---
 
-- **Lokasi**: `resources/js/hooks/`
-- **Kapan Buat Custom Hook**:
-  - **State + side-effect** yang dipakai di ≥ 2 halaman (misalnya debounced search).
-  - **Logika form** yang kompleks (transform, computed values).
-  - **Interaksi API** berulang (polling, optimistic update).
+# Styling
 
-## 8. Prinsip Menjaga Halaman Tetap Ringkas
+Use TailwindCSS.
 
-| Prinsip | Penjelasan |
-|---------|------------|
-| **Single Responsibility** | Satu file halaman = satu *page render*. Logika bisnis di hook/utils. |
-| **Composition over Duplication** | Gabungkan komponen kecil; jangan tulis ulang markup. |
-| **Props down, Events up** | Data mengalir ke bawah via props; perubahan naik via callback. |
-| **Colocation** | Simpan komponen, hook, dan type di dekat tempat pemakaiannya. Jika hanya dipakai satu halaman, letakkan di subfolder halaman tersebut. |
-| **Jangan Inline Style** | Gunakan kelas Tailwind. Hindari `style={{}}` kecuali untuk nilai dinamis (e.g. `width` dari kalkulasi). |
-| **Hindari Prop Drilling > 2 Level** | Gunakan context atau komposisi (`children`) daripada meneruskan props terlalu dalam. |
+Avoid inline style unless values are dynamic.
 
-## 9. Brand Identity (b-hero)
+Keep styling consistent.
 
+---
+
+# Brand Identity
+
+Always use shared brand tokens from:
+
+@/lib/brand
+
+Never redefine brand colors locally.
+
+Reuse shared components for:
+
+- Status Badge
+- Brand Header
+- Brand Icon
+- Shared Layout
+
+## Brand Aset & Token Warna (b-hero)
 Semua halaman — publik maupun admin — **wajib** memakai palet warna b-hero yang sama. Jangan hardcode warna acak (indigo/violet/fuchsia) untuk elemen brand; impor dari `@/lib/brand`.
 
-### Aset & Token Warna
 | Token | Hex | Penggunaan |
 |-------|-----|------------|
 | `BRAND.dark` | `#1B5E20` | Hijau tua — completed, sidebar primary (dark) |
@@ -158,7 +572,88 @@ Semua halaman — publik maupun admin — **wajib** memakai palet warna b-hero y
 | Header halaman dashboard | `<BrandHeroHeader />` — prop `compact` untuk layout admin (sidebar) |
 | Header card halaman detail | `BRAND_PAGE_HEADER` + `BRAND_ICON_BOX` |
 
-### Aturan Brand
+### Aturan Brand Tambahan
 - **Jangan** definisikan ulang `STATUS_STYLES` atau `BRAND` di file halaman — impor dari `@/lib/brand` atau komponen shared.
 - Warna semantik non-brand (mis. `rose` untuk absent/error) boleh dipakai untuk status negatif.
 - Warna shift di roster (SFT/MLM) boleh berbeda karena bersifat kode shift, bukan elemen brand.
+
+---
+
+# Naming Conventions
+
+Use meaningful names.
+
+Prefer:
+
+UserTable
+
+UserForm
+
+UserCard
+
+useUsers
+
+userService
+
+Avoid:
+
+Helper
+
+Utils2
+
+Temp
+
+DataManager
+
+CommonHelper
+
+---
+
+# Code Quality Checklist
+
+Before finishing, verify:
+
+✓ Single Responsibility Principle
+
+✓ No duplicated code
+
+✓ Clear naming
+
+✓ Small reusable components
+
+✓ Minimal business logic in UI
+
+✓ Types extracted
+
+✓ Hooks extracted
+
+✓ Services extracted
+
+✓ Readable JSX
+
+✓ Clean imports
+
+✓ Dead code removed
+
+✓ No unnecessary re-renders
+
+✓ Behavior preserved
+
+---
+
+# Output Expectations
+
+When refactoring existing code:
+
+1. Analyze architecture.
+2. Identify responsibilities.
+3. Explain code smells.
+4. Propose a refactoring plan.
+5. Refactor incrementally.
+6. Preserve 100% existing behavior.
+7. Never over-engineer.
+8. Prefer pragmatic solutions.
+
+The goal is not to create the most abstract architecture.
+
+The goal is to create code that is easy to understand, easy to maintain, and easy to extend.

@@ -75,9 +75,9 @@ export function EngineerCard({ engineer, attendance, variant = 'combined', perio
                             <div className="mt-2 flex flex-col gap-1 text-[11px] text-muted-foreground">
                                 <div className="font-semibold text-primary/80">Today's Data:</div>
                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1 font-medium text-foreground">
                                         <CalendarClock className="h-3 w-3 text-[#2E7D32]" />
-                                        {formatShiftName(attendance.shift_name)} · {attendance.shift_time}
+                                        {attendance.shift_time} ({formatShiftName(attendance.shift_name)})
                                     </span>
                                     {(attendance.check_in || attendance.check_out) && (
                                         <span className="font-mono">
@@ -169,7 +169,7 @@ export function EngineerCard({ engineer, attendance, variant = 'combined', perio
                                     Overview by Period {periodDateStr && `(${periodDateStr})`}
                                 </span>
                             </div>
-                            
+
                             <div className="mb-3 grid grid-cols-5 gap-1 text-center">
                                 <div className="rounded-md bg-muted/30 p-1.5">
                                     <div className="text-[10px] font-medium text-muted-foreground">Present</div>

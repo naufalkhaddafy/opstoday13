@@ -184,3 +184,53 @@ test('schedule registers attendance sync every minute', function () {
     expect($attendanceEvents)->toHaveCount(1)
         ->and($attendanceEvents->first()->expression)->toBe('* * * * *');
 });
+
+test('event shift calculates overtime only when duration exceeds 9 hours', function () {
+    $company = CompanySeeder::$companies[0];
+    $shift = ShiftSeeder::get('event');
+
+    $user = User::factory()->forCompany($company)->create([
+        'employee_id' => '10005',
+    ]);
+
+    UserShiftAssignment::factory()->create([
+        'user_id' => $user->id,
+        'schedule' => array_fill_keys(range(1, 7), $shift->id),
+        'effective_from' => '2026-01-01',
+    ]);
+
+    $workDate = CarbonImmutable::parse('2026-05-28', 'Asia/Makassar');
+
+    AttendanceLog::query()->create([
+        'employee_id' => '10005',
+        'user_id' => $user->id,
+        'company_id' => $company->id,
+        'status' => AttendanceLogStatus::Hadir,
+        'punched_at' => CarbonImmutable::parse('2026-05-28 08:00:00', 'Asia/Makassar'),
+        'work_date' => '2026-05-28',
+        'created_at' => now(),
+    ]);
+
+    AttendanceLog::query()->create([
+        'employee_id' => '10005',
+        'user_id' => $user->id,
+        'company_id' => $company->id,
+        'status' => AttendanceLogStatus::Keluar,
+        'punched_at' => CarbonImmutable::parse('2026-05-28 18:00:00', 'Asia/Makassar'), // 10 hours = 600 mins (> 540 mins -> 60 mins overtime)
+        'work_date' => '2026-05-28',
+        'created_at' => now(),
+    ]);
+
+    $day = app(AttendanceDayAggregator::class)->rebuildForUserAndDate(
+        $user,
+        $workDate,
+        allowAbsentMarking: true,
+    );
+
+    expect($day->presence_status)->toBe(AttendancePresenceStatus::Hadir)
+        ->and($day->timing_status)->toBe(AttendanceTimingStatus::Overtime)
+        ->and($day->late_minutes)->toBe(0)
+        ->and($day->early_leave_minutes)->toBe(0)
+        ->and($day->overtime_minutes)->toBe(60);
+});
+
