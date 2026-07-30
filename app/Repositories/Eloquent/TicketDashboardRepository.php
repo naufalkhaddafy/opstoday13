@@ -338,6 +338,211 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->toArray();
     }
 
+    public function getSlaTrend(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+        ?string $workGroup = null,
+    ): array {
+        $refDate = $dateTo;
+
+        $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
+        $responseSlaHours = round(((int) $settings->get('sla_response_time_green', 60)) / 60.0, 2);
+        $resolutionSlaHours = round(((int) $settings->get('sla_resolution_time_green', 120)) / 60.0, 2);
+
+        $resExpr = '(CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END)';
+        $respExpr = '((CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) / 3600.0)';
+
+        // 1. WEEK MODE (7 Hari Terakhir -> Harian)
+        $weekStart = $refDate->subDays(6);
+        $weekResByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+            ->where('status', TicketStatus::Closed->value)
+            ->selectRaw("
+                DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
+                AVG({$resExpr}) as avg_res
+            ")
+            ->groupBy('dt')
+            ->pluck('avg_res', 'dt');
+
+        $weekRespByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+            ->selectRaw("
+                DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
+                AVG({$respExpr} * 3600.0) as avg_resp
+            ")
+            ->groupBy('dt')
+            ->pluck('avg_resp', 'dt');
+
+        $weekCountsByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+            ->selectRaw("
+                DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
+                SUM(CASE WHEN status = 'closed' AND {$resExpr} <= ? AND {$respExpr} <= ? THEN 1 ELSE 0 END) as met_count,
+                SUM(CASE WHEN status = 'closed' AND {$respExpr} > ? AND {$resExpr} <= ? THEN 1 ELSE 0 END) as breached_resp,
+                SUM(CASE WHEN status = 'closed' AND {$resExpr} > ? THEN 1 ELSE 0 END) as breached_res,
+                SUM(CASE WHEN status != 'closed' OR status IS NULL THEN 1 ELSE 0 END) as unresolved_count
+            ", [$resolutionSlaHours, $responseSlaHours, $responseSlaHours, $resolutionSlaHours, $resolutionSlaHours])
+            ->groupBy('dt')
+            ->get()
+            ->keyBy('dt');
+
+        $weekLabels = [];
+        $weekResolution = [];
+        $weekResponse = [];
+        $weekMetSla = [];
+        $weekBreachedRes = [];
+        $weekBreachedResp = [];
+        $weekUnresolved = [];
+        $curr = $weekStart->copy();
+        while ($curr->lte($refDate)) {
+            $ds = $curr->toDateString();
+            $row = $weekCountsByDate->get($ds);
+            $weekLabels[] = $curr->translatedFormat('d M');
+            $weekResolution[] = round((float) ($weekResByDate[$ds] ?? 0), 2);
+            $weekResponse[] = round(((float) ($weekRespByDate[$ds] ?? 0)) / 3600.0, 2);
+            $weekMetSla[] = (int) ($row->met_count ?? 0);
+            $weekBreachedRes[] = (int) ($row->breached_res ?? 0);
+            $weekBreachedResp[] = (int) ($row->breached_resp ?? 0);
+            $weekUnresolved[] = (int) ($row->unresolved_count ?? 0);
+            $curr = $curr->addDay();
+        }
+
+        // 2. MONTH MODE (Bulan Terpilih -> Mingguan)
+        $monthStart = $refDate->startOfMonth();
+        $monthEnd = $refDate->endOfMonth();
+
+        $monthResByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+            ->where('status', TicketStatus::Closed->value)
+            ->selectRaw("
+                (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
+                AVG({$resExpr}) as avg_res
+            ")
+            ->groupBy('wk')
+            ->pluck('avg_res', 'wk');
+
+        $monthRespByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+            ->selectRaw("
+                (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
+                AVG({$respExpr} * 3600.0) as avg_resp
+            ")
+            ->groupBy('wk')
+            ->pluck('avg_resp', 'wk');
+
+        $monthCountsByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+            ->selectRaw("
+                (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
+                SUM(CASE WHEN status = 'closed' AND {$resExpr} <= ? AND {$respExpr} <= ? THEN 1 ELSE 0 END) as met_count,
+                SUM(CASE WHEN status = 'closed' AND {$respExpr} > ? AND {$resExpr} <= ? THEN 1 ELSE 0 END) as breached_resp,
+                SUM(CASE WHEN status = 'closed' AND {$resExpr} > ? THEN 1 ELSE 0 END) as breached_res,
+                SUM(CASE WHEN status != 'closed' OR status IS NULL THEN 1 ELSE 0 END) as unresolved_count
+            ", [$resolutionSlaHours, $responseSlaHours, $responseSlaHours, $resolutionSlaHours, $resolutionSlaHours])
+            ->groupBy('wk')
+            ->get()
+            ->keyBy('wk');
+
+        $monthLabels = [];
+        $monthResolution = [];
+        $monthResponse = [];
+        $monthMetSla = [];
+        $monthBreachedRes = [];
+        $monthBreachedResp = [];
+        $monthUnresolved = [];
+        for ($w = 1; $w <= 5; $w++) {
+            $row = $monthCountsByWeek->get($w) ?? $monthCountsByWeek->get((string)$w);
+            $monthLabels[] = "Week {$w}";
+            $monthResolution[] = round((float) ($monthResByWeek[$w] ?? $monthResByWeek[(string)$w] ?? 0), 2);
+            $monthResponse[] = round(((float) ($monthRespByWeek[$w] ?? $monthRespByWeek[(string)$w] ?? 0)) / 3600.0, 2);
+            $monthMetSla[] = (int) ($row->met_count ?? 0);
+            $monthBreachedRes[] = (int) ($row->breached_res ?? 0);
+            $monthBreachedResp[] = (int) ($row->breached_resp ?? 0);
+            $monthUnresolved[] = (int) ($row->unresolved_count ?? 0);
+        }
+
+        // 3. YEAR MODE (Tahun Terpilih -> Bulanan)
+        $yearStart = $refDate->startOfYear();
+        $yearEnd = $refDate->endOfYear();
+
+        $yearResByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+            ->where('status', TicketStatus::Closed->value)
+            ->selectRaw("
+                MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
+                AVG({$resExpr}) as avg_res
+            ")
+            ->groupBy('mn')
+            ->pluck('avg_res', 'mn');
+
+        $yearRespByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+            ->selectRaw("
+                MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
+                AVG({$respExpr} * 3600.0) as avg_resp
+            ")
+            ->groupBy('mn')
+            ->pluck('avg_resp', 'mn');
+
+        $yearCountsByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+            ->selectRaw("
+                MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
+                SUM(CASE WHEN status = 'closed' AND {$resExpr} <= ? AND {$respExpr} <= ? THEN 1 ELSE 0 END) as met_count,
+                SUM(CASE WHEN status = 'closed' AND {$respExpr} > ? AND {$resExpr} <= ? THEN 1 ELSE 0 END) as breached_resp,
+                SUM(CASE WHEN status = 'closed' AND {$resExpr} > ? THEN 1 ELSE 0 END) as breached_res,
+                SUM(CASE WHEN status != 'closed' OR status IS NULL THEN 1 ELSE 0 END) as unresolved_count
+            ", [$resolutionSlaHours, $responseSlaHours, $responseSlaHours, $resolutionSlaHours, $resolutionSlaHours])
+            ->groupBy('mn')
+            ->get()
+            ->keyBy('mn');
+
+        $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $yearLabels = [];
+        $yearResolution = [];
+        $yearResponse = [];
+        $yearMetSla = [];
+        $yearBreachedRes = [];
+        $yearBreachedResp = [];
+        $yearUnresolved = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $row = $yearCountsByMonth->get($m) ?? $yearCountsByMonth->get((string)$m);
+            $yearLabels[] = $monthNames[$m - 1];
+            $yearResolution[] = round((float) ($yearResByMonth[$m] ?? $yearResByMonth[(string)$m] ?? 0), 2);
+            $yearResponse[] = round(((float) ($yearRespByMonth[$m] ?? $yearRespByMonth[(string)$m] ?? 0)) / 3600.0, 2);
+            $yearMetSla[] = (int) ($row->met_count ?? 0);
+            $yearBreachedRes[] = (int) ($row->breached_res ?? 0);
+            $yearBreachedResp[] = (int) ($row->breached_resp ?? 0);
+            $yearUnresolved[] = (int) ($row->unresolved_count ?? 0);
+        }
+
+        return [
+            'week' => [
+                'labels' => $weekLabels,
+                'resolutionValues' => $weekResolution,
+                'responseValues' => $weekResponse,
+                'metSlaCount' => $weekMetSla,
+                'breachedResolutionCount' => $weekBreachedRes,
+                'breachedResponseCount' => $weekBreachedResp,
+                'unresolvedCount' => $weekUnresolved,
+            ],
+            'month' => [
+                'labels' => $monthLabels,
+                'resolutionValues' => $monthResolution,
+                'responseValues' => $monthResponse,
+                'metSlaCount' => $monthMetSla,
+                'breachedResolutionCount' => $monthBreachedRes,
+                'breachedResponseCount' => $monthBreachedResp,
+                'unresolvedCount' => $monthUnresolved,
+            ],
+            'year' => [
+                'labels' => $yearLabels,
+                'resolutionValues' => $yearResolution,
+                'responseValues' => $yearResponse,
+                'metSlaCount' => $yearMetSla,
+                'breachedResolutionCount' => $yearBreachedRes,
+                'breachedResponseCount' => $yearBreachedResp,
+                'unresolvedCount' => $yearUnresolved,
+            ],
+            'thresholds' => [
+                'response_sla_hours' => $responseSlaHours,
+                'resolution_sla_hours' => $resolutionSlaHours,
+            ],
+        ];
+    }
+
     public function getAvailableWorkGroups(): array
     {
         return \App\Models\Group::query()

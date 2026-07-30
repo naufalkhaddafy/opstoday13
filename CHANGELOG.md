@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.0] - 2026-07-30
+
+### Added
+- **Compliance Trend Line Chart**: Introduced a new line chart in the Team KPI section that visualizes the average Response Time and Resolution Time over time, with configurable SLA target threshold lines drawn directly on the chart for easy comparison.
+- **Compliance Ticket Volume Bar Chart**: Added a new stacked bar chart alongside the trend chart that breaks down ticket volumes into four categories: Compliant, Exceeded Response Target, Exceeded Resolution Target, and Unresolved (In Progress) — giving a clear picture of compliance performance at a glance.
+- **Multi-Period Chart Views**: Both new charts support three viewing modes — 7 Days (Daily), This Month (Weekly), and This Year (Monthly) — automatically adjusting to the date range selected in the dashboard filter.
+- **Unresolved Tickets on Volume Chart**: The Volume chart includes an "Unresolved (In Progress)" category shown in blue, making it easy to see how many tickets are still open alongside completed ones.
+- **Minute Conversion on Chart Hover**: Hovering over data points on the Trend line chart now automatically shows the equivalent in minutes or hours+minutes (e.g., `0.8 hr → 48 mins`, `4.5 hr → 4h 30m`), so you no longer need to manually calculate decimal hour values.
+- **Skeleton Loading for Charts**: The Ticket Overview section now displays proper skeleton placeholders while the compliance charts are loading, providing a smoother visual experience.
+
+### Changed
+- **Renamed "SLA" to "Compliance"**: All labels, titles, and descriptions across the dashboard now use "Compliance" and "Target" terminology instead of "SLA" for clearer, more intuitive language (e.g., "Compliant", "Exceeded Response Target", "Exceeded Resolution Target").
+- **Unified Chart Filter Controls**: The time period selector (7 Days, This Month, This Year) for both the Trend and Volume charts is combined into a single shared toolbar for a cleaner, more streamlined experience.
+- **Consistent Chart Layout**: Both dashboard charts now have the same height and a single-row legend layout, eliminating visual misalignment between cards.
+- **Ticket Overview Section Restructure**: The Ticket Overview area (Active Ticket Distribution + Issue Trends) has been restructured with improved container nesting and spacing to accommodate the new compliance charts below it.
+
+### Fixed
+- **Incorrect Average Resolution on Chart**: Fixed a bug where the average resolution time shown on the Compliance Trend chart was significantly different from the value on the KPI summary card. Both now display the exact same number when viewing the same period.
+
 ## [v1.3.4] - 2026-07-25
 
 ### Fixed

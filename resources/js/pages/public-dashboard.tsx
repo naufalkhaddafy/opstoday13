@@ -46,6 +46,8 @@ import { DisciplineTable } from '@/components/leaderboard/DisciplineTable';
 import { LateTrendChart } from '@/components/charts/LateTrendChart';
 import { IssueTrendPanel } from '@/components/analytics/IssueTrendPanel';
 import { WorkGroupChart } from '@/components/charts/WorkGroupChart';
+import { SlaTrendChart } from '@/components/charts/SlaTrendChart';
+import { SlaBreachChart } from '@/components/charts/SlaBreachChart';
 
 const AUTO_REFRESH_INTERVAL_SECONDS = 60;
 
@@ -77,6 +79,7 @@ export default function PublicDashboard({
     const [isAutoRefresh, setIsAutoRefresh] = useState(false);
     const [autoRefreshCountdown, setAutoRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL_SECONDS);
     const [isExporting, setIsExporting] = useState(false);
+    const [slaMode, setSlaMode] = useState<'week' | 'month' | 'year'>('week');
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -369,50 +372,95 @@ export default function PublicDashboard({
                                 <p className="-mt-2 text-sm text-muted-foreground">
                                     Global performance metrics and Compliance for {isSingleDay ? 'the selected date' : formatPeriodLabel(filters.date_from, filters.date_to)}.
                                 </p>
-                                <Deferred data={["kpi_stats", "engineers"]} fallback={
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                        <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
+                                <Deferred data={["kpi_stats", "engineers", "analytics"]} fallback={
+                                    <div className="flex flex-col gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                            <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
+                                        </div>
                                     </div>
                                 }>
                                     {kpi_stats && engineers && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                            <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                <KpiCard
-                                                    title="Response Compliance"
-                                                    value={kpi_stats.current.response_sla_percent}
-                                                    isPercentage
-                                                    trendCurrent={kpi_stats.current.response_sla_percent}
-                                                    trendPrevious={kpi_stats.previous.response_sla_percent}
-                                                    subtitle={`Target: < ${kpi_stats.targets.response_sla_seconds / 3600} hours`}
-                                                />
-                                                <KpiCard
-                                                    title="Resolution Compliance"
-                                                    value={kpi_stats.current.resolution_sla_percent}
-                                                    isPercentage
-                                                    trendCurrent={kpi_stats.current.resolution_sla_percent}
-                                                    trendPrevious={kpi_stats.previous.resolution_sla_percent}
-                                                    subtitle={`Target: < ${kpi_stats.targets.resolution_sla_hours} hours`}
-                                                />
-                                                <KpiCard
-                                                    title="Avg Response"
-                                                    value={kpi_stats.current.avg_response_label ?? '-'}
-                                                    trendCurrent={kpi_stats.current.avg_response_seconds}
-                                                    trendPrevious={kpi_stats.previous.avg_response_seconds}
-                                                    inverse
-                                                    subtitle="Global average"
-                                                />
-                                                <KpiCard
-                                                    title="Avg Resolution"
-                                                    value={kpi_stats.current.avg_resolution_label ?? '-'}
-                                                    trendCurrent={kpi_stats.current.avg_resolution_hours}
-                                                    trendPrevious={kpi_stats.previous.avg_resolution_hours}
-                                                    inverse
-                                                    subtitle="Global average"
-                                                />
+                                        <div className="flex flex-col gap-4">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                                <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                    <KpiCard
+                                                        title="Response Compliance"
+                                                        value={kpi_stats.current.response_sla_percent}
+                                                        isPercentage
+                                                        trendCurrent={kpi_stats.current.response_sla_percent}
+                                                        trendPrevious={kpi_stats.previous.response_sla_percent}
+                                                        subtitle={`Target: < ${kpi_stats.targets.response_sla_seconds / 3600} hours`}
+                                                    />
+                                                    <KpiCard
+                                                        title="Resolution Compliance"
+                                                        value={kpi_stats.current.resolution_sla_percent}
+                                                        isPercentage
+                                                        trendCurrent={kpi_stats.current.resolution_sla_percent}
+                                                        trendPrevious={kpi_stats.previous.resolution_sla_percent}
+                                                        subtitle={`Target: < ${kpi_stats.targets.resolution_sla_hours} hours`}
+                                                    />
+                                                    <KpiCard
+                                                        title="Avg Response"
+                                                        value={kpi_stats.current.avg_response_label ?? '-'}
+                                                        trendCurrent={kpi_stats.current.avg_response_seconds}
+                                                        trendPrevious={kpi_stats.previous.avg_response_seconds}
+                                                        inverse
+                                                        subtitle="Global average"
+                                                    />
+                                                    <KpiCard
+                                                        title="Avg Resolution"
+                                                        value={kpi_stats.current.avg_resolution_label ?? '-'}
+                                                        trendCurrent={kpi_stats.current.avg_resolution_hours}
+                                                        trendPrevious={kpi_stats.previous.avg_resolution_hours}
+                                                        inverse
+                                                        subtitle="Global average"
+                                                    />
+                                                </div>
+                                                <div className="lg:col-span-1">
+                                                    <LeaderboardCard engineers={engineers} />
+                                                </div>
                                             </div>
-                                            <div className="lg:col-span-1">
-                                                <LeaderboardCard engineers={engineers} />
-                                            </div>
+                                            {analytics?.slaTrend && (
+                                                <div className="flex flex-col gap-3 pt-2">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-muted/20 border border-slate-100 dark:border-white/5 rounded-lg px-4 py-2.5">
+                                                        <div>
+                                                            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                                                Compliance Trend & Breakdown
+                                                            </h3>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Unified analysis of response/resolution times and compliance ticket volume
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex bg-muted/60 rounded-md p-0.5 border border-slate-200 dark:border-white/10 self-start sm:self-auto">
+                                                            {(['week', 'month', 'year'] as const).map((m) => {
+                                                                const label =
+                                                                    m === 'week'
+                                                                        ? '7 Days (Daily)'
+                                                                        : m === 'month'
+                                                                        ? 'This Month (Weekly)'
+                                                                        : 'This Year (Monthly)';
+                                                                return (
+                                                                    <button
+                                                                        key={m}
+                                                                        onClick={() => setSlaMode(m)}
+                                                                        className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${
+                                                                            slaMode === m
+                                                                                ? 'bg-background text-foreground shadow-sm font-semibold'
+                                                                                : 'text-muted-foreground hover:text-foreground'
+                                                                        }`}
+                                                                    >
+                                                                        {label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                                        <SlaTrendChart data={analytics.slaTrend} mode={slaMode} hideFilter />
+                                                        <SlaBreachChart data={analytics.slaTrend} mode={slaMode} hideFilter />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </Deferred>
@@ -462,33 +510,38 @@ export default function PublicDashboard({
                                 </div>
 
                                 <Deferred data={["ticket_stats", "attendance", "analytics"]} fallback={
-                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
-                                        <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-2"><CardContent className="h-48"></CardContent></Card>
+                                    <div className="flex flex-col gap-4">
+                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                            <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
+                                            <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-2"><CardContent className="h-48"></CardContent></Card>
+                                        </div>
+                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-64"></CardContent></Card>
                                     </div>
                                 }>
                                     {ticket_stats && attendance && analytics && (
-                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                            <Card className="border-border/60 shadow-sm flex flex-col h-[360px] overflow-hidden">
-                                                <CardHeader className="pb-0 shrink-0">
-                                                    <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="flex-1 flex flex-col gap-4">
-                                                    <div className="shrink-0 -mt-2">
-                                                        <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} size="sm" />
-                                                    </div>
-                                                    <div className="flex-1 w-full min-h-0 relative">
-                                                        <WorkGroupChart data={analytics.workGroupDistribution} />
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                            <div className="lg:col-span-2 h-[360px]">
-                                                <IssueTrendPanel 
-                                                    trends={analytics.issueTrends} 
-                                                    dateFrom={filters.date_from} 
-                                                    dateTo={filters.date_to} 
-                                                    onItemClick={handleTrendClick}
-                                                />
+                                        <div className="flex flex-col gap-4">
+                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                                                <Card className="border-border/60 shadow-sm flex flex-col h-[360px] overflow-hidden">
+                                                    <CardHeader className="pb-0 shrink-0">
+                                                        <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
+                                                    </CardHeader>
+                                                    <CardContent className="flex-1 flex flex-col gap-4">
+                                                        <div className="shrink-0 -mt-2">
+                                                            <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} size="sm" />
+                                                        </div>
+                                                        <div className="flex-1 w-full min-h-0 relative">
+                                                            <WorkGroupChart data={analytics.workGroupDistribution} />
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                                <div className="lg:col-span-2 h-[360px]">
+                                                    <IssueTrendPanel 
+                                                        trends={analytics.issueTrends} 
+                                                        dateFrom={filters.date_from} 
+                                                        dateTo={filters.date_to} 
+                                                        onItemClick={handleTrendClick}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     )}

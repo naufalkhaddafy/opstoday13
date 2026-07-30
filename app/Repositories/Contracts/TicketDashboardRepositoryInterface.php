@@ -85,6 +85,22 @@ interface TicketDashboardRepositoryInterface
     ): array;
 
     /**
+     * Get SLA response and resolution trend across 7 days (daily), month (weekly), and year (monthly).
+     *
+     * @return array{
+     *     week: array{labels: array<int, string>, resolutionValues: array<int, float>, responseValues: array<int, float>},
+     *     month: array{labels: array<int, string>, resolutionValues: array<int, float>, responseValues: array<int, float>},
+     *     year: array{labels: array<int, string>, resolutionValues: array<int, float>, responseValues: array<int, float>}
+     * }
+     */
+    public function getSlaTrend(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+        ?string $workGroup = null,
+    ): array;
+
+    /**
      * Get unique available work groups
      *
      * @return array<int, string>

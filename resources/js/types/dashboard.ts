@@ -145,6 +145,15 @@ export type DashboardProps = {
         lateTrend: Record<string, number>;
         issueTrends: IssueTrendItem[];
         workGroupDistribution: { name: string; total: number }[];
+        slaTrend?: {
+            week: { labels: string[]; resolutionValues: number[]; responseValues: number[]; metSlaCount?: number[]; breachedResolutionCount?: number[]; breachedResponseCount?: number[] };
+            month: { labels: string[]; resolutionValues: number[]; responseValues: number[]; metSlaCount?: number[]; breachedResolutionCount?: number[]; breachedResponseCount?: number[] };
+            year: { labels: string[]; resolutionValues: number[]; responseValues: number[]; metSlaCount?: number[]; breachedResolutionCount?: number[]; breachedResponseCount?: number[] };
+            thresholds?: {
+                response_sla_hours: number;
+                resolution_sla_hours: number;
+            };
+        };
     };
 };
 

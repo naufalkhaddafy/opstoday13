@@ -74,6 +74,7 @@ class PublicDashboardController extends Controller
                     'lateTrend' => $this->analyticsService->getLateTrend($dateFrom, $dateTo, $companyId, $workGroup),
                     'issueTrends' => $this->tickets->getTrendingKeywords($dateFrom, $dateTo, $companyId, 10, $workGroup),
                     'workGroupDistribution' => $this->tickets->getTicketsByWorkGroup($dateFrom, $dateTo, $companyId, $workGroup),
+                    'slaTrend' => $this->tickets->getSlaTrend($dateFrom, $dateTo, $companyId, $workGroup),
                 ],
                 'companies' => $this->companies->all(),
                 'workGroups' => fn () => $this->tickets->getAvailableWorkGroups(),
