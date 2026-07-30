@@ -1,55 +1,19 @@
-import { Head, Link, router, Deferred, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { BrandHeroHeader } from '@/components/shared/brand-hero-header';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BRAND, BRAND_LOGO_SRC, TICKET_CHART_COLORS, TICKET_STATUS_STYLES } from '@/lib/brand';
-import {
-    UserCheck,
-    UserX,
-    Clock,
-    CalendarClock,
-    Ticket as TicketIcon,
-    Loader2,
-    PauseCircle,
-    CheckCircle2,
-    Inbox,
-    Sparkles,
-    Timer,
-    Users,
-    Building2,
-    Download,
-    SlidersHorizontal,
-    X,
-    ArrowDown,
-    ArrowUp,
-    ArrowUpDown,
-    Trophy,
-} from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { BRAND, TICKET_CHART_COLORS } from '@/lib/brand';
+import { ArrowUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import { DashboardProps, DashboardFilters, Segment } from '@/types/dashboard';
-import { formatDate, formatPeriodLabel } from '@/components/dashboard/helpers';
-
-import { DonutChart } from '@/components/dashboard/DonutChart';
+import { DashboardProps, Segment } from '@/types/dashboard';
 import { DashboardHeaderFilters } from '@/components/dashboard/DashboardHeaderFilters';
-import { StatCard, KpiCard, LeaderboardCard, MiniStat } from '@/components/dashboard/MetricCards';
-import { EngineerCard } from '@/components/dashboard/EngineerCard';
-import { StatCardSkeleton, EngineerCardSkeleton, TableSkeleton } from '@/components/dashboard/Skeletons';
-import { TicketStatusBadge } from '@/components/shared/TicketStatusBadge';
-import { DisciplineTable } from '@/components/leaderboard/DisciplineTable';
-import { LateTrendChart } from '@/components/charts/LateTrendChart';
-import { IssueTrendPanel } from '@/components/analytics/IssueTrendPanel';
-import { WorkGroupChart } from '@/components/charts/WorkGroupChart';
-import { SlaTrendChart } from '@/components/charts/SlaTrendChart';
-import { SlaBreachChart } from '@/components/charts/SlaBreachChart';
-
-const AUTO_REFRESH_INTERVAL_SECONDS = 60;
+import { StickyFilterBar } from '@/components/dashboard/StickyFilterBar';
+import { useDashboardFilters } from '@/hooks/use-dashboard-filters';
+import { KpiPerformanceSection } from '@/components/dashboard/sections/KpiPerformanceSection';
+import { TicketOverviewSection } from '@/components/dashboard/sections/TicketOverviewSection';
+import { EngineerWorkloadSection } from '@/components/dashboard/sections/EngineerWorkloadSection';
+import { TicketsTableSection } from '@/components/dashboard/sections/TicketsTableSection';
+import { TeamAttendanceTab } from '@/components/dashboard/sections/TeamAttendanceTab';
 
 export default function PublicDashboard({
     date,
@@ -73,46 +37,27 @@ export default function PublicDashboard({
 
     const headerRef = useRef<HTMLDivElement>(null);
     const [showStickyBar, setShowStickyBar] = useState(false);
-    const [isTicketsLoading, setIsTicketsLoading] = useState(false);
-    const [searchQuery, setSearchQuery] = useState(filters.search ?? '');
     const [activeTab, setActiveTab] = useState('service-desk');
-    const [isAutoRefresh, setIsAutoRefresh] = useState(false);
-    const [autoRefreshCountdown, setAutoRefreshCountdown] = useState(AUTO_REFRESH_INTERVAL_SECONDS);
-    const [isExporting, setIsExporting] = useState(false);
     const [slaMode, setSlaMode] = useState<'week' | 'month' | 'year'>('week');
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isAutoRefresh) {
-            interval = setInterval(() => {
-                setAutoRefreshCountdown((prev) => {
-                    if (prev <= 1) {
-                        router.visit(window.location.href, {
-                            only: ['attendance', 'ticket_stats', 'kpi_stats', 'engineers', 'tickets', 'analytics'],
-                            preserveScroll: true,
-                            preserveState: true,
-                        });
-                        return AUTO_REFRESH_INTERVAL_SECONDS;
-                    }
-                    return prev - 1;
-                });
-            }, 1000); // 1 second tick
-        } else {
-            setAutoRefreshCountdown(AUTO_REFRESH_INTERVAL_SECONDS);
-        }
-        return () => clearInterval(interval);
-    }, [isAutoRefresh]);
-
-    const isTicketFiltersActive = !!filters.search || !!filters.sort_by || !!filters.status;
-
-    const selectedCompany = useMemo(() => {
-        return filters.company_id ? companies.find(c => c.id === filters.company_id)?.name : undefined;
-    }, [filters.company_id, companies]);
-
-    const handleTicketFiltersReset = () => {
-        setSearchQuery('');
-        applyFilters({ search: null, sort_by: null, sort_dir: filters.defaults.sort_dir, status: null });
-    };
+    const {
+        searchQuery,
+        setSearchQuery,
+        isTicketsLoading,
+        setIsTicketsLoading,
+        isAutoRefresh,
+        setIsAutoRefresh,
+        autoRefreshCountdown,
+        isExporting,
+        selectedCompany,
+        isTicketFiltersActive,
+        applyFilters,
+        handleTicketFiltersReset,
+        handleSortChange,
+        handleStatusChange,
+        handleTrendClick,
+        handleExport,
+    } = useDashboardFilters(filters, companies);
 
     useEffect(() => {
         const el = headerRef.current;
@@ -124,132 +69,6 @@ export default function PublicDashboard({
         observer.observe(el);
         return () => observer.disconnect();
     }, []);
-
-    const applyFilters = useCallback(
-        (next: Partial<DashboardFilters>) => {
-            const companyId = next.company_id !== undefined ? next.company_id : filters.company_id;
-            const dateFrom = next.date_from ?? filters.date_from;
-            const dateTo = next.date_to ?? filters.date_to;
-            const search = next.search !== undefined ? next.search : filters.search;
-            const workGroup = next.work_group !== undefined ? next.work_group : filters.work_group;
-            const sortBy = next.sort_by !== undefined ? next.sort_by : filters.sort_by;
-            const sortDir = next.sort_dir !== undefined ? next.sort_dir : filters.sort_dir;
-            const status = next.status !== undefined ? next.status : filters.status;
-
-            // If all filters match defaults, navigate to clean URL '/'
-            const isDefault =
-                !companyId &&
-                !workGroup &&
-                dateFrom === filters.defaults.date_from &&
-                dateTo === filters.defaults.date_to &&
-                !search &&
-                !sortBy &&
-                sortDir === filters.defaults.sort_dir &&
-                !status;
-
-            const isTicketOnlyChange =
-                (next.search !== undefined || next.sort_by !== undefined || next.sort_dir !== undefined || next.status !== undefined) &&
-                next.company_id === undefined &&
-                next.work_group === undefined &&
-                next.date_from === undefined &&
-                next.date_to === undefined;
-
-            const routerOptions: any = {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-                onStart: () => setIsTicketsLoading(true),
-                onFinish: () => setIsTicketsLoading(false),
-            };
-
-            if (isTicketOnlyChange) {
-                routerOptions.only = ['tickets', 'filters'];
-            }
-
-            if (isDefault) {
-                router.get('/', {}, routerOptions);
-                return;
-            }
-
-            const params: Record<string, string> = {
-                date_from: dateFrom,
-                date_to: dateTo,
-            };
-            if (companyId) {
-                params.company_id = String(companyId);
-            }
-            if (workGroup) {
-                params.work_group = workGroup;
-            }
-            if (search) {
-                params.search = search;
-            }
-            if (sortBy) {
-                params.sort_by = sortBy;
-                params.sort_dir = sortDir;
-            }
-            if (status) {
-                params.status = status;
-            }
-
-            router.get('/', params, routerOptions);
-        },
-        [filters],
-    );
-
-    useEffect(() => {
-        setSearchQuery(filters.search ?? '');
-    }, [filters.search]);
-
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            if (searchQuery !== (filters.search ?? '')) {
-                applyFilters({ search: searchQuery || null });
-            }
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [searchQuery, filters.search, applyFilters]);
-
-    const handleSortChange = (value: string) => {
-        if (value === 'default') {
-            applyFilters({ sort_by: null, sort_dir: 'desc' });
-            return;
-        }
-
-        const [sortBy, sortDir] = value.split(':');
-        applyFilters({ sort_by: sortBy, sort_dir: sortDir });
-    };
-
-    const handleStatusChange = (value: string) => {
-        applyFilters({ status: value === 'all' ? null : value });
-    };
-
-    const handleTrendClick = (phrase: string) => {
-        let searchVal = phrase;
-        if (phrase.includes(' - ')) {
-            searchVal = phrase.split(' - ').pop()?.trim() || phrase;
-        } else if (phrase.includes('-')) {
-            searchVal = phrase.split('-').pop()?.trim() || phrase;
-        }
-        setSearchQuery(searchVal);
-        document.getElementById('tickets-table-section')?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    const handleExport = useCallback(() => {
-        setIsExporting(true);
-        const params = new URLSearchParams();
-        if (filters.date_from) params.set('date_from', filters.date_from);
-        if (filters.date_to) params.set('date_to', filters.date_to);
-        if (filters.company_id) params.set('company_id', String(filters.company_id));
-        if (filters.work_group) params.set('work_group', filters.work_group);
-        if (filters.search) params.set('search', filters.search);
-        if (filters.status) params.set('status', filters.status);
-
-        window.location.href = `/export?${params.toString()}`;
-        
-        // Disable spinner after a few seconds assuming download has started
-        setTimeout(() => setIsExporting(false), 3000);
-    }, [filters]);
 
     const ticketSegments: Segment[] = ticket_stats ? [
         { label: 'Assigned', value: ticket_stats.assigned, color: TICKET_CHART_COLORS.assigned },
@@ -298,61 +117,23 @@ export default function PublicDashboard({
                 </div>
 
                 {/* Sticky filter bar — only visible when header is scrolled out of view */}
-                <div
-                    className={`sticky top-0 z-30 border-b border-[#1B5E20]/20 bg-white/80 backdrop-blur-lg shadow-sm dark:bg-[#0a0a0a]/80 dark:border-white/10 ${showStickyBar ? 'visible opacity-100 transition-opacity duration-300' : 'invisible opacity-0'
-                        }`}
-                >
-                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:px-8">
-                        <div className="hidden items-center gap-3 sm:flex">
-                            <img src={BRAND_LOGO_SRC} alt="b-hero" className="h-10 w-10 object-contain" />
-                            <div className="flex items-center gap-2 border-r border-[#1B5E20]/20 pr-3 mr-1">
-                                <p className="text-sm font-semibold text-[#1B5E20] dark:text-emerald-400">
-                                    {isSingleDay ? date : formatPeriodLabel(filters.date_from, filters.date_to)}
-                                </p>
-                                <span className="text-muted-foreground/40 text-sm">•</span>
-                                <div className="flex bg-muted/50 rounded-md p-0.5">
-                                    <button
-                                        onClick={() => { setActiveTab('service-desk'); }}
-                                        className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${activeTab === 'service-desk' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        Ticket Overview
-                                    </button>
-                                    <button
-                                        onClick={() => { setActiveTab('team-attendance'); }}
-                                        className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${activeTab === 'team-attendance' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                                    >
-                                        Team & Attendance
-                                    </button>
-                                </div>
-                            </div>
-                            {selectedCompany && (
-                                <span className="text-sm font-bold text-[#1B5E20] dark:text-emerald-400">
-                                    {selectedCompany}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <DashboardHeaderFilters
-                                companies={companies}
-                                workGroups={workGroups}
-                                filters={filters}
-                                onApply={applyFilters}
-                                onExport={handleExport}
-                                isExporting={isExporting}
-                                isAutoRefresh={isAutoRefresh}
-                                autoRefreshCountdown={autoRefreshCountdown}
-                                onAutoRefreshToggle={() => setIsAutoRefresh(!isAutoRefresh)}
-                                light
-                            />
-                            <Link
-                                href="/dashboard"
-                                className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-[#FDD835]/50 bg-[#FDD835] px-4 text-xs font-semibold text-[#1B5E20] shadow-sm transition-all hover:bg-[#FFEB3B] hover:shadow-md"
-                            >
-                                Dashboard
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+                <StickyFilterBar
+                    visible={showStickyBar}
+                    date={date}
+                    isSingleDay={isSingleDay}
+                    filters={filters}
+                    companies={companies}
+                    workGroups={workGroups}
+                    selectedCompany={selectedCompany}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    onApply={applyFilters}
+                    onExport={handleExport}
+                    isExporting={isExporting}
+                    isAutoRefresh={isAutoRefresh}
+                    autoRefreshCountdown={autoRefreshCountdown}
+                    onAutoRefreshToggle={() => setIsAutoRefresh(!isAutoRefresh)}
+                />
 
                 <div className="flex-1 w-full mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-8">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -364,506 +145,70 @@ export default function PublicDashboard({
                         </div>
 
                         <TabsContent value="service-desk" className="flex flex-col gap-8 mt-0">
-                            {/* Section: Team KPI & Performance */}
-                            <section className="flex flex-col gap-4">
-                                <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                    <ArrowUp className="h-5 w-5 text-[#2E7D32]" /> Team KPI & Performance {selectedCompany && `- ${selectedCompany}`}
-                                </h2>
-                                <p className="-mt-2 text-sm text-muted-foreground">
-                                    Global performance metrics and Compliance for {isSingleDay ? 'the selected date' : formatPeriodLabel(filters.date_from, filters.date_to)}.
-                                </p>
-                                <Deferred data={["kpi_stats", "engineers", "analytics"]} fallback={
-                                    <div className="flex flex-col gap-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                            <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
-                                        </div>
-                                    </div>
-                                }>
-                                    {kpi_stats && engineers && (
-                                        <div className="flex flex-col gap-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                                                <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                    <KpiCard
-                                                        title="Response Compliance"
-                                                        value={kpi_stats.current.response_sla_percent}
-                                                        isPercentage
-                                                        trendCurrent={kpi_stats.current.response_sla_percent}
-                                                        trendPrevious={kpi_stats.previous.response_sla_percent}
-                                                        subtitle={`Target: < ${kpi_stats.targets.response_sla_seconds / 3600} hours`}
-                                                    />
-                                                    <KpiCard
-                                                        title="Resolution Compliance"
-                                                        value={kpi_stats.current.resolution_sla_percent}
-                                                        isPercentage
-                                                        trendCurrent={kpi_stats.current.resolution_sla_percent}
-                                                        trendPrevious={kpi_stats.previous.resolution_sla_percent}
-                                                        subtitle={`Target: < ${kpi_stats.targets.resolution_sla_hours} hours`}
-                                                    />
-                                                    <KpiCard
-                                                        title="Avg Response"
-                                                        value={kpi_stats.current.avg_response_label ?? '-'}
-                                                        trendCurrent={kpi_stats.current.avg_response_seconds}
-                                                        trendPrevious={kpi_stats.previous.avg_response_seconds}
-                                                        inverse
-                                                        subtitle="Global average"
-                                                    />
-                                                    <KpiCard
-                                                        title="Avg Resolution"
-                                                        value={kpi_stats.current.avg_resolution_label ?? '-'}
-                                                        trendCurrent={kpi_stats.current.avg_resolution_hours}
-                                                        trendPrevious={kpi_stats.previous.avg_resolution_hours}
-                                                        inverse
-                                                        subtitle="Global average"
-                                                    />
-                                                </div>
-                                                <div className="lg:col-span-1">
-                                                    <LeaderboardCard engineers={engineers} />
-                                                </div>
-                                            </div>
-                                            {analytics?.slaTrend && (
-                                                <div className="flex flex-col gap-3 pt-2">
-                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-muted/20 border border-slate-100 dark:border-white/5 rounded-lg px-4 py-2.5">
-                                                        <div>
-                                                            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                                                Compliance Trend & Breakdown
-                                                            </h3>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                Unified analysis of response/resolution times and compliance ticket volume
-                                                            </p>
-                                                        </div>
-                                                        <div className="flex bg-muted/60 rounded-md p-0.5 border border-slate-200 dark:border-white/10 self-start sm:self-auto">
-                                                            {(['week', 'month', 'year'] as const).map((m) => {
-                                                                const label =
-                                                                    m === 'week'
-                                                                        ? '7 Days (Daily)'
-                                                                        : m === 'month'
-                                                                        ? 'This Month (Weekly)'
-                                                                        : 'This Year (Monthly)';
-                                                                return (
-                                                                    <button
-                                                                        key={m}
-                                                                        onClick={() => setSlaMode(m)}
-                                                                        className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${
-                                                                            slaMode === m
-                                                                                ? 'bg-background text-foreground shadow-sm font-semibold'
-                                                                                : 'text-muted-foreground hover:text-foreground'
-                                                                        }`}
-                                                                    >
-                                                                        {label}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                                        <SlaTrendChart data={analytics.slaTrend} mode={slaMode} hideFilter />
-                                                        <SlaBreachChart data={analytics.slaTrend} mode={slaMode} hideFilter />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </Deferred>
-                            </section>
-
-                            {/* Section: Tickets overview */}
-                            <section className="flex flex-col gap-4">
-                                <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                    <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Ticket Overview {selectedCompany && `- ${selectedCompany}`}
-                                </h2>
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm text-muted-foreground">
-                                            {isSingleDay ? `Summary for ${formatDate(filters.date_from)}.` : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
-                                        </p>
-                                        {isSingleDay && holiday_name && (
-                                            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-400 font-normal shadow-sm">
-                                                Hari Libur: {holiday_name}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    {(filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to) && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyFilters({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to })}
-                                            className="h-6 px-2 text-xs"
-                                        >
-                                            Reset to Today
-                                        </Button>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
-                                    <Deferred data="ticket_stats" fallback={<><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton /></>}>
-                                        {ticket_stats && (
-                                            <>
-                                                <StatCard label="Open Tickets" value={ticket_stats.open_total} icon={<Inbox className="h-4 w-4 text-[#2E7D32]" />} accent="bg-green-50 dark:bg-green-950/40" hint="In period" />
-                                                <StatCard label="Assigned" value={ticket_stats.assigned} icon={<TicketIcon className="h-4 w-4 text-[#1B5E20]" />} accent="bg-green-50 dark:bg-green-950/40" />
-                                                <StatCard label="Pending" value={ticket_stats.pending} icon={<PauseCircle className="h-4 w-4 text-[#F9A825]" />} accent="bg-yellow-50 dark:bg-yellow-950/40" />
-                                                <StatCard label="In Progress" value={ticket_stats.in_progress} icon={<Loader2 className="h-4 w-4 text-[#4CAF50]" />} accent="bg-emerald-50 dark:bg-emerald-950/40" />
-                                                <StatCard label="Completed" value={ticket_stats.completed_today} icon={<CheckCircle2 className="h-4 w-4 text-[#2E7D32]" />} accent="bg-green-50 dark:bg-green-950/40" />
-                                                <StatCard label="Total Tickets" value={ticket_stats.created_today} icon={<Sparkles className="h-4 w-4 text-[#FDD835]" />} accent="bg-yellow-50 dark:bg-yellow-950/40" />
-                                            </>
-                                        )}
-                                    </Deferred>
-                                </div>
-
-                                <Deferred data={["ticket_stats", "attendance", "analytics"]} fallback={
-                                    <div className="flex flex-col gap-4">
-                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                            <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
-                                            <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-2"><CardContent className="h-48"></CardContent></Card>
-                                        </div>
-                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-64"></CardContent></Card>
-                                    </div>
-                                }>
-                                    {ticket_stats && attendance && analytics && (
-                                        <div className="flex flex-col gap-4">
-                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                                <Card className="border-border/60 shadow-sm flex flex-col h-[360px] overflow-hidden">
-                                                    <CardHeader className="pb-0 shrink-0">
-                                                        <CardTitle className="text-sm font-medium text-muted-foreground">Active Ticket Distribution</CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent className="flex-1 flex flex-col gap-4">
-                                                        <div className="shrink-0 -mt-2">
-                                                            <DonutChart segments={ticketSegments} centerLabel="Active" centerValue={ticket_stats.open_total} size="sm" />
-                                                        </div>
-                                                        <div className="flex-1 w-full min-h-0 relative">
-                                                            <WorkGroupChart data={analytics.workGroupDistribution} />
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                                <div className="lg:col-span-2 h-[360px]">
-                                                    <IssueTrendPanel 
-                                                        trends={analytics.issueTrends} 
-                                                        dateFrom={filters.date_from} 
-                                                        dateTo={filters.date_to} 
-                                                        onItemClick={handleTrendClick}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </Deferred>
-                            </section>
-
-                            {/* Section: Engineer Ticket Workload */}
-                            <section className="flex flex-col gap-4">
-                                <div>
-                                    <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                        <Users className="h-5 w-5 text-[#2E7D32]" /> Team Ticket Workload
-                                    </h2>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Engineer ticket workload for the selected filters.
-                                    </p>
-                                </div>
-                                <Deferred data={["engineers", "attendance"]} fallback={
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                        <EngineerCardSkeleton /><EngineerCardSkeleton /><EngineerCardSkeleton />
-                                    </div>
-                                }>
-                                    {engineers && attendance && (
-                                        engineers.length > 0 ? (
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                                {engineers.map((engineer) => (
-                                                    <EngineerCard
-                                                        key={engineer.id}
-                                                        engineer={engineer}
-                                                        attendance={attendanceByUserId.get(engineer.id) ?? null}
-                                                        variant="tickets"
-                                                        slaHighTicketLoad={filters.slaHighTicketLoad}
-                                                    />
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <Card className="border-border/60 shadow-sm">
-                                                <CardContent className="p-8 text-center text-muted-foreground">No engineers registered yet.</CardContent>
-                                            </Card>
-                                        )
-                                    )}
-                                </Deferred>
-                            </section>
-
-                            {/* Section: Latest tickets table */}
-                            <section id="tickets-table-section" className="flex flex-col gap-4">
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                        <TicketIcon className="h-5 w-5 text-[#2E7D32]" /> Tickets in Period
-                                    </h2>
-                                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                                        <Input
-                                            placeholder="Search ticket or engineer..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="h-9 w-full bg-white dark:bg-black sm:w-64"
-                                        />
-                                        <Select
-                                            value={filters.sort_by ? `${filters.sort_by}:${filters.sort_dir}` : 'default'}
-                                            onValueChange={handleSortChange}
-                                        >
-                                            <SelectTrigger className="h-9 w-full bg-white dark:bg-black sm:w-44">
-                                                <SelectValue placeholder="Sort By" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="default">Sort: Default</SelectItem>
-                                                <SelectItem value="response_time:asc">Resp. Time (Fastest)</SelectItem>
-                                                <SelectItem value="response_time:desc">Resp. Time (Slowest)</SelectItem>
-                                                <SelectItem value="resolution_time:asc">Res. Time (Fastest)</SelectItem>
-                                                <SelectItem value="resolution_time:desc">Res. Time (Slowest)</SelectItem>
-                                                <SelectItem value="created_date:asc">Created (Asc)</SelectItem>
-                                                <SelectItem value="created_date:desc">Created (Desc)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Select
-                                            value={filters.status ?? 'all'}
-                                            onValueChange={handleStatusChange}
-                                        >
-                                            <SelectTrigger className="h-9 w-full bg-white dark:bg-black sm:w-36">
-                                                <SelectValue placeholder="Status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">All Status</SelectItem>
-                                                <SelectItem value="assigned">Assigned</SelectItem>
-                                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                                <SelectItem value="pending_on_hold">Pending/On Hold</SelectItem>
-                                                <SelectItem value="closed">Closed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {isTicketFiltersActive && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                onClick={handleTicketFiltersReset}
-                                                className="h-9 px-2 text-xs cursor-pointer text-rose-500 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/50"
-                                            >
-                                                <X className="h-3.5 w-3.5 mr-1" />
-                                                Reset
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                                <Deferred data="tickets" fallback={<TableSkeleton />}>
-                                    {tickets && (
-                                        isTicketsLoading ? <TableSkeleton /> : (
-                                            <Card className="border-border/60 shadow-sm">
-                                                <CardContent className="p-0">
-                                                    <div className="overflow-x-auto">
-                                                        <table className="w-full text-sm">
-                                                            <thead>
-                                                                <tr className="border-b bg-muted/40 text-left text-xs uppercase text-muted-foreground">
-                                                                    <th className="px-4 py-3 font-medium">Ticket</th>
-                                                                    <th className="px-4 py-3 font-medium">Category</th>
-                                                                    <th className="px-4 py-3 font-medium">Engineer</th>
-                                                                    <th className="px-4 py-3 font-medium">Resp. Time</th>
-                                                                    <th className="px-4 py-3 font-medium">Res. Time</th>
-                                                                    <th className="px-4 py-3 font-medium">Status</th>
-                                                                    <th className="px-4 py-3 font-medium">Created</th>
-                                                                    <th className="px-4 py-3 font-medium">Completed</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {tickets.data.length === 0 ? (
-                                                                    <tr>
-                                                                        <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
-                                                                            <TicketIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
-                                                                            No tickets yet.
-                                                                        </td>
-                                                                    </tr>
-                                                                ) : (
-                                                                    tickets.data.map((ticket, i) => (
-                                                                        <tr key={i} className="group hover:bg-muted/30 transition-colors">
-                                                                            <td className="px-4 py-3 align-top">
-                                                                                <div className="font-semibold text-foreground">{ticket.ticket_no}</div>
-                                                                                <div className="text-muted-foreground truncate max-w-[200px]" title={ticket.title ?? undefined}>{ticket.title}</div>
-                                                                                {ticket.requested_for && (
-                                                                                    <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
-                                                                                )}
-                                                                            </td>
-                                                                            <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
-                                                                            <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
-                                                                            <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
-                                                                            <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
-                                                                            <td className="px-4 py-3 align-top">
-                                                                                <TicketStatusBadge status={ticket.status} label={ticket.status_label} />
-                                                                            </td>
-                                                                            <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
-                                                                            <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
-                                                                        </tr>
-                                                                    ))
-                                                                )}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-
-                                                    {tickets.meta.last_page > 1 && (
-                                                        <div className="flex flex-col items-center justify-between gap-3 border-t px-4 py-3 sm:flex-row">
-                                                            <p className="text-xs text-muted-foreground">
-                                                                Showing {tickets.meta.from ?? 0}-{tickets.meta.to ?? 0} of {tickets.meta.total} tickets
-                                                            </p>
-                                                            <div className="flex flex-wrap items-center gap-1">
-                                                                {tickets.links.map((link, i) =>
-                                                                    link.url ? (
-                                                                        <Link
-                                                                            key={i}
-                                                                            href={link.url}
-                                                                            preserveScroll
-                                                                            preserveState
-                                                                            only={['tickets']}
-                                                                            onStart={() => setIsTicketsLoading(true)}
-                                                                            onFinish={() => setIsTicketsLoading(false)}
-                                                                            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${link.active
-                                                                                ? 'bg-[#2E7D32] text-white'
-                                                                                : 'border bg-background text-foreground hover:bg-muted'
-                                                                                }`}
-                                                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                                                        />
-                                                                    ) : (
-                                                                        <span
-                                                                            key={i}
-                                                                            className="rounded-md px-3 py-1.5 text-xs text-muted-foreground/40"
-                                                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                                                        />
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                        )
-                                    )}
-                                </Deferred>
-                            </section>
-
+                            <KpiPerformanceSection
+                                selectedCompany={selectedCompany}
+                                isSingleDay={isSingleDay}
+                                dateFrom={filters.date_from}
+                                dateTo={filters.date_to}
+                                kpiStats={kpi_stats}
+                                engineers={engineers}
+                                analytics={analytics}
+                                slaMode={slaMode}
+                                onSlaModeChange={setSlaMode}
+                            />
+                            <TicketOverviewSection
+                                selectedCompany={selectedCompany}
+                                isSingleDay={isSingleDay}
+                                dateFrom={filters.date_from}
+                                dateTo={filters.date_to}
+                                defaultDateFrom={filters.defaults.date_from}
+                                defaultDateTo={filters.defaults.date_to}
+                                holidayName={holiday_name}
+                                ticketStats={ticket_stats}
+                                attendance={attendance}
+                                analytics={analytics}
+                                ticketSegments={ticketSegments}
+                                onResetToToday={() => applyFilters({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to })}
+                                onTrendClick={handleTrendClick}
+                            />
+                            <EngineerWorkloadSection
+                                engineers={engineers}
+                                attendance={attendance}
+                                attendanceByUserId={attendanceByUserId}
+                                slaHighTicketLoad={filters.slaHighTicketLoad}
+                            />
+                            <TicketsTableSection
+                                searchQuery={searchQuery}
+                                onSearchQueryChange={setSearchQuery}
+                                filters={filters}
+                                onSortChange={handleSortChange}
+                                onStatusChange={handleStatusChange}
+                                isTicketFiltersActive={isTicketFiltersActive}
+                                onResetFilters={handleTicketFiltersReset}
+                                tickets={tickets}
+                                isTicketsLoading={isTicketsLoading}
+                                onStartLoading={() => setIsTicketsLoading(true)}
+                                onFinishLoading={() => setIsTicketsLoading(false)}
+                            />
                         </TabsContent>
 
                         <TabsContent value="team-attendance" className="flex flex-col gap-8 mt-0">
-                            {/* Section: Attendance Overview */}
-                            <section className="flex flex-col gap-4">
-                                <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                    <Users className="h-5 w-5 text-[#2E7D32]" /> Attendance Overview {selectedCompany && `- ${selectedCompany}`}
-                                </h2>
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-sm text-muted-foreground">
-                                            {isSingleDay ? `Summary for ${formatDate(filters.date_from)}.` : `Summary for ${formatPeriodLabel(filters.date_from, filters.date_to)}.`}
-                                        </p>
-                                        {isSingleDay && holiday_name && (
-                                            <Badge variant="outline" className="border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-900/50 dark:bg-rose-900/20 dark:text-rose-400 font-normal shadow-sm">
-                                                Hari Libur: {holiday_name}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    {(filters.date_from !== filters.defaults.date_from || filters.date_to !== filters.defaults.date_to) && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => applyFilters({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to })}
-                                            className="h-6 px-2 text-xs"
-                                        >
-                                            Reset to Today
-                                        </Button>
-                                    )}
-                                </div>
-                                <Deferred data={["attendance"]} fallback={
-                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
-                                        <Card className="border-border/60 shadow-sm animate-pulse"><CardContent className="h-48"></CardContent></Card>
-                                    </div>
-                                }>
-                                    {attendance && (
-                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                            <Card className="border-border/60 shadow-sm">
-                                                <CardHeader className="pb-2">
-                                                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                                                        {isSingleDay ? 'Attendance' : `Attendance · ${formatPeriodLabel(filters.date_to, filters.date_to)}`}
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent>
-                                                    <DonutChart segments={attendanceSegments} centerLabel="Scheduled" centerValue={stats.total_scheduled} />
-                                                </CardContent>
-                                            </Card>
-                                            <Card className="border-border/60 shadow-sm">
-                                                <CardHeader className="pb-2">
-                                                    <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                                                        <Users className="h-4 w-4" /> Team Attendance
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="grid grid-cols-2 gap-3">
-                                                    <MiniStat label="Present" value={stats.total_present} icon={<UserCheck className="h-4 w-4 text-[#4CAF50]" />} />
-                                                    <MiniStat label="Absent" value={stats.total_absent} icon={<UserX className="h-4 w-4 text-rose-500" />} />
-                                                    <MiniStat label="Late" value={stats.total_late} icon={<Clock className="h-4 w-4 text-[#FDD835]" />} />
-                                                    <MiniStat label="On Leave" value={stats.total_leave} icon={<CalendarClock className="h-4 w-4 text-[#2E7D32]" />} />
-                                                </CardContent>
-                                            </Card>
-                                        </div>
-                                    )}
-                                </Deferred>
-
-                                <Deferred data={["analytics"]} fallback={
-                                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                        <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-1"><CardContent className="h-64"></CardContent></Card>
-                                        <Card className="border-border/60 shadow-sm animate-pulse lg:col-span-2"><CardContent className="h-64"></CardContent></Card>
-                                    </div>
-                                }>
-                                    {analytics && (
-                                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                            <div className="lg:col-span-1">
-                                                <DisciplineTable leaderboard={analytics.leaderboard.slice(0, 10)} />
-                                            </div>
-                                            <div className="lg:col-span-2">
-                                                <LateTrendChart data={analytics.lateTrend} />
-                                            </div>
-                                        </div>
-                                    )}
-                                </Deferred>
-                            </section>
-
-                            {/* Section: Team overview (attendance + tickets) */}
-                            <section className="flex flex-col gap-4">
-                                <div>
-                                    <h2 className="flex items-center gap-2 text-lg font-semibold">
-                                        <Users className="h-5 w-5 text-[#2E7D32]" /> Team Operations Overview {selectedCompany && `- ${selectedCompany}`}
-                                    </h2>
-                                    <p className="mt-1 text-sm text-muted-foreground">
-                                        Engineer attendance and ticket workload for the selected filters.
-                                    </p>
-                                </div>
-                                <Deferred data={["engineers", "attendance"]} fallback={
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                        <EngineerCardSkeleton /><EngineerCardSkeleton /><EngineerCardSkeleton />
-                                    </div>
-                                }>
-                                    {engineers && attendance && (
-                                        engineers.length > 0 ? (
-                                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                                                {engineers.map((engineer) => {
-                                                    const periodStr = filters.date_from === filters.date_to
-                                                        ? filters.date_from
-                                                        : `${filters.date_from} to ${filters.date_to}`;
-
-                                                    return (
-                                                        <EngineerCard
-                                                            key={engineer.id}
-                                                            engineer={engineer}
-                                                            attendance={attendanceByUserId.get(engineer.id) ?? null}
-                                                            variant="attendance"
-                                                            periodDateStr={periodStr}
-                                                            companyName={selectedCompany}
-                                                        />
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <Card className="border-border/60 shadow-sm">
-                                                <CardContent className="p-8 text-center text-muted-foreground">No engineers registered yet.</CardContent>
-                                            </Card>
-                                        )
-                                    )}
-                                </Deferred>
-                            </section>
-
+                            <TeamAttendanceTab
+                                selectedCompany={selectedCompany}
+                                isSingleDay={isSingleDay}
+                                dateFrom={filters.date_from}
+                                dateTo={filters.date_to}
+                                defaultDateFrom={filters.defaults.date_from}
+                                defaultDateTo={filters.defaults.date_to}
+                                holidayName={holiday_name}
+                                attendance={attendance}
+                                stats={stats}
+                                attendanceSegments={attendanceSegments}
+                                analytics={analytics}
+                                engineers={engineers}
+                                attendanceByUserId={attendanceByUserId}
+                                onResetToToday={() => applyFilters({ date_from: filters.defaults.date_from, date_to: filters.defaults.date_to })}
+                            />
                         </TabsContent>
 
                     </Tabs>

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Unified Chart Filter Controls**: The time period selector (7 Days, This Month, This Year) for both the Trend and Volume charts is combined into a single shared toolbar for a cleaner, more streamlined experience.
 - **Consistent Chart Layout**: Both dashboard charts now have the same height and a single-row legend layout, eliminating visual misalignment between cards.
 - **Ticket Overview Section Restructure**: The Ticket Overview area (Active Ticket Distribution + Issue Trends) has been restructured with improved container nesting and spacing to accommodate the new compliance charts below it.
+- **Public Dashboard Architecture Refactor**: Refactored the dashboard page from a large monolithic component (~900 lines) into a clean, highly maintainable composition layout (~230 lines) by extracting custom hooks (`useDashboardFilters`) and 5 dedicated UI section components, strictly adhering to frontend design guidelines.
 
 ### Fixed
 - **Incorrect Average Resolution on Chart**: Fixed a bug where the average resolution time shown on the Compliance Trend chart was significantly different from the value on the KPI summary card. Both now display the exact same number when viewing the same period.
