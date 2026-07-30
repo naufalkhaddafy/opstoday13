@@ -80,17 +80,33 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
         datasets: [
             {
                 type: 'line' as const,
-                label: 'Avg Resolution Time',
-                data: resolutionValues,
-                borderColor: BRAND.dark,
-                backgroundColor: 'rgba(27, 94, 32, 0.1)',
+                label: `Response Threshold (${responseTarget}h)`,
+                data: labels.map(() => responseTarget),
+                borderColor: '#F59E0B',
+                backgroundColor: 'transparent',
                 borderWidth: 2,
-                pointRadius: 4,
-                pointBackgroundColor: BRAND.dark,
-                tension: 0.3,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0,
                 fill: false,
                 yAxisID: 'y',
-                order: 3,
+                order: 0,
+            },
+            {
+                type: 'line' as const,
+                label: `Resolution Threshold (${resolutionTarget}h)`,
+                data: labels.map(() => resolutionTarget),
+                borderColor: BRAND.dark,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0,
+                fill: false,
+                yAxisID: 'y',
+                order: 1,
             },
             {
                 type: 'line' as const,
@@ -108,33 +124,17 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
             },
             {
                 type: 'line' as const,
-                label: `Resolution Target (${resolutionTarget}h)`,
-                data: labels.map(() => resolutionTarget),
-                borderColor: '#EF4444',
-                backgroundColor: 'transparent',
+                label: 'Avg Resolution Time',
+                data: resolutionValues,
+                borderColor: BRAND.dark,
+                backgroundColor: 'rgba(27, 94, 32, 0.1)',
                 borderWidth: 2,
-                borderDash: [6, 4],
-                pointRadius: 0,
-                pointHoverRadius: 0,
-                tension: 0,
+                pointRadius: 4,
+                pointBackgroundColor: BRAND.dark,
+                tension: 0.3,
                 fill: false,
                 yAxisID: 'y',
-                order: 1,
-            },
-            {
-                type: 'line' as const,
-                label: `Response Target (${responseTarget}h)`,
-                data: labels.map(() => responseTarget),
-                borderColor: '#6366F1',
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                borderDash: [4, 4],
-                pointRadius: 0,
-                pointHoverRadius: 0,
-                tension: 0,
-                fill: false,
-                yAxisID: 'y',
-                order: 0,
+                order: 3,
             },
         ],
     };
@@ -148,11 +148,56 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
                 position: 'top',
                 align: 'center',
                 labels: {
-                    boxWidth: 8,
-                    padding: 10,
                     usePointStyle: true,
+                    pointStyleWidth: 24,
+                    boxWidth: 24,
+                    padding: 10,
                     font: {
                         size: 10,
+                    },
+                    generateLabels: (chart: any) => {
+                        const defaultLabels = ChartJS.defaults.plugins.legend.labels.generateLabels(chart);
+                        const orderMap: Record<string, number> = {
+                            'Response Threshold': 0,
+                            'Resolution Threshold': 1,
+                            'Avg Response Time': 2,
+                            'Avg Resolution Time': 3,
+                        };
+                        return defaultLabels
+                            .map((label: any) => {
+                                const isThreshold = (label.text || '').includes('Threshold');
+                                const color = (label.text || '').includes('Response') ? '#F59E0B' : '#1B5E20';
+
+                                const canvas = document.createElement('canvas');
+                                canvas.width = 24;
+                                canvas.height = 10;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx) {
+                                    ctx.strokeStyle = color;
+                                    ctx.lineWidth = 2.5;
+                                    if (isThreshold) {
+                                        ctx.setLineDash([6, 3]);
+                                    }
+                                    ctx.beginPath();
+                                    ctx.moveTo(0, 5);
+                                    ctx.lineTo(24, 5);
+                                    ctx.stroke();
+                                }
+
+                                return {
+                                    ...label,
+                                    pointStyle: canvas,
+                                };
+                            })
+                            .sort((a: any, b: any) => {
+                                const getOrder = (text: string = '') => {
+                                    for (const key in orderMap) {
+                                        if (text.includes(key)) return orderMap[key];
+                                    }
+                                    return 99;
+                                };
+                                return getOrder(a.text) - getOrder(b.text);
+                            });
                     },
                 },
             },
@@ -225,33 +270,30 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
                         <button
                             type="button"
                             onClick={() => handleModeChange('week')}
-                            className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
-                                mode === 'week'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${mode === 'week'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
                         >
                             7 Days (Daily)
                         </button>
                         <button
                             type="button"
                             onClick={() => handleModeChange('month')}
-                            className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
-                                mode === 'month'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${mode === 'month'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
                         >
                             This Month (Weekly)
                         </button>
                         <button
                             type="button"
                             onClick={() => handleModeChange('year')}
-                            className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
-                                mode === 'year'
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${mode === 'year'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
                         >
                             This Year (Monthly)
                         </button>

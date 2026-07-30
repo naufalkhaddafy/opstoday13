@@ -67,9 +67,9 @@ export function SlaBreachChart({ data, mode: controlledMode, onModeChange, hideF
     const hasData =
         labels.length > 0 &&
         (metCount.some((v) => v > 0) ||
-         breachedResCount.some((v) => v > 0) ||
-         breachedRespCount.some((v) => v > 0) ||
-         unresolvedCount.some((v) => v > 0));
+            breachedResCount.some((v) => v > 0) ||
+            breachedRespCount.some((v) => v > 0) ||
+            unresolvedCount.some((v) => v > 0));
 
     const chartData = {
         labels,
@@ -99,7 +99,7 @@ export function SlaBreachChart({ data, mode: controlledMode, onModeChange, hideF
                 stack: 'sla',
             },
             {
-                label: 'Unresolved (In Progress)',
+                label: 'Unresolved',
                 data: unresolvedCount,
                 backgroundColor: '#3B82F6', // Blue 500
                 hoverBackgroundColor: '#2563EB',
@@ -199,17 +199,16 @@ export function SlaBreachChart({ data, mode: controlledMode, onModeChange, hideF
                                 m === 'week'
                                     ? '7 Days'
                                     : m === 'month'
-                                    ? 'This Month'
-                                    : 'This Year';
+                                        ? 'This Month'
+                                        : 'This Year';
                             return (
                                 <button
                                     key={m}
                                     onClick={() => handleModeChange(m)}
-                                    className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${
-                                        mode === m
+                                    className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-all ${mode === m
                                             ? 'bg-background text-foreground shadow-sm font-semibold'
                                             : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                        }`}
                                 >
                                     {label}
                                 </button>
