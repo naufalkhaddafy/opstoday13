@@ -53,17 +53,19 @@ class HolidayRepository implements HolidayRepositoryInterface
                 return [
                     'name' => $h->name,
                     'date' => $h->date->toDateString(),
-                    'is_recurrent' => $h->is_recurrent,
+                    'month' => (int) $h->date->format('m'),
+                    'day' => (int) $h->date->format('d'),
+                    'is_recurrent' => (bool) $h->is_recurrent,
                 ];
             })->toArray();
         });
 
-        $checkDate = \Carbon\CarbonImmutable::parse($date);
+        $month = (int) substr($date, 5, 2);
+        $day = (int) substr($date, 8, 2);
         
         foreach ($holidays as $h) {
-            $hDate = \Carbon\CarbonImmutable::parse($h['date']);
             if ($h['is_recurrent']) {
-                if ($hDate->month === $checkDate->month && $hDate->day === $checkDate->day) {
+                if (($h['month'] ?? 0) === $month && ($h['day'] ?? 0) === $day) {
                     return $h['name'];
                 }
             } else {

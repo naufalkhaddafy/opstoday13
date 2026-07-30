@@ -121,17 +121,17 @@ class AttendanceAnalyticsService
             });
         }
 
-        $records = $query->selectRaw('DATE(work_date) as date, SUM(late_minutes) as total_late')
+        $recordsMap = $query->selectRaw('DATE(work_date) as date, SUM(late_minutes) as total_late')
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
+            ->pluck('total_late', 'date')
+            ->all();
 
         $trend = [];
         $currentDate = $dateFrom;
         while ($currentDate->lte($dateTo)) {
             $dateString = $currentDate->toDateString();
-            $record = $records->firstWhere('date', $dateString);
-            $trend[$dateString] = $record ? (int)$record->total_late : 0;
+            $trend[$dateString] = (int) ($recordsMap[$dateString] ?? 0);
             $currentDate = $currentDate->addDay();
         }
 

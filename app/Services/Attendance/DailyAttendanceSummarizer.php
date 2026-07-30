@@ -25,6 +25,16 @@ class DailyAttendanceSummarizer
     {
         $timezone = config('app.timezone');
         $period = CarbonPeriod::create($dateFrom, $dateTo);
+        $dateToStr = $dateTo->toDateString();
+
+        $holidayRepo = app(HolidayRepositoryInterface::class);
+        $holidayMap = [];
+        $dayNamesMap = [];
+        foreach ($period as $date) {
+            $ds = $date->toDateString();
+            $holidayMap[$ds] = $holidayRepo->getHolidayName($ds);
+            $dayNamesMap[$ds] = $date->translatedFormat('l');
+        }
 
         $stats = [
             'total_users' => $users->count(),
@@ -52,6 +62,13 @@ class DailyAttendanceSummarizer
                 'extended_minutes' => 0,
             ];
 
+            // Pre-index attendanceDays by date string for O(1) lookup
+            $attendanceDaysByDate = [];
+            foreach ($user->attendanceDays as $day) {
+                $dtStr = is_string($day->work_date) ? substr($day->work_date, 0, 10) : $day->work_date->toDateString();
+                $attendanceDaysByDate[$dtStr] = $day;
+            }
+
             // Default for the last day (for badge)
             $lastDayStatus = 'off_day';
             $lastDayCheckIn = null;
@@ -65,18 +82,17 @@ class DailyAttendanceSummarizer
             $dailyDetails = [];
 
             foreach ($period as $date) {
+                $ds = $date->toDateString();
                 $immutableDate = CarbonImmutable::instance($date);
                 
-                $activeLeave = $user->leaves->firstWhere(fn($leave) => $immutableDate->between($leave->start_date, $leave->end_date));
-                $assignment = $shiftResolver->forWorkDate($user, $immutableDate);
+                $activeLeave = $user->leaves->firstWhere(function ($leave) use ($ds) {
+                    $startStr = is_string($leave->start_date) ? substr($leave->start_date, 0, 10) : $leave->start_date->toDateString();
+                    $endStr = is_string($leave->end_date) ? substr($leave->end_date, 0, 10) : $leave->end_date->toDateString();
+                    return $ds >= $startStr && $ds <= $endStr;
+                });
                 $shift = $shiftResolver->shiftForWorkDate($user, $immutableDate);
                 $isScheduled = $shift !== null;
-                $attendanceDay = $user->attendanceDays->firstWhere(function($day) use ($immutableDate) {
-                    if (is_string($day->work_date)) {
-                        return $immutableDate->toDateString() === $day->work_date;
-                    }
-                    return $immutableDate->isSameDay($day->work_date);
-                });
+                $attendanceDay = $attendanceDaysByDate[$ds] ?? null;
 
                 $dayStatus = 'off_day';
                 $dayLeaveDesc = null;
@@ -156,19 +172,19 @@ class DailyAttendanceSummarizer
                         if ($isScheduled) $stats['total_absent']++;
                     }
                 } else {
-                    $holidayName = app(HolidayRepositoryInterface::class)->getHolidayName($immutableDate->toDateString());
+                    $holidayName = $holidayMap[$ds] ?? null;
                     if ($holidayName !== null) {
                         $dayStatus = 'holiday';
-                        $dayLeaveDesc = $holidayName . ' (' . $immutableDate->translatedFormat('l') . ')';
+                        $dayLeaveDesc = $holidayName . ' (' . ($dayNamesMap[$ds] ?? '') . ')';
                     }
                 }
 
-                $dailyDetails[$date->toDateString()] = [
+                $dailyDetails[$ds] = [
                     'status' => $dayStatus,
                 ];
 
                 // If this is the last day of the period, save for badge
-                if ($date->isSameDay($dateTo)) {
+                if ($ds === $dateToStr) {
                     $lastDayStatus = $dayStatus;
                     $lastDayCheckIn = $dayCheckIn;
                     $lastDayCheckOut = $dayCheckOut;
