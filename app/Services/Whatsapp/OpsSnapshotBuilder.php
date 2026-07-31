@@ -444,8 +444,10 @@ class OpsSnapshotBuilder
 
         $lines[] = '';
 
-        // Engineer SLA Performance (Disabled individual stats)
-        // $lines[] = "🎯 Engineer SLA Performance (Today's Closed)";
+        // Engineer Compliance Performance
+        if ($closedTodayTickets->isNotEmpty()) {
+            $lines[] = "🎯 Engineer Compliance Performance (Today's Closed)";
+        }
         $totalSlaTickets = 0;
         $totalLateSla = 0;
 
@@ -459,31 +461,36 @@ class OpsSnapshotBuilder
             $lateCount = 0;
 
             foreach ($userClosed as $t) {
-                $resolutionMin = ((float)($t->resolution_time ?? 0)) * 60;
-                if ($resolutionMin > $resolutionThreshold) {
+                $responseSec = (int) ($t->response_time_seconds ?? 0);
+                $responseMin = $responseSec <= 0 ? 1 : ($responseSec / 60);
+                $resolutionMin = ((float) ($t->resolution_time ?? 0)) * 60;
+
+                if ($responseMin > $responseThreshold || $resolutionMin > $resolutionThreshold) {
                     $lateCount++;
                 }
             }
 
             $slaPercent = $count > 0 ? round((($count - $lateCount) / $count) * 100) : 0;
+            $onTimeCount = $count - $lateCount;
 
             $slaIcon = $slaPercent >= 90 ? '🟢' : ($slaPercent >= 70 ? '🟡' : '🔴');
 
-            // $lines[] = "{$slaIcon} {$user->name}: {$slaPercent}% SLA";
-            // $lines[] = "└ {$count}/{$count} tiket ({$lateCount} late)";
+            $lines[] = "{$slaIcon} {$user->name}: {$slaPercent}% Compliance";
+            $lines[] = "└ {$onTimeCount}/{$count} tiket ({$lateCount} late)";
 
             $totalSlaTickets += $count;
             $totalLateSla += $lateCount;
         }
 
-        // Team average SLA
+        // Team average Compliance
         if ($totalSlaTickets > 0) {
             $teamSla = round((($totalSlaTickets - $totalLateSla) / $totalSlaTickets) * 100);
             $teamIcon = $teamSla >= 90 ? '🟢' : ($teamSla >= 70 ? '🟡' : '🔴');
+            $onTimeTeam = $totalSlaTickets - $totalLateSla;
 
             $lines[] = '';
-            $lines[] = "🏅 Team Average SLA: {$teamSla}% ({$totalSlaTickets}/{$totalSlaTickets} tiket)";
-            $lines[] = "{$teamIcon} Status: " . ($teamSla >= 90 ? 'Excellent SLA Compliance' : ($teamSla >= 70 ? 'Good SLA Compliance' : 'Needs Improvement'));
+            $lines[] = "🏅 Team Average Compliance: {$teamSla}% ({$onTimeTeam}/{$totalSlaTickets} tiket)";
+            $lines[] = "{$teamIcon} Status: " . ($teamSla >= 90 ? 'Excellent Compliance' : ($teamSla >= 70 ? 'Good Compliance' : 'Needs Improvement'));
         }
 
         $lines[] = '';
