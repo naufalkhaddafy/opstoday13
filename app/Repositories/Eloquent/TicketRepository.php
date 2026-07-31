@@ -148,6 +148,10 @@ class TicketRepository implements TicketRepositoryInterface
             $ticket->response_time_seconds = $this->secondsBetween($ticket->first_seen_at, $ticket->in_progress_at);
         }
 
+        if ($ticket->response_time_seconds === null) {
+            $ticket->response_time_seconds = 60;
+        }
+
         $ticket->save();
 
         $this->processAIPrediction($ticket, $oldTitle);
@@ -279,6 +283,9 @@ class TicketRepository implements TicketRepositoryInterface
         $start = $ticket->in_progress_at ?? $ticket->first_seen_at ?? $closeTime;
         $diffInSeconds = max(0, $start->diffInSeconds($closeTime));
         $ticket->resolution_time = round($diffInSeconds / 3600, 2);
+        if ($ticket->response_time_seconds === null) {
+            $ticket->response_time_seconds = 60;
+        }
         
         $ticket->api_creation_date = $closeTime->toDateString();
         $ticket->completed_date = $closeTime->toDateString();
