@@ -75,7 +75,7 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
         labels.length > 0 &&
         (resolutionValues.some((v) => v > 0) || responseValues.some((v) => v > 0));
 
-    const chartData = {
+    const chartData: any = {
         labels,
         datasets: [
             {
@@ -115,9 +115,12 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
                 borderColor: '#F59E0B',
                 backgroundColor: 'rgba(245, 158, 11, 0.1)',
                 borderWidth: 2,
-                pointRadius: 4,
-                pointBackgroundColor: '#F59E0B',
-                tension: 0.3,
+                pointRadius: responseValues.map((val) => (val > responseTarget ? 6 : 4)),
+                pointHoverRadius: 7,
+                pointBackgroundColor: responseValues.map((val) => (val > responseTarget ? '#EF4444' : '#F59E0B')),
+                pointBorderColor: responseValues.map((val) => (val > responseTarget ? '#ffffff' : '#F59E0B')),
+                pointBorderWidth: responseValues.map((val) => (val > responseTarget ? 2 : 1)),
+                tension: 0.2,
                 fill: false,
                 yAxisID: 'y',
                 order: 2,
@@ -129,9 +132,12 @@ export function SlaTrendChart({ data, mode: controlledMode, onModeChange, hideFi
                 borderColor: BRAND.dark,
                 backgroundColor: 'rgba(27, 94, 32, 0.1)',
                 borderWidth: 2,
-                pointRadius: 4,
-                pointBackgroundColor: BRAND.dark,
-                tension: 0.3,
+                pointRadius: resolutionValues.map((val) => (val > resolutionTarget ? 6 : 4)),
+                pointHoverRadius: 7,
+                pointBackgroundColor: resolutionValues.map((val) => (val > resolutionTarget ? '#EF4444' : BRAND.dark)),
+                pointBorderColor: resolutionValues.map((val) => (val > resolutionTarget ? '#ffffff' : BRAND.dark)),
+                pointBorderWidth: resolutionValues.map((val) => (val > resolutionTarget ? 2 : 1)),
+                tension: 0.2,
                 fill: false,
                 yAxisID: 'y',
                 order: 3,
