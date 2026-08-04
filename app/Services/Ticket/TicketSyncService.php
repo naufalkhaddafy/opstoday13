@@ -9,8 +9,10 @@ use App\Models\Ticket;
 use App\Models\TicketSyncRun;
 use App\Models\User;
 use App\Repositories\Contracts\SihepiTicketClientInterface;
+use App\Enums\TicketStatus;
 use App\Repositories\Contracts\TicketRepositoryInterface;
 use App\Repositories\Contracts\TicketSyncRunRepositoryInterface;
+use Illuminate\Support\Facades\Cache;
 
 class TicketSyncService
 {
@@ -54,17 +56,17 @@ class TicketSyncService
 
                     $cachedTicket = null;
                     try {
-                        $cachedTicket = \Illuminate\Support\Facades\Cache::store('redis')->get('ticket:' . $record['ticket_no']);
+                        $cachedTicket = Cache::store('redis')->get('ticket:' . $record['ticket_no']);
                     } catch (\Throwable $e) {
                         // Jika Redis mati, abaikan error dan anggap cache tidak ada (bypass ke DB)
                     }
 
                     if (is_array($cachedTicket)) {
-                        $cachedStatus = $cachedTicket['status'] instanceof \App\Enums\TicketStatus
+                        $cachedStatus = $cachedTicket['status'] instanceof TicketStatus
                             ? $cachedTicket['status']->value
                             : $cachedTicket['status'];
                             
-                        $incomingStatus = $record['status'] instanceof \App\Enums\TicketStatus 
+                        $incomingStatus = $record['status'] instanceof TicketStatus 
                             ? $record['status']->value 
                             : $record['status'];
                             

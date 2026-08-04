@@ -8,8 +8,11 @@ use App\Models\Shift;
 use App\Models\User;
 use App\Models\UserShiftAssignment;
 use App\Models\UserShiftException;
+use App\Models\AttendanceLog;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceWorkDateResolver
 {
@@ -19,7 +22,7 @@ class AttendanceWorkDateResolver
     protected const PLACEHOLDER_CODES = ['steady', 'shift'];
 
     public function __construct(
-        protected \App\Repositories\Contracts\HolidayRepositoryInterface $holidayRepository,
+        protected HolidayRepositoryInterface $holidayRepository,
         ?string $timezone = null,
     ) {
         $this->timezone = $timezone ?? config('app.timezone');
@@ -36,7 +39,7 @@ class AttendanceWorkDateResolver
         }
 
         if ($status !== null && strtolower($status) === 'keluar') {
-            $lastIn = \App\Models\AttendanceLog::where('user_id', $user->id)
+            $lastIn = AttendanceLog::where('user_id', $user->id)
                 ->where('status', 'hadir')
                 ->where('punched_at', '<', $punchedAt)
                 ->where('punched_at', '>=', $punchedAt->subHours(16))
@@ -46,12 +49,12 @@ class AttendanceWorkDateResolver
             if ($lastIn !== null) {
                 // Selesaikan ulang untuk check-in sebelumnya agar work_date dan shift sama persis
                 $resolvedIn = $this->resolve($user, CarbonImmutable::instance($lastIn->punched_at), 'hadir');
-                \Illuminate\Support\Facades\Log::info("KELUAR PUNCH {$punchedAt} FOUND LAST IN {$lastIn->punched_at}. RESOLVED TO: " . ($resolvedIn ? $resolvedIn['work_date'] : 'null'));
+                Log::info("KELUAR PUNCH {$punchedAt} FOUND LAST IN {$lastIn->punched_at}. RESOLVED TO: " . ($resolvedIn ? $resolvedIn['work_date'] : 'null'));
                 if ($resolvedIn !== null) {
                     return $resolvedIn;
                 }
             } else {
-                \Illuminate\Support\Facades\Log::info("KELUAR PUNCH {$punchedAt} DID NOT FIND LAST IN");
+                Log::info("KELUAR PUNCH {$punchedAt} DID NOT FIND LAST IN");
             }
         }
 

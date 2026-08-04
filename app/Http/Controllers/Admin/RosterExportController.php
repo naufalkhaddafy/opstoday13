@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\RosterExport;
 use App\Http\Controllers\Controller;
+use App\Models\Company;
+use App\Models\Group;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -34,7 +36,7 @@ class RosterExportController extends Controller
 
         $companyName = 'All Companies';
         if ($filters['company_id'] !== 'all') {
-            $company = \App\Models\Company::find($filters['company_id']);
+            $company = Company::find($filters['company_id']);
             if ($company) {
                 $companyName = $company->name;
             }
@@ -42,7 +44,7 @@ class RosterExportController extends Controller
 
         $groupName = 'All Groups';
         if ($filters['group_id'] !== 'all') {
-            $group = \App\Models\Group::find($filters['group_id']);
+            $group = Group::find($filters['group_id']);
             if ($group) {
                 $groupName = $group->name;
             }

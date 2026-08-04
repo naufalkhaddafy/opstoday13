@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Company;
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
@@ -28,7 +29,7 @@ class DashboardExport implements WithMultipleSheets
     {
         $companyName = null;
         if ($this->companyId) {
-            $companyName = \App\Models\Company::find($this->companyId)?->name;
+            $companyName = Company::find($this->companyId)?->name;
         }
 
         return [

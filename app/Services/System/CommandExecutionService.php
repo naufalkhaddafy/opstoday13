@@ -2,6 +2,7 @@
 
 namespace App\Services\System;
 
+use App\Jobs\RunAsyncCommandJob;
 use App\Repositories\Contracts\SettingRepositoryInterface;
 use Illuminate\Support\Facades\Cache;
 
@@ -50,7 +51,7 @@ class CommandExecutionService
             'message' => 'Menambahkan perintah ke antrean (Queue)...',
         ], 600);
 
-        \App\Jobs\RunAsyncCommandJob::dispatch($command, $cacheKey);
+        RunAsyncCommandJob::dispatch($command, $cacheKey);
         
         return "Command {$command} diantrekan (Queue) di background.";
     }

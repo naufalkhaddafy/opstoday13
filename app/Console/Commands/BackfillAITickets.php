@@ -3,8 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Models\Ticket;
+use App\Models\TicketAIPrediction;
+use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Services\Analytics\AIEngineService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class BackfillAITickets extends Command
 {
@@ -30,7 +33,7 @@ class BackfillAITickets extends Command
         $limit = (int) $this->option('limit');
         $force = $this->option('force');
         $daysOpt = $this->option('days');
-        $days = $daysOpt !== null ? (int) $daysOpt : (int) app(\App\Repositories\Contracts\SettingRepositoryInterface::class)->get('ai_backfill_days', 30);
+        $days = $daysOpt !== null ? (int) $daysOpt : (int) app(SettingRepositoryInterface::class)->get('ai_backfill_days', 30);
         
         $query = Ticket::query()->whereNotNull('title');
 
@@ -42,7 +45,7 @@ class BackfillAITickets extends Command
         if ($force) {
             $this->info("Menghapus prediksi AI sebelumnya" . ($days > 0 ? " (untuk {$days} hari terakhir)..." : "..."));
             $ticketIds = (clone $query)->pluck('id');
-            \App\Models\TicketAIPrediction::whereIn('ticket_id', $ticketIds)->delete();
+            TicketAIPrediction::whereIn('ticket_id', $ticketIds)->delete();
         } else {
             $query->whereDoesntHave('aiPrediction');
         }
@@ -59,7 +62,7 @@ class BackfillAITickets extends Command
                 : "Semua tiket sudah memiliki Kategori AI. Tidak ada yang perlu diproses.";
             
             $this->info($msg);
-            \Illuminate\Support\Facades\Cache::put('cmd_progress:ops_backfill', [
+            Cache::put('cmd_progress:ops_backfill', [
                 'status' => 'completed',
                 'progress' => 100,
                 'message' => 'Selesai! ' . $msg,
@@ -71,7 +74,7 @@ class BackfillAITickets extends Command
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        \Illuminate\Support\Facades\Cache::put('cmd_progress:ops_backfill', [
+        Cache::put('cmd_progress:ops_backfill', [
             'status' => 'running',
             'progress' => 0,
             'message' => "[Filter: {$days} Hari] Memulai proses prediksi untuk {$total} tiket...",
@@ -102,7 +105,7 @@ class BackfillAITickets extends Command
                 // Update cache every 10 tickets to avoid too many Redis calls
                 if ($processed % 10 === 0 || $processed === $total) {
                     $percent = (int) round(($processed / $total) * 100);
-                    \Illuminate\Support\Facades\Cache::put('cmd_progress:ops_backfill', [
+                    Cache::put('cmd_progress:ops_backfill', [
                         'status' => 'running',
                         'progress' => $percent,
                         'message' => "Memproses tiket {$processed} / {$total}...",
@@ -115,7 +118,7 @@ class BackfillAITickets extends Command
         $this->newLine(2);
         $this->info("Selesai! AI berhasil memprediksi {$total} tiket lama.");
 
-        \Illuminate\Support\Facades\Cache::put('cmd_progress:ops_backfill', [
+        Cache::put('cmd_progress:ops_backfill', [
             'status' => 'completed',
             'progress' => 100,
             'message' => "Selesai! AI berhasil memprediksi {$total} tiket lama.",

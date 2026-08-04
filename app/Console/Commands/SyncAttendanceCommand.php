@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AttendanceSyncRunStatus;
 use App\Models\ScheduleLog;
 use App\Services\Attendance\AttendanceSyncService;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 
 class SyncAttendanceCommand extends Command
@@ -28,7 +30,7 @@ class SyncAttendanceCommand extends Command
         $now = null;
         if ($dateOption) {
             $timezone = config('app.timezone');
-            $now = \Carbon\CarbonImmutable::createFromFormat('Y-m-d', $dateOption, $timezone)->setTime(10, 0);
+            $now = CarbonImmutable::createFromFormat('Y-m-d', $dateOption, $timezone)->setTime(10, 0);
             $this->info("Syncing with simulated time: {$now->toDateTimeString()}");
         }
 
@@ -44,7 +46,7 @@ class SyncAttendanceCommand extends Command
             $this->info($outputMsg);
 
             $log->update([
-                'status' => $run->status === \App\Enums\AttendanceSyncRunStatus::Success ? 'success' : 'failed',
+                'status' => $run->status === AttendanceSyncRunStatus::Success ? 'success' : 'failed',
                 'finished_at' => now(),
                 'duration' => round((microtime(true) - $startTime) * 1000),
                 'output' => $outputMsg,

@@ -3,9 +3,12 @@
 namespace App\Repositories\Eloquent;
 
 use App\Enums\TicketStatus;
+use App\Models\Group;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Repositories\Contracts\SettingRepositoryInterface;
 use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
+use App\Services\Analytics\TicketTrendAnalyzer;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -205,7 +208,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?float $resolutionSlaHours = null,
         ?string $workGroup = null,
     ): array {
-        $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
+        $settings = app(SettingRepositoryInterface::class);
         $responseSlaSeconds ??= ((int) $settings->get('sla_response_time_green', 60)) * 60;
         $resolutionSlaHours ??= ((int) $settings->get('sla_resolution_time_green', 120)) / 60;
         $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $workGroup, $responseSlaSeconds, $resolutionSlaHours) {
@@ -307,7 +310,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
         $previousItems = $getFormattedItems($prevDateFrom, $prevDateTo);
 
-        $analyzer = new \App\Services\Analytics\TicketTrendAnalyzer();
+        $analyzer = new TicketTrendAnalyzer();
         return $analyzer->analyzeKeywords($currentItems, $previousItems, $limit);
     }
 
@@ -346,7 +349,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
     ): array {
         $refDate = $dateTo;
 
-        $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
+        $settings = app(SettingRepositoryInterface::class);
         $responseSlaHours = round(((int) $settings->get('sla_response_time_green', 60)) / 60.0, 2);
         $resolutionSlaHours = round(((int) $settings->get('sla_resolution_time_green', 120)) / 60.0, 2);
 
@@ -545,7 +548,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
     public function getAvailableWorkGroups(): array
     {
-        return \App\Models\Group::query()
+        return Group::query()
             ->orderBy('name')
             ->pluck('name')
             ->toArray();

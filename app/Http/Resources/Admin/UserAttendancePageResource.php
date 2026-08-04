@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Models\UserShiftException;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use App\Repositories\Contracts\HolidayRepositoryInterface;
 
 class UserAttendancePageResource extends JsonResource
 {
@@ -21,7 +23,7 @@ class UserAttendancePageResource extends JsonResource
         
         $timezone = config('app.timezone');
         
-        $startOfMonth = \Carbon\CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
+        $startOfMonth = CarbonImmutable::create($year, $month, 1, 0, 0, 0, $timezone);
         $endOfMonth = $startOfMonth->endOfMonth();
         $totalDays = $startOfMonth->daysInMonth;
         
@@ -75,7 +77,7 @@ class UserAttendancePageResource extends JsonResource
                 $exception = $user->exceptions->first(fn($e) => $e->date->toDateString() === $dateString);
                 $isException = $exception !== null;
             } else {
-                $isException = \App\Models\UserShiftException::where('user_id', $user->id)
+                $isException = UserShiftException::where('user_id', $user->id)
                     ->where('date', $dateString)
                     ->exists();
             }
@@ -99,8 +101,8 @@ class UserAttendancePageResource extends JsonResource
             $overtimeMinutes = 0;
             
             if ($dbRecord) {
-                $checkIn = $dbRecord->check_in_at ? \Carbon\CarbonImmutable::parse($dbRecord->check_in_at)->timezone($timezone)->toDateTimeString() : null;
-                $checkOut = $dbRecord->check_out_at ? \Carbon\CarbonImmutable::parse($dbRecord->check_out_at)->timezone($timezone)->toDateTimeString() : null;
+                $checkIn = $dbRecord->check_in_at ? CarbonImmutable::parse($dbRecord->check_in_at)->timezone($timezone)->toDateTimeString() : null;
+                $checkOut = $dbRecord->check_out_at ? CarbonImmutable::parse($dbRecord->check_out_at)->timezone($timezone)->toDateTimeString() : null;
                 $presence = $dbRecord->presence_status->value;
                 $timing = $dbRecord->timing_status?->value;
                 $lateMinutes = $dbRecord->late_minutes;
@@ -181,13 +183,13 @@ class UserAttendancePageResource extends JsonResource
             ];
         }
         
-        $today = \Carbon\CarbonImmutable::now($timezone);
+        $today = CarbonImmutable::now($timezone);
         $todayStr = $today->toDateString();
         $isTodayException = false;
         if ($user->relationLoaded('exceptions')) {
             $isTodayException = $user->exceptions->first(fn($e) => $e->date->toDateString() === $todayStr) !== null;
         } else {
-            $isTodayException = \App\Models\UserShiftException::where('user_id', $user->id)
+            $isTodayException = UserShiftException::where('user_id', $user->id)
                 ->where('date', $todayStr)
                 ->exists();
         }

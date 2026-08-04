@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\TicketSyncRunStatus;
 use App\Models\ScheduleLog;
 use App\Services\Ticket\TicketSyncService;
 use Illuminate\Console\Command;
@@ -37,7 +38,7 @@ class SyncCompletedTicketsCommand extends Command
             $this->info($outputMsg);
 
             $log->update([
-                'status' => $run->status === \App\Enums\TicketSyncRunStatus::Success ? 'success' : 'failed',
+                'status' => $run->status === TicketSyncRunStatus::Success ? 'success' : 'failed',
                 'finished_at' => now(),
                 'duration' => round((microtime(true) - $startTime) * 1000),
                 'output' => $outputMsg,
