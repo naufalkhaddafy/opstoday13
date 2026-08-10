@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.1] - 2026-08-10
+
+### Fixed
+- **NSS Ticket Creation Date Bug**: Fixed a bug in the automated string-ticket (e.g., NSS, REQ, INC) cleanup process where the `api_creation_date` of a forcefully closed ticket was incorrectly being overwritten with its closing date. Now, the system safely preserves the original API creation date, or falls back to `first_seen_at`, ensuring that ticket intake (created) volume charts remain accurate.
+
 ## [v1.4.0] - 2026-07-30
 
 ### Added
