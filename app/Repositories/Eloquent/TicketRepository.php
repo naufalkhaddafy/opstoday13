@@ -287,7 +287,9 @@ class TicketRepository implements TicketRepositoryInterface
             $ticket->response_time_seconds = 60;
         }
         
-        $ticket->api_creation_date = $closeTime->toDateString();
+        if ($ticket->api_creation_date === null && $ticket->first_seen_at) {
+            $ticket->api_creation_date = $ticket->first_seen_at->toDateString();
+        }
         $ticket->completed_date = $closeTime->toDateString();
         
         $ticket->disappeared_at = null;
