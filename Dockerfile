@@ -3,6 +3,8 @@ FROM dunglas/frankenphp:php8.4-alpine AS base
 # Install required PHP extensions
 RUN install-php-extensions \
     pdo_mysql \
+    sqlsrv \
+    pdo_sqlsrv \
     redis \
     pcntl \
     opcache \

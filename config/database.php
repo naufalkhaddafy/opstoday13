@@ -114,6 +114,21 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'fingerprint_sqlsrv' => [
+            'driver' => 'sqlsrv',
+            'url' => env('FINGERPRINT_DB_URL'),
+            'host' => env('FINGERPRINT_DB_HOST', '172.16.1.111'),
+            'port' => env('FINGERPRINT_DB_PORT', '1433'),
+            'database' => env('FINGERPRINT_DB_DATABASE', 'smartweb_b/up'),
+            'username' => env('FINGERPRINT_DB_USERNAME', 'usersmart'),
+            'password' => env('FINGERPRINT_DB_PASSWORD', '2026smart'),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'encrypt' => 'no', // match node js options: encrypt: false
+            'trust_server_certificate' => 'true',
+        ],
+
     ],
 
     /*

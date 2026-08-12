@@ -51,7 +51,7 @@ use App\Repositories\Contracts\SessionRepositoryInterface;
 use App\Repositories\Eloquent\SessionRepository;
 use App\Models\Setting;
 use App\Observers\SettingObserver;
-use App\Services\Fingerprint\HttpFingerprintClient;
+use App\Services\Fingerprint\SqlFingerprintClient;
 use App\Services\Sihepi\HttpSihepiTicketClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
@@ -75,7 +75,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AttendanceLogRepositoryInterface::class, AttendanceLogRepository::class);
         $this->app->bind(AttendanceDayRepositoryInterface::class, AttendanceDayRepository::class);
         $this->app->bind(AttendanceSyncRunRepositoryInterface::class, AttendanceSyncRunRepository::class);
-        $this->app->bind(FingerprintClientInterface::class, HttpFingerprintClient::class);
+        $this->app->bind(FingerprintClientInterface::class, SqlFingerprintClient::class);
         $this->app->bind(GroupRepositoryInterface::class, GroupRepository::class);
         $this->app->bind(UserLeaveRepositoryInterface::class, UserLeaveRepository::class);
         $this->app->bind(SihepiTicketClientInterface::class, HttpSihepiTicketClient::class);

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.2] - 2026-08-13
+
+### Changed
+- **Direct SQL Server Attendance Sync**: Migrated the attendance (fingerprint) synchronization architecture. The system now directly connects to the SQL Server database (`smartweb_b/up`) via a new `fingerprint_sqlsrv` database connection, completely bypassing the legacy external Node.js API.
+- **Dynamic Attendance Filtering**: Replaced static NIK queries with dynamic fetching of all active employees (`is_active = true`), ensuring seamless data integrity for new or reactivated personnel.
+
 ## [v1.4.1] - 2026-08-10
 
 ### Fixed
