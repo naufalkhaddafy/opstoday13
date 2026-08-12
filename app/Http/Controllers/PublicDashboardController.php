@@ -10,6 +10,9 @@ use App\Services\Attendance\AttendanceAnalyticsService;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\CarbonImmutable;
 
+use App\Models\Setting;
+use App\Models\SharePointData;
+use App\Exports\DashboardExport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -69,6 +72,7 @@ class PublicDashboardController extends Controller
                 'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId, $workGroup),
                 'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId, $workGroup),
                 'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId, null, null, $workGroup),
+                'initiatives' => fn () => SharePointData::ofType('initiative')->latest('last_synced_at')->get(),
                 'analytics' => fn () => [
                     'leaderboard' => $this->analyticsService->getDisciplineLeaderboard($dateFrom, $dateTo, $companyId, $workGroup),
                     'lateTrend' => $this->analyticsService->getLateTrend($dateFrom, $dateTo, $companyId, $workGroup),
@@ -87,7 +91,7 @@ class PublicDashboardController extends Controller
                     'sort_by' => $sortBy,
                     'sort_dir' => $sortDir,
                     'status' => $status,
-                    'slaHighTicketLoad' => (int) (\App\Models\Setting::where('key', 'sla_high_ticket_load')->value('value') ?? 10),
+                    'slaHighTicketLoad' => (int) (Setting::where('key', 'sla_high_ticket_load')->value('value') ?? 10),
                     'defaults' => [
                         'company_id' => null,
                         'work_group' => null,
@@ -129,6 +133,6 @@ class PublicDashboardController extends Controller
         $status = $request->input('status');
 
         $fileName = 'dashboard-export-' . $dateFrom->format('Y-m-d') . '-to-' . $dateTo->format('Y-m-d') . '.xlsx';
-        return (new \App\Exports\DashboardExport($dateFrom, $dateTo, $companyId, $search, $status))->download($fileName);
+        return (new DashboardExport($dateFrom, $dateTo, $companyId, $search, $status))->download($fileName);
     }
 }

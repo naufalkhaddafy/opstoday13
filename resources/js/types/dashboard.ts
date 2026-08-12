@@ -80,6 +80,15 @@ export type EngineerSummary = {
     avg_response_time_label: string | null;
     avg_resolution_time_hours: number | null;
     avg_resolution_time_label: string | null;
+    initiative_count?: number;
+    initiatives?: Array<{
+        id: number;
+        title: string | null;
+        status: string | null;
+        impact_level: string | null;
+        target_timeline: string | null;
+        pic: string | null;
+    }>;
 };
 
 export type TicketRow = {
@@ -131,6 +140,7 @@ export type DashboardProps = {
     attendance?: { stats: AttendanceStats; employees: EmployeeStatus[] };
     ticket_stats?: TicketStats;
     kpi_stats?: KpiStats;
+    initiatives?: SharePointInitiativeItem[];
     companies: CompanyOption[];
     workGroups: string[];
     filters: DashboardFilters;
@@ -178,3 +188,18 @@ export type LeaderboardEntry = {
 };
 
 export type Segment = { label: string; value: number; color: string };
+
+export type SharePointInitiativeItem = {
+    id: number;
+    sharepoint_item_id: string;
+    type: string;
+    title: string | null;
+    pic: string | null;
+    submitted_by?: string | null;
+    status: string | null;
+    target_timeline: string | null;
+    impact_level: string | null;
+    data: Record<string, any>;
+    last_synced_at?: string;
+};
+

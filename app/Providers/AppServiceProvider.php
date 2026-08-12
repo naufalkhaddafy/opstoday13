@@ -53,6 +53,8 @@ use App\Models\Setting;
 use App\Observers\SettingObserver;
 use App\Services\Fingerprint\HttpFingerprintClient;
 use App\Services\Sihepi\HttpSihepiTicketClient;
+use App\Repositories\Contracts\SharePointClientInterface;
+use App\Services\SharePoint\GraphSharePointClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Facades\Date;
@@ -60,6 +62,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Azure\AzureExtendSocialite;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -87,6 +91,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(HolidayRepositoryInterface::class, HolidayRepository::class);
         $this->app->bind(SettingRepositoryInterface::class, SettingRepository::class);
         $this->app->bind(SessionRepositoryInterface::class, SessionRepository::class);
+        $this->app->bind(SharePointClientInterface::class, GraphSharePointClient::class);
     }
 
     /**
@@ -107,8 +112,8 @@ class AppServiceProvider extends ServiceProvider
         Setting::observe(SettingObserver::class);
 
         Event::listen(
-            \SocialiteProviders\Manager\SocialiteWasCalled::class,
-            [\SocialiteProviders\Azure\AzureExtendSocialite::class, 'handle']
+            SocialiteWasCalled::class,
+            [AzureExtendSocialite::class, 'handle']
         );
     }
 

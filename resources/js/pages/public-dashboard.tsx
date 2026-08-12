@@ -14,6 +14,7 @@ import { TicketOverviewSection } from '@/components/dashboard/sections/TicketOve
 import { EngineerWorkloadSection } from '@/components/dashboard/sections/EngineerWorkloadSection';
 import { TicketsTableSection } from '@/components/dashboard/sections/TicketsTableSection';
 import { TeamAttendanceTab } from '@/components/dashboard/sections/TeamAttendanceTab';
+import { TopLeaderboardEngineerTab } from '@/components/dashboard/sections/TopLeaderboardEngineerTab';
 
 export default function PublicDashboard({
     date,
@@ -27,6 +28,7 @@ export default function PublicDashboard({
     tickets,
     analytics,
     holiday_name,
+    initiatives = [],
 }: DashboardProps) {
     const { app_version } = usePage().props as any;
     const stats = attendance?.stats ?? { total_scheduled: 0, total_present: 0, total_absent: 0, total_leave: 0, total_late: 0, total_users: 0, total_early_leave: 0 };
@@ -138,9 +140,10 @@ export default function PublicDashboard({
                 <div className="flex-1 w-full mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-8">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <div className="flex w-full items-center justify-between mb-6">
-                            <TabsList className="grid w-[400px] grid-cols-2">
+                            <TabsList className="grid w-[620px] grid-cols-3">
                                 <TabsTrigger value="service-desk">Ticket Overview</TabsTrigger>
                                 <TabsTrigger value="team-attendance">Team & Attendance</TabsTrigger>
+                                <TabsTrigger value="top-leaderboard">Top Leaderboard Engineer</TabsTrigger>
                             </TabsList>
                         </div>
 
@@ -211,6 +214,13 @@ export default function PublicDashboard({
                             />
                         </TabsContent>
 
+                        <TabsContent value="top-leaderboard" className="mt-0">
+                            <TopLeaderboardEngineerTab
+                                engineers={engineers}
+                                leaderboard={analytics?.leaderboard}
+                                initiatives={initiatives}
+                            />
+                        </TabsContent>
                     </Tabs>
                 </div>
 

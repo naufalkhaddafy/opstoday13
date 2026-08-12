@@ -3,16 +3,19 @@
 namespace App\Http\Resources;
 
 use App\Enums\TicketStatus;
+use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Attendance\DailyAttendanceSummarizer;
 use App\Services\Attendance\ShiftAssignmentResolver;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use App\Repositories\Contracts\HolidayRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Inertia\Inertia;
 
 class PublicDashboardPageResource extends JsonResource
 {
@@ -39,7 +42,7 @@ class PublicDashboardPageResource extends JsonResource
         $kpiStatsClosure = $this->resource['kpiStats'];
         /** @var \Closure $analyticsClosure */
         $analyticsClosure = $this->resource['analytics'] ?? fn() => null;
-        /** @var \Illuminate\Database\Eloquent\Collection<int, \App\Models\Company> $companies */
+        /** @var \Illuminate\Database\Eloquent\Collection<int, Company> $companies */
         $companies = $this->resource['companies'];
         /** @var array{company_id: int|null, date_from: string, date_to: string} $filters */
         $filters = $this->resource['filters'];
@@ -51,8 +54,8 @@ class PublicDashboardPageResource extends JsonResource
             'date' => $dateFrom->eq($dateTo)
                 ? $dateFrom->locale('en')->translatedFormat('l, d F Y')
                 : $dateFrom->locale('en')->translatedFormat('d M Y').' – '.$dateTo->locale('en')->translatedFormat('d M Y'),
-            'holiday_name' => app(\App\Repositories\Contracts\HolidayRepositoryInterface::class)->getHolidayName($dateTo->toDateString()),
-            'attendance' => \Inertia\Inertia::defer(function () use ($usersClosure, $dateFrom, $attendanceDate, $shiftResolver) {
+            'holiday_name' => app(HolidayRepositoryInterface::class)->getHolidayName($dateTo->toDateString()),
+            'attendance' => Inertia::defer(function () use ($usersClosure, $dateFrom, $attendanceDate, $shiftResolver) {
                 $users = $usersClosure();
                   $attendance = (new DailyAttendanceSummarizer())->summarize($users, $dateFrom, $attendanceDate, $shiftResolver);
                 return [
@@ -60,8 +63,8 @@ class PublicDashboardPageResource extends JsonResource
                     'employees' => $attendance['employees'],
                 ];
             }),
-            'ticket_stats' => \Inertia\Inertia::defer(fn() => $ticketStatsClosure()),
-            'kpi_stats' => \Inertia\Inertia::defer(function () use ($kpiStatsClosure) {
+            'ticket_stats' => Inertia::defer(fn() => $ticketStatsClosure()),
+            'kpi_stats' => Inertia::defer(function () use ($kpiStatsClosure) {
                 $stats = $kpiStatsClosure();
                 
                 // Format times for display
@@ -79,19 +82,35 @@ class PublicDashboardPageResource extends JsonResource
 
                 return $stats;
             }),
-            'analytics' => \Inertia\Inertia::defer(fn() => $analyticsClosure()),
+            'initiatives' => Inertia::defer(function () {
+                $closure = $this->resource['initiatives'] ?? fn() => collect([]);
+                return $closure()->map(fn ($item) => [
+                    'id' => $item->id,
+                    'sharepoint_item_id' => $item->sharepoint_item_id,
+                    'type' => $item->type,
+                    'title' => $item->title,
+                    'pic' => $item->submitted_by ?? $item->pic,
+                    'submitted_by' => $item->submitted_by ?? $item->pic,
+                    'status' => $item->initiative_status,
+                    'target_timeline' => $item->target_timeline,
+                    'impact_level' => $item->impact_level,
+                    'data' => $item->data,
+                    'last_synced_at' => $item->last_synced_at?->toIso8601String(),
+                ])->values()->all();
+            }),
+            'analytics' => Inertia::defer(fn() => $analyticsClosure()),
             'companies' => $companies->map(fn ($company) => [
                 'id' => $company->id,
                 'name' => $company->name,
             ])->values()->all(),
             'workGroups' => is_callable($this->resource['workGroups']) ? $this->resource['workGroups']() : $this->resource['workGroups'],
             'filters' => $filters,
-            'engineers' => \Inertia\Inertia::defer(function () use ($engineersClosure) {
+            'engineers' => Inertia::defer(function () use ($engineersClosure) {
                 return $engineersClosure()
                     ->map(fn (array $engineer) => $this->transformEngineer($engineer))
                     ->all();
             }),
-            'tickets' => \Inertia\Inertia::defer(function () use ($ticketsClosure) {
+            'tickets' => Inertia::defer(function () use ($ticketsClosure) {
                 $tickets = $ticketsClosure();
                 return [
                     'data' => collect($tickets->items())

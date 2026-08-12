@@ -62,4 +62,11 @@ return [
         'url' => env('AI_ENGINE_URL', 'http://127.0.0.1:8002'),
     ],
 
+    'sharepoint' => [
+        'initiatives' => [
+            'site_id' => env('SHAREPOINT_INITIATIVE_SITE_ID'),
+            'list_id' => env('SHAREPOINT_INITIATIVE_LIST_ID'),
+        ],
+    ],
+
 ];

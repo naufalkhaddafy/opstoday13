@@ -3,11 +3,16 @@
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\UpdateUserLastActive;
+use App\Http\Middleware\EnsureUserIsVerifiedAndOnboarded;
+use App\Repositories\Contracts\SettingRepositoryInterface;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -28,17 +33,17 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->alias([
-            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
-            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
-            'verified' => \App\Http\Middleware\EnsureUserIsVerifiedAndOnboarded::class,
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'verified' => EnsureUserIsVerifiedAndOnboarded::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })
     ->withSchedule(function (Schedule $schedule): void {
-        $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
+        $settings = app(SettingRepositoryInterface::class);
 
         $syncOpenInterval = $settings->get('sync_open_tickets_interval', '1');
         $schedule->command('tickets:sync-open')
@@ -72,6 +77,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('ops:send-snapshot evening')
             ->dailyAt($eveningTime)
             ->withoutOverlapping()
+            ->runInBackground()
+            ->timezone(config('app.timezone'));
+
+        $syncSharePointInterval = $settings->get('sync_sharepoint_interval', '15');
+        $schedule->command('sharepoint:sync-initiatives')
+            ->cron('*/' . $syncSharePointInterval . ' * * * *')
+            ->withoutOverlapping(10)
             ->runInBackground()
             ->timezone(config('app.timezone'));
     })
