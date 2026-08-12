@@ -99,6 +99,7 @@ class UserRepository implements UserRepositoryInterface
         return User::query()
             ->with(['company', 'group'])
             ->where('is_verified', false)
+            ->where('is_active', true)
             ->whereNotNull('employee_id')
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->orderBy('created_at', 'desc')

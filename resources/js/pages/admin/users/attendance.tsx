@@ -12,6 +12,7 @@ type User = {
     name: string;
     email: string;
     employee_id: string | null;
+    is_active?: boolean;
 };
 
 type Shift = {
@@ -29,7 +30,7 @@ type AttendanceLog = {
     shift: Shift | null;
     check_in_at: string | null;
     check_out_at: string | null;
-    presence_status: 'hadir' | 'tidak_lengkap' | 'absen' | 'tidak_hadir' | 'scheduled' | 'off_day';
+    presence_status: 'hadir' | 'tidak_lengkap' | 'absen' | 'tidak_hadir' | 'scheduled' | 'off_day' | 'inactive';
     timing_status: 'on_time' | 'late' | 'early_leave' | 'overtime' | 'mixed' | null;
     late_minutes: number;
     early_leave_minutes: number;

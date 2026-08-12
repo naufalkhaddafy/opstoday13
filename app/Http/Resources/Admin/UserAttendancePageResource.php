@@ -147,12 +147,16 @@ class UserAttendancePageResource extends JsonResource
                     $presence = 'holiday';
                     $summary['total_off_days']++;
                 } elseif ($isWorkday) {
-                    $summary['total_scheduled']++;
-                    if ($date->isPast() && !$date->isToday()) {
-                        $presence = 'tidak_hadir';
-                        $summary['total_absent']++;
+                    if (! $user->is_active) {
+                        $presence = 'inactive';
                     } else {
-                        $presence = 'scheduled';
+                        $summary['total_scheduled']++;
+                        if ($date->isPast() && !$date->isToday()) {
+                            $presence = 'tidak_hadir';
+                            $summary['total_absent']++;
+                        } else {
+                            $presence = 'scheduled';
+                        }
                     }
                 } else {
                     $presence = 'off_day';
@@ -203,6 +207,7 @@ class UserAttendancePageResource extends JsonResource
                 'name' => $user->name,
                 'email' => $user->email,
                 'employee_id' => $user->employee_id,
+                'is_active' => (bool) $user->is_active,
             ],
             'attendance_logs' => $daysInMonth,
             'summary' => $summary,
