@@ -60,7 +60,7 @@ RUN cp /etc/ssl/openssl.cnf /etc/ssl/openssl_custom.cnf && \
     echo "system_default = system_default_sect" >> /etc/ssl/openssl_custom.cnf && \
     echo "" >> /etc/ssl/openssl_custom.cnf && \
     echo "[system_default_sect]" >> /etc/ssl/openssl_custom.cnf && \
-    echo "MinProtocol = TLSv1.0" >> /etc/ssl/openssl_custom.cnf && \
+    echo "MinProtocol = TLSv1" >> /etc/ssl/openssl_custom.cnf && \
     echo "CipherString = DEFAULT@SECLEVEL=0" >> /etc/ssl/openssl_custom.cnf
 
 ENV OPENSSL_CONF=/etc/ssl/openssl_custom.cnf
