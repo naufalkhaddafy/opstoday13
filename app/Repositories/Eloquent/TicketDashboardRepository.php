@@ -114,13 +114,14 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
         $resolutionSlaHours = ((int) $settings->get('sla_resolution_time_green', 120)) / 60;
 
-        $metResolutionSlaCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $resolutionSlaStats = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
-            ->selectRaw('assigned_to_user_id, SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_sla', [$resolutionSlaHours])
+            ->selectRaw('assigned_to_user_id, COUNT(*) as total_standard_closed, SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_sla', [$resolutionSlaHours])
             ->groupBy('assigned_to_user_id')
-            ->pluck('met_sla', 'assigned_to_user_id');
+            ->get()
+            ->keyBy('assigned_to_user_id');
 
         $globalActiveCounts = Ticket::query()
             ->whereNull('disappeared_at')
@@ -274,7 +275,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             return false;
         };
 
-        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $metResolutionSlaCounts, $globalActiveCounts, $allInitiatives, $matchInitiativeToEngineer, $trendByEngineer, $lastMonths) {
+        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $resolutionSlaStats, $globalActiveCounts, $allInitiatives, $matchInitiativeToEngineer, $trendByEngineer, $lastMonths) {
             $byStatus = ($statusCounts[$engineer->id] ?? collect())->pluck('total', 'status_value');
 
             $assigned = (int) ($byStatus[TicketStatus::Assigned->value] ?? 0);
@@ -297,7 +298,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 'pending' => $pending,
                 'in_progress' => $inProgress,
                 'completed_today' => $completed,
-                'met_resolution_sla' => (int) ($metResolutionSlaCounts[$engineer->id] ?? 0),
+                'met_resolution_sla' => (int) ($resolutionSlaStats[$engineer->id]->met_sla ?? 0),
+                'total_standard_closed' => (int) ($resolutionSlaStats[$engineer->id]->total_standard_closed ?? 0),
                 'total' => $assigned + $pending + $inProgress + $completed,
                 'global_active_tickets' => (int) ($globalActiveCounts[$engineer->id] ?? 0),
                 'avg_response_time_seconds' => $avgResponse !== null ? (int) round((float) $avgResponse) : null,

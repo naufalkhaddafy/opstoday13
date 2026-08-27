@@ -115,23 +115,24 @@ export function TopLeaderboardEngineerTab({
                 : initiatives.filter((init) => isInitiativeForEngineer(init, eng));
 
             const completedTickets = eng.completed_today ?? 0;
+            const standardClosedTickets = eng.total_standard_closed ?? eng.completed_today ?? 0;
             const metResolutionSla = eng.met_resolution_sla ?? 0;
             const totalTickets = eng.total ?? 1;
 
-            // Calculate SLA Compliance based on compliant tickets vs total closed
-            const slaPercent = completedTickets > 0 ? Math.round((metResolutionSla / completedTickets) * 100) : 0;
+            // Calculate SLA Compliance based on compliant tickets vs standard closed tickets (ignoring NSS)
+            const slaPercent = standardClosedTickets > 0 ? Math.round((metResolutionSla / standardClosedTickets) * 100) : 0;
             const disciplineScore = discipline?.score ?? 100;
             const initiativeCount = eng.initiative_count ?? userInitiatives.length;
 
-            // Compliant Volume Score (Relative to the best performer, max 20 points)
-            const compliantVolumeScore = Math.round((metResolutionSla / maxCompliantTickets) * 20);
+            // Compliant Volume Score (Relative to the best performer, max 40 points)
+            const compliantVolumeScore = Math.round((metResolutionSla / maxCompliantTickets) * 40);
 
-            // Composite Score formula (40% SLA, 30% Discipline, 20% Compliant Volume, 10% Initiatives)
+            // Composite Score formula (30% SLA, 20% Discipline, 40% Compliant Volume, 10% Initiatives)
             const compositeScore = Math.min(
                 100,
                 Math.round(
-                    slaPercent * 0.4 +
-                    disciplineScore * 0.3 +
+                    slaPercent * 0.3 +
+                    disciplineScore * 0.2 +
                     compliantVolumeScore +
                     Math.min(initiativeCount * 5, 10)
                 )
@@ -387,10 +388,11 @@ export function TopLeaderboardEngineerTab({
                             <tr>
                                 <th className="px-4 py-3 font-medium text-center w-16">Rank</th>
                                 <th className="px-4 py-3 font-medium">Engineer Name</th>
-                                <th className="px-4 py-3 font-medium text-center">Compliant Tickets (SLA)</th>
-                                <th className="px-4 py-3 font-medium text-center">Tickets Solved (Vol)</th>
-                                <th className="px-4 py-3 font-medium text-center">Attendance Discipline</th>
-                                <th className="px-4 py-3 font-medium text-center">SharePoint Initiatives</th>
+                                <th className="px-4 py-3 font-medium text-center">Compliance (SLA %)</th>
+                                <th className="px-4 py-3 font-medium text-center">Compliant (Vol)</th>
+                                <th className="px-4 py-3 font-medium text-center">Total Solved</th>
+                                <th className="px-4 py-3 font-medium text-center">Discipline</th>
+                                <th className="px-4 py-3 font-medium text-center">Initiatives</th>
                                 <th className="px-4 py-3 font-medium text-right">Composite Score</th>
                             </tr>
                         </thead>
@@ -471,7 +473,7 @@ export function TopLeaderboardEngineerTab({
                                         {/* Expanded Initiatives and Trend Row */}
                                         {expandedEngineerId === eng.id && (
                                             <tr className="bg-muted/15 border-b">
-                                                <td colSpan={7} className="px-6 py-4">
+                                                <td colSpan={8} className="px-6 py-4">
                                                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
                                                         {/* Ticket Trend Chart */}
@@ -525,7 +527,7 @@ export function TopLeaderboardEngineerTab({
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                                    <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">
                                         No engineer data available for this date range.
                                     </td>
                                 </tr>
