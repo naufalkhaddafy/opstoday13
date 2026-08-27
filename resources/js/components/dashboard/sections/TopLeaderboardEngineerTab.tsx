@@ -96,6 +96,12 @@ export function TopLeaderboardEngineerTab({
         });
     };
 
+    const maxCompliantTickets = useMemo(() => {
+        if (engineers.length === 0) return 1;
+        const max = Math.max(...engineers.map(e => e.met_resolution_sla ?? 0));
+        return max > 0 ? max : 1;
+    }, [engineers]);
+
     // Combine parameters to rank engineers
     const rankedEngineers = useMemo(() => {
         return engineers.map((eng) => {
@@ -117,13 +123,16 @@ export function TopLeaderboardEngineerTab({
             const disciplineScore = discipline?.score ?? 100;
             const initiativeCount = eng.initiative_count ?? userInitiatives.length;
 
-            // Composite Score formula (40% SLA, 30% Discipline, 20% Volume, 10% Initiatives)
+            // Compliant Volume Score (Relative to the best performer, max 20 points)
+            const compliantVolumeScore = Math.round((metResolutionSla / maxCompliantTickets) * 20);
+
+            // Composite Score formula (40% SLA, 30% Discipline, 20% Compliant Volume, 10% Initiatives)
             const compositeScore = Math.min(
                 100,
                 Math.round(
                     slaPercent * 0.4 +
                     disciplineScore * 0.3 +
-                    Math.min(completedTickets * 5, 20) +
+                    compliantVolumeScore +
                     Math.min(initiativeCount * 5, 10)
                 )
             );
@@ -134,10 +143,11 @@ export function TopLeaderboardEngineerTab({
                 disciplineScore,
                 initiativeCount,
                 userInitiatives,
+                compliantVolumeScore,
                 compositeScore,
             };
         }).sort((a, b) => b.compositeScore - a.compositeScore);
-    }, [engineers, leaderboard, initiatives]);
+    }, [engineers, leaderboard, initiatives, maxCompliantTickets]);
 
     const getSubmittedByName = (item: SharePointInitiativeItem) => {
         if (item.submitted_by && item.submitted_by.trim() !== '') {
@@ -306,7 +316,7 @@ export function TopLeaderboardEngineerTab({
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
                     <div className="flex items-center gap-2">
                         <p className="text-sm text-muted-foreground">
-                            Executive ranking evaluated across Compliance, Ticket Solved Volume, Attendance Discipline, and Strategic SharePoint Initiatives.
+                            Executive ranking evaluated across Compliance %, Compliant Ticket Volume, Attendance Discipline, and Strategic SharePoint Initiatives.
                         </p>
                     </div>
                 </div>
@@ -377,8 +387,8 @@ export function TopLeaderboardEngineerTab({
                             <tr>
                                 <th className="px-4 py-3 font-medium text-center w-16">Rank</th>
                                 <th className="px-4 py-3 font-medium">Engineer Name</th>
-                                <th className="px-4 py-3 font-medium text-center">Compliance Tickets</th>
-                                <th className="px-4 py-3 font-medium text-center">Tickets Solved</th>
+                                <th className="px-4 py-3 font-medium text-center">Compliant Tickets (SLA)</th>
+                                <th className="px-4 py-3 font-medium text-center">Tickets Solved (Vol)</th>
                                 <th className="px-4 py-3 font-medium text-center">Attendance Discipline</th>
                                 <th className="px-4 py-3 font-medium text-center">SharePoint Initiatives</th>
                                 <th className="px-4 py-3 font-medium text-right">Composite Score</th>
@@ -424,6 +434,9 @@ export function TopLeaderboardEngineerTab({
                                                 </Badge>
                                             </td>
                                             <td className="px-6 py-4 text-center font-medium">
+                                                <span className="text-[#2E7D32] dark:text-emerald-400">{eng.met_resolution_sla ?? 0}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center font-medium text-muted-foreground">
                                                 {eng.completed_today} / {eng.total}
                                             </td>
                                             <td className="px-6 py-4 text-center font-medium">
