@@ -99,6 +99,7 @@ class UserRepository implements UserRepositoryInterface
         return User::query()
             ->with(['company', 'group'])
             ->where('is_verified', false)
+            ->where('is_active', true)
             ->whereNotNull('employee_id')
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->orderBy('created_at', 'desc')
@@ -150,6 +151,7 @@ class UserRepository implements UserRepositoryInterface
             ->with(['company', 'group', 'shiftAssignments', 'exceptions', 'leaves' => fn($q) => $q->approved()])
             ->whereNotNull('employee_id')
             ->where('is_active', true)
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::SuperAdmin->value))
             ->when(! empty($filters['search']), function ($q) use ($filters) {
                 $q->where(function ($inner) use ($filters) {
                     $inner->where('name', 'like', "%{$filters['search']}%")

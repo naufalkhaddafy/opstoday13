@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.3] - 2026-08-13
+
+### Added
+- **Account Inactive Badges**: Added visual indicators for inactive accounts on the Attendance Report page. A prominent "Account Inactive" badge now appears next to the user's name, and days without attendance are explicitly labeled as "Nonaktif" rather than "Alpha" to preserve accurate statistics. Historical attendance data from before deactivation is still safely retained and displayed.
+
+### Changed
+- **Inactive User Filtering**: System-wide hardening to ensure inactive users (`is_active = false`) are completely excluded from backend syncs and queues. They are now actively blocked from being processed during Ticket Synchronization (`TicketSyncService`) and removed from the Admin Verification Queue.
+
+### Fixed
+- **Docker OpenSSL Configuration**: Fixed a critical infrastructure issue where a custom OpenSSL configuration (intended for legacy SQL Server TLS 1.0 support) was causing segmentation faults (`exit code 139`) during the Docker build stage and breaking `cURL` (HTTPS) requests. The OpenSSL override is now isolated solely to the final production stage and correctly uses the `TLSv1` syntax protocol.
+
+## [v1.4.2] - 2026-08-13
+
+### Changed
+- **Direct SQL Server Attendance Sync**: Migrated the attendance (fingerprint) synchronization architecture. The system now directly connects to the SQL Server database (`smartweb_b/up`) via a new `fingerprint_sqlsrv` database connection, completely bypassing the legacy external Node.js API.
+- **Dynamic Attendance Filtering**: Replaced static NIK queries with dynamic fetching of all active employees (`is_active = true`), ensuring seamless data integrity for new or reactivated personnel.
+
 ## [v1.4.1] - 2026-08-10
 
 ### Fixed

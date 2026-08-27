@@ -3,6 +3,8 @@ FROM dunglas/frankenphp:php8.4-alpine AS base
 # Install required PHP extensions
 RUN install-php-extensions \
     pdo_mysql \
+    sqlsrv \
+    pdo_sqlsrv \
     redis \
     pcntl \
     opcache \
@@ -10,6 +12,8 @@ RUN install-php-extensions \
     gd \
     bcmath \
     intl
+
+
 
 # Stage 2: Build dependencies (Node & Composer)
 FROM base AS build
@@ -45,6 +49,21 @@ FROM base AS final
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 ENV SERVER_NAME=":80"
+
+# Create a custom OpenSSL config to allow legacy TLS 1.0 for older SQL Servers (Fixes SSL unsupported protocol error)
+RUN cp /etc/ssl/openssl.cnf /etc/ssl/openssl_custom.cnf && \
+    echo "" >> /etc/ssl/openssl_custom.cnf && \
+    echo "[openssl_init]" >> /etc/ssl/openssl_custom.cnf && \
+    echo "ssl_conf = ssl_sect" >> /etc/ssl/openssl_custom.cnf && \
+    echo "" >> /etc/ssl/openssl_custom.cnf && \
+    echo "[ssl_sect]" >> /etc/ssl/openssl_custom.cnf && \
+    echo "system_default = system_default_sect" >> /etc/ssl/openssl_custom.cnf && \
+    echo "" >> /etc/ssl/openssl_custom.cnf && \
+    echo "[system_default_sect]" >> /etc/ssl/openssl_custom.cnf && \
+    echo "MinProtocol = TLSv1" >> /etc/ssl/openssl_custom.cnf && \
+    echo "CipherString = DEFAULT@SECLEVEL=0" >> /etc/ssl/openssl_custom.cnf
+
+ENV OPENSSL_CONF=/etc/ssl/openssl_custom.cnf
 
 # Tangkap argument versi dari CI/CD dan jadikan Environment Variable Laravel
 ARG APP_VERSION=latest

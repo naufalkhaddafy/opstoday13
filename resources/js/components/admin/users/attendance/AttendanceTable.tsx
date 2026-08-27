@@ -18,7 +18,7 @@ type AttendanceLog = {
     shift: Shift | null;
     check_in_at: string | null;
     check_out_at: string | null;
-    presence_status: 'hadir' | 'tidak_lengkap' | 'absen' | 'tidak_hadir' | 'scheduled' | 'off_day' | 'holiday';
+    presence_status: 'hadir' | 'tidak_lengkap' | 'absen' | 'tidak_hadir' | 'scheduled' | 'off_day' | 'holiday' | 'inactive';
     is_holiday: boolean;
     timing_status: 'on_time' | 'late' | 'early_leave' | 'overtime' | 'mixed' | null;
     late_minutes: number;
@@ -68,6 +68,8 @@ const getPresenceBadge = (status: string) => {
             return <Badge variant="outline" className="text-rose-600 border-rose-200 bg-rose-50/50 dark:text-rose-300 dark:border-rose-900/50 dark:bg-rose-950/20 font-medium">Holiday</Badge>;
         case 'off_day':
             return <Badge variant="secondary" className="text-muted-foreground bg-muted/50 dark:bg-muted/20 font-normal">Libur</Badge>;
+        case 'inactive':
+            return <Badge variant="secondary" className="bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 font-normal border-slate-200 dark:border-slate-700">Nonaktif</Badge>;
         default:
             return <Badge variant="outline" className="font-normal">{status}</Badge>;
     }

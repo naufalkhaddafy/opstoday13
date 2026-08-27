@@ -12,6 +12,7 @@ type User = {
     name: string;
     email: string;
     employee_id: string | null;
+    is_active?: boolean;
 };
 
 type CurrentShift = {
@@ -65,7 +66,12 @@ export function AttendanceHeader({
                                 <UserIcon className="h-6 w-6" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-foreground">{user.name}</h1>
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-2xl font-bold text-foreground">{user.name}</h1>
+                                    {user.is_active === false && (
+                                        <Badge variant="destructive">Account Inactive</Badge>
+                                    )}
+                                </div>
                                 <div className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
                                     <span>{user.email}</span>
                                     {user.employee_id && (
