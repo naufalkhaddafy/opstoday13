@@ -23,6 +23,8 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { EngineerSummary, LeaderboardEntry, SharePointInitiativeItem } from '@/types/dashboard';
+import { EngineerTrendChart } from '@/components/charts/EngineerTrendChart';
+import { DonutChart } from '@/components/dashboard/DonutChart';
 
 interface TopLeaderboardEngineerTabProps {
     engineers?: EngineerSummary[];
@@ -107,8 +109,11 @@ export function TopLeaderboardEngineerTab({
                 : initiatives.filter((init) => isInitiativeForEngineer(init, eng));
 
             const completedTickets = eng.completed_today ?? 0;
+            const metResolutionSla = eng.met_resolution_sla ?? 0;
             const totalTickets = eng.total ?? 1;
-            const slaPercent = totalTickets > 0 ? Math.round((completedTickets / totalTickets) * 100) : 0;
+
+            // Calculate SLA Compliance based on compliant tickets vs total closed
+            const slaPercent = completedTickets > 0 ? Math.round((metResolutionSla / completedTickets) * 100) : 0;
             const disciplineScore = discipline?.score ?? 100;
             const initiativeCount = eng.initiative_count ?? userInitiatives.length;
 
@@ -117,9 +122,9 @@ export function TopLeaderboardEngineerTab({
                 100,
                 Math.round(
                     slaPercent * 0.4 +
-                        disciplineScore * 0.3 +
-                        Math.min(completedTickets * 5, 20) +
-                        Math.min(initiativeCount * 5, 10)
+                    disciplineScore * 0.3 +
+                    Math.min(completedTickets * 5, 20) +
+                    Math.min(initiativeCount * 5, 10)
                 )
             );
 
@@ -172,6 +177,18 @@ export function TopLeaderboardEngineerTab({
             item.data?.['Priority'] ||
             item.data?.['StrategicImpact'] ||
             item.data?.['Strategic Impact'] ||
+            null
+        );
+    };
+
+    const getInitiativeTimeline = (item: SharePointInitiativeItem) => {
+        return (
+            item.target_timeline ||
+            item.data?.['TargetTimeline'] ||
+            item.data?.['Target Timeline'] ||
+            item.data?.['Timeline'] ||
+            item.data?.['DueDate'] ||
+            item.data?.['Due Date'] ||
             null
         );
     };
@@ -281,32 +298,66 @@ export function TopLeaderboardEngineerTab({
 
     return (
         <div className="flex flex-col gap-8">
-            {/* Top Leaderboard Hero Header */}
-            <Card className="border-0 shadow-md bg-gradient-to-r from-[#0d1f12] via-[#1b4322] to-[#2E7D32] text-white">
-                <CardHeader className="pb-4">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <span className="inline-block rounded-full bg-[#FDD835]/20 px-3 py-0.5 text-xs font-bold tracking-wider text-[#FDD835] uppercase mb-2">
-                                Holistic Performance
-                            </span>
-                            <CardTitle className="text-2xl md:text-3xl font-extrabold flex items-center gap-3">
-                                <Trophy className="h-7 w-7 text-[#FDD835]" />
-                                Top Leaderboard Engineer
-                            </CardTitle>
-                            <CardDescription className="text-white/70 text-sm mt-1">
-                                Executive ranking evaluated across SLA Compliance, Ticket Solved Volume, Attendance Discipline, and Strategic SharePoint Initiatives.
-                            </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/15">
-                            <TrendingUp className="h-6 w-6 text-[#FDD835]" />
-                            <div>
-                                <p className="text-xs text-white/60">Active Engineers</p>
-                                <p className="text-xl font-bold text-[#FDD835]">{rankedEngineers.length}</p>
-                            </div>
-                        </div>
+            {/* Standard Section Header */}
+            <section className="flex flex-col gap-4">
+                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                    <Trophy className="h-5 w-5 text-[#2E7D32]" /> Top Leaderboard Engineer
+                </h2>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                            Executive ranking evaluated across Compliance, Ticket Solved Volume, Attendance Discipline, and Strategic SharePoint Initiatives.
+                        </p>
                     </div>
-                </CardHeader>
-            </Card>
+                </div>
+
+                {/* Dashboard Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card className="border-border/60 shadow-sm md:col-span-1">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Active Engineers
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <DonutChart 
+                                segments={[{ label: 'Active', value: rankedEngineers.length, color: '#2E7D32' }]} 
+                                centerLabel="Engineers" 
+                                centerValue={rankedEngineers.length} 
+                                size="sm" 
+                            />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-border/60 shadow-sm md:col-span-3">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Podium (Top 3 Engineers)
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col sm:flex-row items-center gap-4">
+                            {rankedEngineers.slice(0, 3).map((eng, idx) => (
+                                <div key={eng.id} className="flex items-center gap-3 bg-muted/20 hover:bg-muted/40 transition-colors rounded-xl p-3 flex-1 border w-full">
+                                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold text-sm shadow-sm ${
+                                        idx === 0 ? 'bg-[#FDD835] text-amber-900' :
+                                        idx === 1 ? 'bg-slate-200 text-slate-700' :
+                                        'bg-amber-600/20 text-amber-900 dark:text-amber-500'
+                                    }`}>
+                                        #{idx + 1}
+                                    </div>
+                                    <div className="overflow-hidden">
+                                        <p className="font-semibold text-sm text-foreground truncate" title={eng.name}>{eng.name}</p>
+                                        <p className="text-xs text-muted-foreground font-medium mt-0.5">Score: {eng.compositeScore.toFixed(1)}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {rankedEngineers.length === 0 && (
+                                <div className="text-sm text-muted-foreground w-full text-center py-4">No data available</div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </section>
 
             {/* Engineer Multi-Parameter Leaderboard Table */}
             <Card className="shadow-sm border">
@@ -315,7 +366,7 @@ export function TopLeaderboardEngineerTab({
                         <div>
                             <CardTitle className="text-lg font-bold">Top Engineer Leaderboard</CardTitle>
                             <CardDescription className="text-xs">
-                                Composite scores combining Ticket SLA %, Attendance Discipline, and SharePoint Milestones
+                                Composite scores combining Ticket Compliance %, Attendance Discipline, and SharePoint Milestones
                             </CardDescription>
                         </div>
                     </div>
@@ -324,13 +375,13 @@ export function TopLeaderboardEngineerTab({
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs uppercase bg-muted/40 border-b text-muted-foreground">
                             <tr>
-                                <th className="px-6 py-3 font-semibold text-center w-16">Rank</th>
-                                <th className="px-6 py-3 font-semibold">Engineer Name</th>
-                                <th className="px-6 py-3 font-semibold text-center">SLA Compliance</th>
-                                <th className="px-6 py-3 font-semibold text-center">Tickets Solved</th>
-                                <th className="px-6 py-3 font-semibold text-center">Attendance Discipline</th>
-                                <th className="px-6 py-3 font-semibold text-center">SharePoint Initiatives</th>
-                                <th className="px-6 py-3 font-semibold text-right">Composite Score</th>
+                                <th className="px-4 py-3 font-medium text-center w-16">Rank</th>
+                                <th className="px-4 py-3 font-medium">Engineer Name</th>
+                                <th className="px-4 py-3 font-medium text-center">Compliance Tickets</th>
+                                <th className="px-4 py-3 font-medium text-center">Tickets Solved</th>
+                                <th className="px-4 py-3 font-medium text-center">Attendance Discipline</th>
+                                <th className="px-4 py-3 font-medium text-center">SharePoint Initiatives</th>
+                                <th className="px-4 py-3 font-medium text-right">Composite Score</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -338,9 +389,8 @@ export function TopLeaderboardEngineerTab({
                                 rankedEngineers.map((eng, idx) => (
                                     <React.Fragment key={eng.id}>
                                         <tr
-                                            className={`hover:bg-muted/30 transition-colors cursor-pointer ${
-                                                idx === 0 ? 'bg-amber-50/50 dark:bg-amber-950/20 font-medium' : ''
-                                            }`}
+                                            className={`hover:bg-muted/30 transition-colors cursor-pointer ${idx === 0 ? 'bg-amber-50/50 dark:bg-amber-950/20 font-medium' : ''
+                                                }`}
                                             onClick={() => setExpandedEngineerId(expandedEngineerId === eng.id ? null : eng.id)}
                                         >
                                             <td className="px-6 py-4 text-center">
@@ -366,8 +416,8 @@ export function TopLeaderboardEngineerTab({
                                                         eng.slaPercent >= 90
                                                             ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                                                             : eng.slaPercent >= 70
-                                                            ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                                                            : 'border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                                                                ? 'border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                                                : 'border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
                                                     }
                                                 >
                                                     {eng.slaPercent}%
@@ -405,45 +455,55 @@ export function TopLeaderboardEngineerTab({
                                             </td>
                                         </tr>
 
-                                        {/* Expanded Initiatives Row */}
+                                        {/* Expanded Initiatives and Trend Row */}
                                         {expandedEngineerId === eng.id && (
                                             <tr className="bg-muted/15 border-b">
                                                 <td colSpan={7} className="px-6 py-4">
-                                                    <div className="rounded-xl border bg-card p-4 shadow-sm">
-                                                        <div className="flex items-center justify-between mb-3">
-                                                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                                                <Layers className="h-4 w-4 text-[#2E7D32]" />
-                                                                SharePoint Initiatives Assigned to {eng.name} ({eng.userInitiatives.length})
-                                                            </h4>
+                                                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+
+                                                        {/* Ticket Trend Chart */}
+                                                        <div className="xl:col-span-1">
+                                                            <EngineerTrendChart data={eng.monthly_trend} engineerName={eng.name} />
                                                         </div>
-                                                        {eng.userInitiatives.length > 0 ? (
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                {eng.userInitiatives.map((initItem: any) => (
-                                                                    <div
-                                                                        key={initItem.id}
-                                                                        className="rounded-lg border bg-background p-3 text-xs flex flex-col justify-between gap-2 shadow-2xs hover:border-[#2E7D32]/50 transition-colors"
-                                                                    >
-                                                                        <div>
-                                                                            <div className="font-semibold text-foreground text-sm line-clamp-2">
-                                                                                {initItem.title ?? 'Untitled Initiative'}
-                                                                            </div>
-                                                                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                                                                {getStatusBadge(getInitiativeStatus(initItem))}
-                                                                                {getImpactBadge(getInitiativeImpact(initItem))}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="text-[11px] text-muted-foreground border-t pt-2 mt-1 flex items-center justify-between">
-                                                                            <span>PIC: {initItem.pic ?? eng.name}</span>
-                                                                            <span>{initItem.target_timeline ?? 'No deadline'}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
+
+                                                        {/* SharePoint Initiatives */}
+                                                        <div className="xl:col-span-2 rounded-xl border bg-card p-4 shadow-sm">
+                                                            <div className="flex items-center justify-between mb-3">
+                                                                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                                                                    <Layers className="h-4 w-4 text-[#2E7D32]" />
+                                                                    SharePoint Initiatives Assigned to {eng.name} ({eng.userInitiatives.length})
+                                                                </h4>
                                                             </div>
-                                                        ) : (
-                                                            <p className="text-xs text-muted-foreground italic">
-                                                                No active initiatives found for {eng.name}.
-                                                            </p>
-                                                        )}
+                                                            {eng.userInitiatives.length > 0 ? (
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                    {eng.userInitiatives.map((initItem: any) => (
+                                                                        <div
+                                                                            key={initItem.id}
+                                                                            className="rounded-lg border bg-background p-3 text-xs flex flex-col justify-between gap-2 shadow-2xs hover:border-[#2E7D32]/50 transition-colors"
+                                                                        >
+                                                                            <div>
+                                                                                <div className="font-semibold text-foreground text-sm line-clamp-2">
+                                                                                    {initItem.title ?? 'Untitled Initiative'}
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                                                    {getStatusBadge(getInitiativeStatus(initItem))}
+                                                                                    {getImpactBadge(getInitiativeImpact(initItem))}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="text-[11px] text-muted-foreground border-t pt-2 mt-1 flex items-center justify-between">
+                                                                                <span>PIC: {initItem.pic ?? eng.name}</span>
+                                                                                <span>{initItem.target_timeline ?? 'No deadline'}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-xs text-muted-foreground italic">
+                                                                    No active initiatives found for {eng.name}.
+                                                                </p>
+                                                            )}
+                                                        </div>
+
                                                     </div>
                                                 </td>
                                             </tr>
@@ -469,7 +529,7 @@ export function TopLeaderboardEngineerTab({
                         <div>
                             <CardTitle className="text-lg font-bold flex items-center gap-2">
                                 <Layers className="h-5 w-5 text-[#2E7D32]" />
-                                Strategic Initiatives & Milestones (SharePoint)
+                                Initiative Milestones
                             </CardTitle>
                             <CardDescription className="text-xs">
                                 Real-time operational initiatives synchronized from Microsoft SharePoint List
@@ -491,13 +551,13 @@ export function TopLeaderboardEngineerTab({
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm border-collapse">
                             <thead>
-                                <tr className="border-b bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                <tr className="border-b bg-muted/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     <th className="px-4 py-3.5 w-12 text-center">No</th>
                                     <th className="px-4 py-3.5 min-w-[240px]">Initiative Title & Type</th>
+                                    <th className="px-4 py-3.5">Target Timeline</th>
                                     <th className="px-4 py-3.5">Submitted By</th>
                                     <th className="px-4 py-3.5">Impact Level</th>
                                     <th className="px-4 py-3.5">Status</th>
-                                    <th className="px-4 py-3.5">Submission / Timeline</th>
                                     <th className="px-4 py-3.5 text-right">Action</th>
                                 </tr>
                             </thead>
@@ -524,6 +584,9 @@ export function TopLeaderboardEngineerTab({
                                                             </div>
                                                         )}
                                                     </td>
+                                                    <td className="px-4 py-3.5 font-medium text-foreground text-sm">
+                                                        {getInitiativeTimeline(item) || '-'}
+                                                    </td>
                                                     <td className="px-4 py-3.5">
                                                         <span className="inline-flex items-center gap-1.5 font-medium text-xs text-foreground bg-muted/50 px-2 py-1 rounded-md">
                                                             <User className="h-3.5 w-3.5 text-[#2E7D32]" />
@@ -535,16 +598,6 @@ export function TopLeaderboardEngineerTab({
                                                     </td>
                                                     <td className="px-4 py-3.5">
                                                         {getStatusBadge(getInitiativeStatus(item))}
-                                                    </td>
-                                                    <td className="px-4 py-3.5 text-xs text-muted-foreground">
-                                                        {item.target_timeline ? (
-                                                            <span className="flex items-center gap-1">
-                                                                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                                                                {item.target_timeline}
-                                                            </span>
-                                                        ) : (
-                                                            <span>-</span>
-                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3.5 text-right">
                                                         <Button
@@ -571,33 +624,33 @@ export function TopLeaderboardEngineerTab({
                                                     <tr className="bg-muted/15 border-b">
                                                         <td colSpan={7} className="px-6 py-4">
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                                                                {item.data['Expected Result'] && (
+                                                                {(item.data['ExpectedResult'] || item.data['Expected Result']) && (
                                                                     <div className="bg-card p-3 rounded-lg border shadow-sm">
                                                                         <span className="font-semibold text-foreground block mb-1">
                                                                             Expected Result
                                                                         </span>
-                                                                        <p className="text-muted-foreground whitespace-pre-line">
-                                                                            {item.data['Expected Result']}
+                                                                        <p className="text-muted-foreground whitespace-pre-wrap break-words">
+                                                                            {item.data['ExpectedResult'] || item.data['Expected Result']}
                                                                         </p>
                                                                     </div>
                                                                 )}
-                                                                {item.data['Action Needed'] && (
+                                                                {(item.data['ActionNeeded'] || item.data['Action Needed']) && (
                                                                     <div className="bg-card p-3 rounded-lg border shadow-sm">
                                                                         <span className="font-semibold text-foreground block mb-1">
                                                                             Action Needed
                                                                         </span>
-                                                                        <p className="text-muted-foreground whitespace-pre-line">
-                                                                            {item.data['Action Needed']}
+                                                                        <p className="text-muted-foreground whitespace-pre-wrap break-words">
+                                                                            {item.data['ActionNeeded'] || item.data['Action Needed']}
                                                                         </p>
                                                                     </div>
                                                                 )}
-                                                                {item.data['Pain Points'] && (
+                                                                {(item.data['PainPoints'] || item.data['Pain Points']) && (
                                                                     <div className="bg-card p-3 rounded-lg border shadow-sm">
                                                                         <span className="font-semibold text-foreground block mb-1">
                                                                             Pain Points
                                                                         </span>
-                                                                        <p className="text-muted-foreground whitespace-pre-line">
-                                                                            {item.data['Pain Points']}
+                                                                        <p className="text-muted-foreground whitespace-pre-wrap break-words">
+                                                                            {item.data['PainPoints'] || item.data['Pain Points']}
                                                                         </p>
                                                                     </div>
                                                                 )}
@@ -606,9 +659,25 @@ export function TopLeaderboardEngineerTab({
                                                                         <span className="font-semibold text-foreground block mb-1">
                                                                             Comments
                                                                         </span>
-                                                                        <p className="text-muted-foreground whitespace-pre-line">
+                                                                        <p className="text-muted-foreground whitespace-pre-wrap break-words">
                                                                             {item.data['Comments']}
                                                                         </p>
+                                                                    </div>
+                                                                )}
+                                                                {(item.data['InitiativeType'] || item.data['Initiative Type'] || item.data['Initiative_Type']) && (
+                                                                    <div className="bg-card p-3 rounded-lg border shadow-sm">
+                                                                        <span className="font-semibold text-foreground block mb-1">
+                                                                            Initiative Type
+                                                                        </span>
+                                                                        <div className="text-muted-foreground flex flex-wrap gap-1">
+                                                                            {(Array.isArray(item.data['InitiativeType'] || item.data['Initiative Type'] || item.data['Initiative_Type'])
+                                                                                ? (item.data['InitiativeType'] || item.data['Initiative Type'] || item.data['Initiative_Type'])
+                                                                                : [item.data['InitiativeType'] || item.data['Initiative Type'] || item.data['Initiative_Type']]).map((type: string, idx: number) => (
+                                                                                    <span key={idx} className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px]">
+                                                                                        {type}
+                                                                                    </span>
+                                                                                ))}
+                                                                        </div>
                                                                     </div>
                                                                 )}
                                                             </div>

@@ -109,6 +109,16 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_hours', 'assigned_to_user_id');
 
+        $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
+        $resolutionSlaHours = ((int) $settings->get('sla_resolution_time_green', 120)) / 60;
+
+        $metResolutionSlaCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+            ->whereNotNull('assigned_to_user_id')
+            ->where('status', TicketStatus::Closed->value)
+            ->selectRaw('assigned_to_user_id, SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_sla', [$resolutionSlaHours])
+            ->groupBy('assigned_to_user_id')
+            ->pluck('met_sla', 'assigned_to_user_id');
+
         $globalActiveCounts = Ticket::query()
             ->whereNull('disappeared_at')
             ->whereNotNull('assigned_to_user_id')
@@ -120,7 +130,58 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('assigned_to_user_id')
             ->pluck('total', 'assigned_to_user_id');
 
-        $allInitiatives = SharePointData::ofType('initiative')->get();
+        $monthlyTrendRaw = Ticket::query()
+            ->whereNull('disappeared_at')
+            ->whereNotNull('assigned_to_user_id')
+            ->where('status', TicketStatus::Closed->value)
+            ->whereBetween('completed_date', [$dateFrom->startOfDay(), $dateTo->endOfDay()])
+            ->when($companyId, function ($query) use ($companyId) {
+                $query->whereHas('assignedUser', fn ($q) => $q->where('company_id', $companyId));
+            })
+            ->when($workGroup, function ($query) use ($workGroup) {
+                $query->whereHas('assignedUser.group', function ($gq) use ($workGroup) {
+                    $gq->where('name', $workGroup);
+                });
+            })
+            ->selectRaw('assigned_to_user_id, YEAR(completed_date) as yr, MONTH(completed_date) as mo, COUNT(*) as total')
+            ->groupBy('assigned_to_user_id', 'yr', 'mo')
+            ->get();
+            
+        $trendByEngineer = $monthlyTrendRaw->groupBy('assigned_to_user_id');
+
+        $lastMonths = [];
+        $currentMonth = $dateFrom->startOfMonth();
+        $endMonth = $dateTo->endOfMonth();
+        
+        // Prevent infinite loops or massive arrays if date range is somehow huge
+        $maxMonths = 60; 
+        $count = 0;
+        
+        while ($currentMonth->lte($endMonth) && $count < $maxMonths) {
+            $lastMonths[] = [
+                'month_str' => $currentMonth->format('M Y'),
+                'mo' => (int) $currentMonth->format('n'),
+                'yr' => (int) $currentMonth->format('Y'),
+            ];
+            $currentMonth = $currentMonth->addMonth();
+            $count++;
+        }
+
+        $allInitiatives = SharePointData::ofType('initiative')
+            ->get()
+            ->filter(function (SharePointData $init) use ($dateFrom, $dateTo) {
+                $dateStr = $init->getField('SubmissionDate') ?? $init->getField('Created') ?? $init->getField('Modified');
+                if (!$dateStr) {
+                    return true;
+                }
+                try {
+                    $initDate = \Carbon\Carbon::parse($dateStr);
+                    return $initDate->between($dateFrom->startOfDay(), $dateTo->endOfDay());
+                } catch (\Exception $e) {
+                    return true;
+                }
+            })
+            ->values();
 
         $namesMatch = function (?string $strA, ?string $strB): bool {
             if (!$strA || !$strB) {
@@ -210,7 +271,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             return false;
         };
 
-        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $globalActiveCounts, $allInitiatives, $matchInitiativeToEngineer) {
+        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $metResolutionSlaCounts, $globalActiveCounts, $allInitiatives, $matchInitiativeToEngineer, $trendByEngineer, $lastMonths) {
             $byStatus = ($statusCounts[$engineer->id] ?? collect())->pluck('total', 'status_value');
 
             $assigned = (int) ($byStatus[TicketStatus::Assigned->value] ?? 0);
@@ -233,6 +294,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 'pending' => $pending,
                 'in_progress' => $inProgress,
                 'completed_today' => $completed,
+                'met_resolution_sla' => (int) ($metResolutionSlaCounts[$engineer->id] ?? 0),
                 'total' => $assigned + $pending + $inProgress + $completed,
                 'global_active_tickets' => (int) ($globalActiveCounts[$engineer->id] ?? 0),
                 'avg_response_time_seconds' => $avgResponse !== null ? (int) round((float) $avgResponse) : null,
@@ -246,6 +308,14 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                         'impact_level' => $init->impact_level,
                         'target_timeline' => $init->target_timeline,
                         'pic' => $init->pic,
+                    ];
+                })->toArray(),
+                'monthly_trend' => collect($lastMonths)->map(function ($m) use ($engineer, $trendByEngineer) {
+                    $rawTrend = $trendByEngineer[$engineer->id] ?? collect();
+                    $match = $rawTrend->first(fn($t) => $t->mo === $m['mo'] && $t->yr === $m['yr']);
+                    return [
+                        'month' => $m['month_str'],
+                        'tickets' => $match ? (int) $match->total : 0,
                     ];
                 })->toArray(),
             ];

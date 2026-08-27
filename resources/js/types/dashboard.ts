@@ -74,6 +74,7 @@ export type EngineerSummary = {
     pending: number;
     in_progress: number;
     completed_today: number;
+    met_resolution_sla?: number;
     global_active_tickets: number;
     total: number;
     avg_response_time_seconds: number | null;
@@ -88,6 +89,10 @@ export type EngineerSummary = {
         impact_level: string | null;
         target_timeline: string | null;
         pic: string | null;
+    }>;
+    monthly_trend?: Array<{
+        month: string;
+        tickets: number;
     }>;
 };
 
