@@ -135,6 +135,8 @@ class PublicDashboardPageResource extends JsonResource
      */
     protected function transformTicket(Ticket $ticket): array
     {
+        $isNonStandard = preg_match('/[a-zA-Z]/', (string) $ticket->ticket_no);
+
         return [
             'id' => $ticket->id,
             'ticket_no' => $ticket->ticket_no,
@@ -151,12 +153,12 @@ class PublicDashboardPageResource extends JsonResource
             'created_date' => $ticket->api_creation_date?->toDateString()
                 ?? $ticket->first_seen_at?->toDateString(),
             'completed_date' => $ticket->completed_date?->toDateString(),
-            'response_time_label' => $ticket->response_time_seconds !== null
+            'response_time_label' => ($ticket->response_time_seconds !== null && !$isNonStandard)
                 ? $this->formatDuration($ticket->response_time_seconds)
-                : null,
-            'resolution_time_label' => $ticket->resolution_time !== null && is_numeric($ticket->resolution_time)
+                : '-',
+            'resolution_time_label' => ($ticket->resolution_time !== null && is_numeric($ticket->resolution_time) && !$isNonStandard)
                 ? $this->formatHours((float) $ticket->resolution_time)
-                : null,
+                : '-',
             'updated_at' => optional($ticket->status_changed_at ?? $ticket->last_synced_at)
                 ? Carbon::parse($ticket->status_changed_at ?? $ticket->last_synced_at)->toIso8601String()
                 : null,

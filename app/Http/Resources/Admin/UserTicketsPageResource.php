@@ -24,14 +24,14 @@ class UserTicketsPageResource extends JsonResource
         $year = $this->resource['year'] ?? null;
 
         $responseTimes = $tickets
-            ->filter(fn ($t) => $t->status !== TicketStatus::Assigned)
+            ->filter(fn ($t) => $t->status !== TicketStatus::Assigned && !preg_match('/[a-zA-Z]/', (string) $t->ticket_no))
             ->map(function ($t) {
                 $val = $t->response_time_seconds;
                 return ($val === null || $val <= 0) ? 60 : $val;
             });
 
         $resolutionTimes = $tickets
-            ->filter(fn ($t) => $t->status === TicketStatus::Closed)
+            ->filter(fn ($t) => $t->status === TicketStatus::Closed && !preg_match('/[a-zA-Z]/', (string) $t->ticket_no))
             ->map(function ($t) {
                 $val = (float) ($t->resolution_time ?? 0);
                 return $val <= 0 ? (1.0 / 60.0) : $val;
@@ -86,6 +86,8 @@ class UserTicketsPageResource extends JsonResource
      */
     protected function transformTicket(Ticket $ticket): array
     {
+        $isNonStandard = preg_match('/[a-zA-Z]/', (string) $ticket->ticket_no);
+
         return [
             'id' => $ticket->id,
             'ticket_no' => $ticket->ticket_no,
@@ -102,9 +104,9 @@ class UserTicketsPageResource extends JsonResource
             'status_changed_at' => $ticket->status_changed_at?->toIso8601String(),
             'disappeared_at' => $ticket->disappeared_at?->toIso8601String(),
             'response_time_seconds' => $ticket->response_time_seconds,
-            'response_time_label' => $ticket->response_time_seconds !== null
+            'response_time_label' => ($ticket->response_time_seconds !== null && !$isNonStandard)
                 ? $this->formatDuration($ticket->response_time_seconds)
-                : null,
+                : '-',
             'api_creation_date' => $ticket->api_creation_date?->toDateString(),
             'completed_date' => $ticket->completed_date?->toDateString(),
             'resolution_time' => $ticket->resolution_time,

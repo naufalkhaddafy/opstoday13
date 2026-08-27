@@ -98,6 +98,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $responseAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', '!=', TicketStatus::Assigned->value)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw('assigned_to_user_id, AVG(CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) as avg_seconds')
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_seconds', 'assigned_to_user_id');
@@ -105,6 +106,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $resolutionAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw('assigned_to_user_id, AVG(CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) as avg_hours')
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_hours', 'assigned_to_user_id');
@@ -115,6 +117,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $metResolutionSlaCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw('assigned_to_user_id, SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_sla', [$resolutionSlaHours])
             ->groupBy('assigned_to_user_id')
             ->pluck('met_sla', 'assigned_to_user_id');
@@ -393,6 +396,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             // Response SLA
             $responseStats = (clone $baseQuery)
                 ->where('status', '!=', TicketStatus::Assigned->value)
+                ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
                 ->selectRaw('
                     COUNT(*) as total_responded,
                     SUM(CASE WHEN (CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) <= ? THEN 1 ELSE 0 END) as met_response_sla,
@@ -403,6 +407,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             // Resolution SLA
             $resolutionStats = (clone $baseQuery)
                 ->where('status', TicketStatus::Closed->value)
+                ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
                 ->selectRaw('
                     COUNT(*) as total_resolved,
                     SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_resolution_sla,
@@ -536,6 +541,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $weekStart = $refDate->subDays(6);
         $weekResByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
             ->where('status', TicketStatus::Closed->value)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
                 AVG({$resExpr}) as avg_res
@@ -544,6 +550,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->pluck('avg_res', 'dt');
 
         $weekRespByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
                 AVG({$respExpr} * 3600.0) as avg_resp
@@ -552,6 +559,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->pluck('avg_resp', 'dt');
 
         $weekCountsByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
                 SUM(CASE WHEN status = 'closed' AND {$resExpr} <= ? AND {$respExpr} <= ? THEN 1 ELSE 0 END) as met_count,
@@ -590,6 +598,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
         $monthResByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
             ->where('status', TicketStatus::Closed->value)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
                 AVG({$resExpr}) as avg_res
@@ -598,6 +607,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->pluck('avg_res', 'wk');
 
         $monthRespByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
                 AVG({$respExpr} * 3600.0) as avg_resp
@@ -606,6 +616,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->pluck('avg_resp', 'wk');
 
         $monthCountsByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
                 SUM(CASE WHEN status = 'closed' AND {$resExpr} <= ? AND {$respExpr} <= ? THEN 1 ELSE 0 END) as met_count,
@@ -641,6 +652,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
         $yearResByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
             ->where('status', TicketStatus::Closed->value)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
                 AVG({$resExpr}) as avg_res
@@ -649,6 +661,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->pluck('avg_res', 'mn');
 
         $yearRespByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
                 AVG({$respExpr} * 3600.0) as avg_resp
@@ -657,6 +670,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->pluck('avg_resp', 'mn');
 
         $yearCountsByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+            ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
                 SUM(CASE WHEN status = 'closed' AND {$resExpr} <= ? AND {$respExpr} <= ? THEN 1 ELSE 0 END) as met_count,

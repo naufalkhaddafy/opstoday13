@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.0] - 2026-08-27
+
+### Added
+- **SharePoint Initiatives Integration**: Implemented a highly optimized, bulk-processing synchronization engine (`SharePointSyncService`) to fetch active initiatives from Microsoft SharePoint Lists directly into the local database without N+1 query issues.
+- **Top Engineer Leaderboard Overhaul**: Redesigned the Top Engineer Leaderboard UI with a new dynamic expanded panel. It now features an interactive 6-Month historical "Ticket Solved Volume" trend chart (`EngineerTrendChart`) and an active list of the engineer's assigned SharePoint Initiatives.
+- **Scheduler Logs**: Automated background tasks (like `opstoday:sync-sharepoint`) are now tightly integrated with the `ScheduleLog` model to track execution times, statuses, and robust error metrics in real-time.
+
+### Changed
+- **SLA Exemption for Non-Standard Tickets**: Adjusted the SLA calculation logic across the board. Tickets containing non-numeric characters (e.g., NSS, IA) in their `ticket_no` are now forcefully exempted from Average Response Time, Average Resolution Time, and Compliance Trend Chart calculations. Their workload volume is still safely counted in the "Closed" / "In Progress" tallies, but their SLA fields will cleanly output a dash (`-`).
+
 ## [v1.4.3] - 2026-08-13
 
 ### Added
