@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Robust ETL Pivot Matching**: Transitioned the frontend fuzzy-matching logic entirely to the backend. The `SharePointSyncService` now accurately bridges SharePoint initiatives to exact engineer accounts via an `initiative_user` pivot table using strict multi-word NLP boundaries, eliminating false positive overlaps (e.g., matching "Aryawijaya" with "Wijaya").
 
 ### Fixed
-- **Mojibake User Names**: Cleaned up legacy data corruption in the `users` table where en-dashes (`–`) were mistakenly saved as `â€“`.
 - **Inertia Deferred Props**: Fixed a critical bug where deferred properties (such as `engineers` data) would silently vanish ("No data available") during partial Inertia filter visits.
 
 ## [v1.5.0] - 2026-08-27
