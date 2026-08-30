@@ -110,6 +110,22 @@ class User extends Authenticatable
         return $this->hasMany(UserLeave::class);
     }
 
+    /**
+     * @return HasMany<UserLeave, $this>
+     */
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+    }
+
+    /**
+     * Get the sharepoint initiatives associated with the user.
+     */
+    public function sharepointInitiatives()
+    {
+        return $this->belongsToMany(SharePointInitiative::class, 'initiative_user', 'user_id', 'sharepoint_initiative_id');
+    }
+
     public function markLastActive(): void
     {
         $this->newQuery()

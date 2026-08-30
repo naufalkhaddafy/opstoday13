@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.5.1] - 2026-08-31
+
+### Added
+- **Leaderboard Filter Decoupling**: The Top Leaderboard Engineer tab now has its own independent Month and Year dropdown filters, decoupling it from the global dashboard date range. This allows historical leaderboard viewing without affecting main dashboard metrics.
+- **Leaderboard Skeleton Loading**: Implemented skeleton loading animations for the active engineers and podium cards, preventing visual layout jumps during asynchronous Inertia requests.
+- **Admin SharePoint Control**: Added UI controls in the Admin Settings to easily trigger manual SharePoint syncs ("Test Sync Initiatives") and configure its background Cron schedule (`sync_sharepoint_initiatives_cron`) dynamically.
+- **Docker Compose Integration**: The `SettingSeeder` is now fully idempotent (`firstOrCreate`) and securely embedded into the `docker-compose.yml` initialization process, ensuring seamless CI/CD deployments.
+
+### Changed
+- **Robust ETL Pivot Matching**: Transitioned the frontend fuzzy-matching logic entirely to the backend. The `SharePointSyncService` now accurately bridges SharePoint initiatives to exact engineer accounts via an `initiative_user` pivot table using strict multi-word NLP boundaries, eliminating false positive overlaps (e.g., matching "Aryawijaya" with "Wijaya").
+
+### Fixed
+- **Mojibake User Names**: Cleaned up legacy data corruption in the `users` table where en-dashes (`–`) were mistakenly saved as `â€“`.
+- **Inertia Deferred Props**: Fixed a critical bug where deferred properties (such as `engineers` data) would silently vanish ("No data available") during partial Inertia filter visits.
+
 ## [v1.5.0] - 2026-08-27
 
 ### Added

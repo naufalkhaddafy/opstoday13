@@ -122,6 +122,8 @@ export type DashboardFilters = {
     work_group: string | null;
     date_from: string;
     date_to: string;
+    leaderboard_month: number;
+    leaderboard_year: number;
     search: string | null;
     sort_by: string | null;
     sort_dir: string;
@@ -132,6 +134,8 @@ export type DashboardFilters = {
         work_group: string | null;
         date_from: string;
         date_to: string;
+        leaderboard_month: number;
+        leaderboard_year: number;
         search: string | null;
         sort_by: string | null;
         sort_dir: string;

@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
     Trophy,
     Award,
@@ -22,7 +24,7 @@ import {
     ExternalLink,
     TrendingUp,
 } from 'lucide-react';
-import { EngineerSummary, LeaderboardEntry, SharePointInitiativeItem } from '@/types/dashboard';
+import { EngineerSummary, LeaderboardEntry, SharePointInitiativeItem, DashboardFilters } from '@/types/dashboard';
 import { EngineerTrendChart } from '@/components/charts/EngineerTrendChart';
 import { DonutChart } from '@/components/dashboard/DonutChart';
 
@@ -30,71 +32,39 @@ interface TopLeaderboardEngineerTabProps {
     engineers?: EngineerSummary[];
     leaderboard?: LeaderboardEntry[];
     initiatives?: SharePointInitiativeItem[];
+    filters?: DashboardFilters;
+    onApplyFilters?: (filters: Partial<DashboardFilters>) => void;
+    isLoading?: boolean;
 }
 
 export function TopLeaderboardEngineerTab({
     engineers = [],
     leaderboard = [],
     initiatives = [],
+    filters,
+    onApplyFilters,
+    isLoading = false,
 }: TopLeaderboardEngineerTabProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [expandedEngineerId, setExpandedEngineerId] = useState<number | null>(null);
 
-    const getInitiativePeopleStrings = (item: SharePointInitiativeItem): string[] => {
-        const results: string[] = [];
-        const addVal = (val: any) => {
-            if (!val) return;
-            if (typeof val === 'string' && val.trim() !== '') {
-                results.push(val.trim().toLowerCase());
-            } else if (typeof val === 'object') {
-                if (Array.isArray(val)) {
-                    val.forEach(addVal);
-                } else {
-                    const name = val.LookupValue ?? val.Email ?? val.Title ?? val.Name ?? val.label;
-                    if (typeof name === 'string' && name.trim() !== '') {
-                        results.push(name.trim().toLowerCase());
-                    }
-                }
-            }
-        };
-
-        addVal(item.pic);
-        addVal(item.submitted_by);
-        if (item.data && typeof item.data === 'object') {
-            const keys = [
-                'PIC', 'PIC / Engineer', 'Engineer', 'Assignee', 'AssignedTo', 'Assigned To',
-                'SubmittedBy', 'Submitted By', 'Author', 'Owner', 'Lead', 'PICName', 'PIC_Name'
-            ];
-            keys.forEach((k) => addVal(item.data[k]));
-        }
-        return results;
-    };
-
-    const isInitiativeForEngineer = (init: SharePointInitiativeItem, eng: EngineerSummary): boolean => {
-        const people = getInitiativePeopleStrings(init);
-        const name = eng.name.toLowerCase();
-        const empId = eng.employee_id ? eng.employee_id.toLowerCase() : null;
-
-        const normalize = (s: string) => s.replace(/[^a-z0-9]/gi, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
-        const normName = normalize(eng.name);
-        const nameWords = normName.split(' ').filter(w => w.length >= 3 && !['dso', 'dco', 'kpc', 'ext', 'it'].includes(w));
-
-        return people.some((p) => {
-            const normP = normalize(p);
-            if (normP.includes(normName) || normName.includes(normP)) return true;
-            if (empId && normP.includes(empId)) return true;
-
-            const pWords = normP.split(' ').filter(w => w.length >= 3 && !['dso', 'dco', 'kpc', 'ext', 'it'].includes(w));
-            if (nameWords.length > 0 && pWords.length > 0) {
-                const common = nameWords.filter(w => pWords.includes(w));
-                if (common.length >= 2 || (nameWords.length === 1 && common.length === 1) || (pWords.length === 1 && common.length === 1)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    };
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+    const months = [
+        { value: 1, label: 'January' },
+        { value: 2, label: 'February' },
+        { value: 3, label: 'March' },
+        { value: 4, label: 'April' },
+        { value: 5, label: 'May' },
+        { value: 6, label: 'June' },
+        { value: 7, label: 'July' },
+        { value: 8, label: 'August' },
+        { value: 9, label: 'September' },
+        { value: 10, label: 'October' },
+        { value: 11, label: 'November' },
+        { value: 12, label: 'December' },
+    ];
 
     const maxCompliantTickets = useMemo(() => {
         if (engineers.length === 0) return 1;
@@ -109,10 +79,8 @@ export function TopLeaderboardEngineerTab({
                 (l) => l.user_id === eng.id || (eng.employee_id && l.employee_id === eng.employee_id)
             );
 
-            // Use backend pre-matched initiatives if available, otherwise match dynamically from JSON data
-            const userInitiatives = eng.initiatives && eng.initiatives.length > 0
-                ? eng.initiatives
-                : initiatives.filter((init) => isInitiativeForEngineer(init, eng));
+            // Use backend pre-matched initiatives exclusively
+            const userInitiatives = eng.initiatives || [];
 
             const completedTickets = eng.completed_today ?? 0;
             const standardClosedTickets = eng.total_standard_closed ?? eng.completed_today ?? 0;
@@ -164,7 +132,7 @@ export function TopLeaderboardEngineerTab({
         if (typeof submitted === 'string' && submitted.trim() !== '') {
             return submitted;
         }
-        return item.pic ?? 'Unassigned';
+        return 'Unknown';
     };
 
     const getInitiativeStatus = (item: SharePointInitiativeItem) => {
@@ -314,12 +282,46 @@ export function TopLeaderboardEngineerTab({
                 <h2 className="flex items-center gap-2 text-lg font-semibold">
                     <Trophy className="h-5 w-5 text-[#2E7D32]" /> Top Leaderboard Engineer
                 </h2>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 -mt-2 mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 -mt-2 mb-2">
                     <div className="flex items-center gap-2">
                         <p className="text-sm text-muted-foreground">
                             Executive ranking evaluated across Compliance %, Compliant Ticket Volume, Attendance Discipline, and Strategic SharePoint Initiatives.
                         </p>
                     </div>
+                    {filters && onApplyFilters && (
+                        <div className="flex items-center gap-2">
+                            <Select
+                                value={String(filters.leaderboard_month)}
+                                onValueChange={(val) => onApplyFilters({ leaderboard_month: parseInt(val) })}
+                            >
+                                <SelectTrigger className="w-[130px] h-9 text-xs">
+                                    <SelectValue placeholder="Month" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {months.map((m) => (
+                                        <SelectItem key={m.value} value={String(m.value)} className="text-xs">
+                                            {m.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={String(filters.leaderboard_year)}
+                                onValueChange={(val) => onApplyFilters({ leaderboard_year: parseInt(val) })}
+                            >
+                                <SelectTrigger className="w-[90px] h-9 text-xs">
+                                    <SelectValue placeholder="Year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {years.map((y) => (
+                                        <SelectItem key={y} value={String(y)} className="text-xs">
+                                            {y}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                 </div>
 
                 {/* Dashboard Summary Cards */}
@@ -331,12 +333,18 @@ export function TopLeaderboardEngineerTab({
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DonutChart 
-                                segments={[{ label: 'Active', value: rankedEngineers.length, color: '#2E7D32' }]} 
-                                centerLabel="Engineers" 
-                                centerValue={rankedEngineers.length} 
-                                size="sm" 
-                            />
+                            {isLoading ? (
+                                <div className="flex justify-center p-4">
+                                    <Skeleton className="h-[120px] w-[120px] rounded-full" />
+                                </div>
+                            ) : (
+                                <DonutChart 
+                                    segments={[{ label: 'Active', value: rankedEngineers.length, color: '#2E7D32' }]} 
+                                    centerLabel="Engineers" 
+                                    centerValue={rankedEngineers.length} 
+                                    size="sm" 
+                                />
+                            )}
                         </CardContent>
                     </Card>
 
@@ -347,22 +355,34 @@ export function TopLeaderboardEngineerTab({
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col sm:flex-row items-center gap-4">
-                            {rankedEngineers.slice(0, 3).map((eng, idx) => (
-                                <div key={eng.id} className="flex items-center gap-3 bg-muted/20 hover:bg-muted/40 transition-colors rounded-xl p-3 flex-1 border w-full">
-                                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold text-sm shadow-sm ${
-                                        idx === 0 ? 'bg-[#FDD835] text-amber-900' :
-                                        idx === 1 ? 'bg-slate-200 text-slate-700' :
-                                        'bg-amber-600/20 text-amber-900 dark:text-amber-500'
-                                    }`}>
-                                        #{idx + 1}
+                            {isLoading ? (
+                                <>
+                                    {[1, 2, 3].map((i) => (
+                                        <Skeleton key={i} className="h-16 w-full flex-1 rounded-xl" />
+                                    ))}
+                                </>
+                            ) : (
+                                rankedEngineers.slice(0, 3).map((eng, idx) => (
+                                    <div key={eng.id} className="flex items-center gap-3 bg-muted/20 hover:bg-muted/40 transition-colors rounded-xl p-3 flex-1 border w-full">
+                                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold text-sm shadow-sm ${
+                                            idx === 0 ? 'bg-[#FDD835] text-amber-900' :
+                                            idx === 1 ? 'bg-slate-200 text-slate-700' :
+                                            'bg-amber-600/20 text-amber-900 dark:text-amber-500'
+                                        }`}>
+                                            #{idx + 1}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate font-semibold text-sm leading-none mb-1">
+                                                {eng.name}
+                                            </p>
+                                            <p className="truncate text-xs text-muted-foreground flex items-center gap-1">
+                                                <Trophy className="h-3 w-3" /> Score: {eng.compositeScore}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="overflow-hidden">
-                                        <p className="font-semibold text-sm text-foreground truncate" title={eng.name}>{eng.name}</p>
-                                        <p className="text-xs text-muted-foreground font-medium mt-0.5">Score: {eng.compositeScore.toFixed(1)}</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {rankedEngineers.length === 0 && (
+                                ))
+                            )}
+                            {rankedEngineers.length === 0 && !isLoading && (
                                 <div className="text-sm text-muted-foreground w-full text-center py-4">No data available</div>
                             )}
                         </CardContent>
@@ -506,7 +526,7 @@ export function TopLeaderboardEngineerTab({
                                                                                 </div>
                                                                             </div>
                                                                             <div className="text-[11px] text-muted-foreground border-t pt-2 mt-1 flex items-center justify-between">
-                                                                                <span>PIC: {initItem.pic ?? eng.name}</span>
+                                                                                <span>Submitted By: {getSubmittedByName(initItem)}</span>
                                                                                 <span>{initItem.target_timeline ?? 'No deadline'}</span>
                                                                             </div>
                                                                         </div>

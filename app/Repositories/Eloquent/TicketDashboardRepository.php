@@ -85,6 +85,10 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                     $gq->where('name', $workGroup);
                 });
             })
+            ->with(['sharepointInitiatives' => function ($query) use ($dateFrom, $dateTo) {
+                $query->whereBetween('submission_date', [$dateFrom->startOfDay(), $dateTo->endOfDay()])
+                      ->orWhereNull('submission_date');
+            }])
             ->orderBy('name')
             ->get(['id', 'name', 'employee_id']);
 
@@ -171,110 +175,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             $count++;
         }
 
-        $allInitiatives = SharePointData::ofType('initiative')
-            ->get()
-            ->filter(function (SharePointData $init) use ($dateFrom, $dateTo) {
-                $dateStr = $init->getField('SubmissionDate') ?? $init->getField('Created') ?? $init->getField('Modified');
-                if (!$dateStr) {
-                    return true;
-                }
-                try {
-                    $initDate = \Carbon\Carbon::parse($dateStr);
-                    return $initDate->between($dateFrom->startOfDay(), $dateTo->endOfDay());
-                } catch (\Exception $e) {
-                    return true;
-                }
-            })
-            ->values();
-
-        $namesMatch = function (?string $strA, ?string $strB): bool {
-            if (!$strA || !$strB) {
-                return false;
-            }
-
-            $normA = preg_replace('/[^\p{L}\p{N}]+/u', ' ', strtolower(trim($strA)));
-            $normB = preg_replace('/[^\p{L}\p{N}]+/u', ' ', strtolower(trim($strB)));
-            $normA = trim(preg_replace('/\s+/', ' ', (string) $normA));
-            $normB = trim(preg_replace('/\s+/', ' ', (string) $normB));
-
-            if ($normA === '' || $normB === '') {
-                return false;
-            }
-
-            if (str_contains($normA, $normB) || str_contains($normB, $normA)) {
-                return true;
-            }
-
-            $primaryA = trim(preg_split('/[\(\,]/', $strA)[0] ?? '');
-            $primaryB = trim(preg_split('/[\(\,]/', $strB)[0] ?? '');
-            if (strlen($primaryA) >= 3 && strlen($primaryB) >= 3) {
-                if (strcasecmp($primaryA, $primaryB) === 0 || str_contains(strtolower($primaryA), strtolower($primaryB)) || str_contains(strtolower($primaryB), strtolower($primaryA))) {
-                    return true;
-                }
-            }
-
-            $wordsA = array_filter(explode(' ', $normA), fn ($w) => strlen($w) >= 3 && !in_array($w, ['dso', 'dco', 'kpc', 'ext', 'it', 'the', 'and', 'for']));
-            $wordsB = array_filter(explode(' ', $normB), fn ($w) => strlen($w) >= 3 && !in_array($w, ['dso', 'dco', 'kpc', 'ext', 'it', 'the', 'and', 'for']));
-
-            if (count($wordsA) > 0 && count($wordsB) > 0) {
-                $common = array_intersect($wordsA, $wordsB);
-                if (count($common) >= 2 || (count($wordsA) === 1 && count($common) === 1) || (count($wordsB) === 1 && count($common) === 1)) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        $matchInitiativeToEngineer = function (SharePointData $item, User $engineer) use ($namesMatch): bool {
-            $name = $engineer->name;
-            $empId = $engineer->employee_id ? strtolower(trim($engineer->employee_id)) : null;
-            $email = $engineer->email ? strtolower(trim($engineer->email)) : null;
-
-            $checkValue = function ($value) use ($name, $empId, $email, $namesMatch, &$checkValue): bool {
-                if ($value === null) {
-                    return false;
-                }
-                if (is_string($value) && trim($value) !== '') {
-                    $v = strtolower(trim($value));
-                    if ($namesMatch($name, $value)) {
-                        return true;
-                    }
-                    if ($empId && str_contains($v, $empId)) {
-                        return true;
-                    }
-                    if ($email && (str_contains($v, $email) || $namesMatch($email, $value))) {
-                        return true;
-                    }
-                    return false;
-                }
-                if (is_array($value)) {
-                    foreach ($value as $val) {
-                        if ($checkValue($val)) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            };
-
-            if ($checkValue($item->submitted_by)) {
-                return true;
-            }
-
-            $personKeys = [
-                'SubmittedBy', 'Submitted By', 'Author', 'CreatedBy'
-            ];
-            foreach ($personKeys as $key) {
-                if (isset($item->data[$key]) && $checkValue($item->data[$key])) {
-                    return true;
-                }
-            }
-
-            return false;
-        };
-
-        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $resolutionSlaStats, $globalActiveCounts, $allInitiatives, $matchInitiativeToEngineer, $trendByEngineer, $lastMonths) {
+        return $engineers->map(function (User $engineer) use ($statusCounts, $responseAvgs, $resolutionAvgs, $resolutionSlaStats, $globalActiveCounts, $trendByEngineer, $lastMonths) {
             $byStatus = ($statusCounts[$engineer->id] ?? collect())->pluck('total', 'status_value');
 
             $assigned = (int) ($byStatus[TicketStatus::Assigned->value] ?? 0);
@@ -285,9 +186,20 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             $avgResponse = $responseAvgs[$engineer->id] ?? null;
             $avgResolution = $resolutionAvgs[$engineer->id] ?? null;
 
-            $engineerInitiatives = $allInitiatives
-                ->filter(fn (SharePointData $init) => $matchInitiativeToEngineer($init, $engineer))
-                ->values();
+            // Format initiatives to match frontend expectations
+            $engineerInitiatives = $engineer->sharepointInitiatives->map(function ($init) {
+                return [
+                    'id' => $init->id,
+                    'sharepoint_item_id' => $init->sharepoint_item_id,
+                    'title' => $init->title,
+                    'status' => $init->status,
+                    'impact_level' => $init->impact_level,
+                    'target_timeline' => $init->target_timeline,
+                    'submitted_by' => null, // Not needed strictly on per-engineer array, UI reads from data or pic
+                    'data' => $init->raw_data,
+                    'last_synced_at' => $init->updated_at ? $init->updated_at->diffForHumans() : null,
+                ];
+            })->values();
 
             return [
                 'id' => $engineer->id,
@@ -304,16 +216,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 'avg_response_time_seconds' => $avgResponse !== null ? (int) round((float) $avgResponse) : null,
                 'avg_resolution_time_hours' => $avgResolution !== null ? round((float) $avgResolution, 2) : null,
                 'initiative_count' => $engineerInitiatives->count(),
-                'initiatives' => $engineerInitiatives->map(function (SharePointData $init) {
-                    return [
-                        'id' => $init->id,
-                        'title' => $init->title,
-                        'status' => $init->initiative_status,
-                        'impact_level' => $init->impact_level,
-                        'target_timeline' => $init->target_timeline,
-                        'pic' => $init->pic,
-                    ];
-                })->toArray(),
+                'initiatives' => $engineerInitiatives->toArray(),
                 'monthly_trend' => collect($lastMonths)->map(function ($m) use ($engineer, $trendByEngineer) {
                     $rawTrend = $trendByEngineer[$engineer->id] ?? collect();
                     $match = $rawTrend->first(fn($t) => $t->mo === $m['mo'] && $t->yr === $m['yr']);

@@ -164,6 +164,17 @@ export default function SettingsIndex({ grouped_settings }: Props) {
 
                                 {Object.keys(grouped_settings).map((group) => (
                                     <TabsContent key={group} value={group} className="space-y-4">
+                                        {group === 'Scheduler' && (
+                                            <div className="mb-4 text-sm bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 p-3 rounded-md border border-blue-100 dark:border-blue-900/50 flex items-start gap-2">
+                                                <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                                                <p>
+                                                    Pengaturan interval dengan format <strong>cron</strong> menggunakan standar Cron Unix. 
+                                                    <a href="https://crontab.guru" target="_blank" rel="noreferrer" className="text-brand-500 hover:underline font-medium ml-1">
+                                                        Buat format di crontab.guru &rarr;
+                                                    </a>
+                                                </p>
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {Object.entries(grouped_settings[group]).map(([key, setting]) => (
                                                 <div key={key} className="space-y-2">
@@ -177,17 +188,6 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                         onChange={(e) => setData('settings', { ...data.settings, [key]: e.target.value })}
                                                     />
                                                     <p className="text-xs text-muted-foreground">{setting.description}</p>
-                                                    {key === 'sync_completed_tickets_cron' && (
-                                                        <div className="mt-2 text-xs bg-muted p-2 rounded-md border border-border text-muted-foreground space-y-1">
-                                                            <p className="font-semibold">Format Cron (Menit Jam Tanggal Bulan Hari)</p>
-                                                            <ul className="list-disc pl-4 space-y-1">
-                                                                <li><code>0 6,18 * * *</code> : Setiap jam 06:00 dan 18:00</li>
-                                                                <li><code>0 0 * * *</code> : Setiap tengah malam (00:00)</li>
-                                                                <li><code>*/30 * * * *</code> : Setiap 30 menit</li>
-                                                            </ul>
-                                                            <p className="mt-1"><a href="https://crontab.guru" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Pelajari lebih lanjut (crontab.guru)</a></p>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -243,6 +243,15 @@ export default function SettingsIndex({ grouped_settings }: Props) {
                                                         onClick={() => handleTestCommand('attendance:sync')}
                                                     >
                                                         <Play className="mr-2 h-3 w-3" /> Test Sync Attendance
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        disabled={testingCmd === 'opstoday:sync-sharepoint --type=initiatives'}
+                                                        onClick={() => handleTestCommand('opstoday:sync-sharepoint --type=initiatives')}
+                                                    >
+                                                        <Play className="mr-2 h-3 w-3" /> Test Sync Initiatives
                                                     </Button>
                                                 </div>
                                                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 text-xs rounded-md border border-blue-100 dark:border-blue-900/50 flex items-start gap-2">

@@ -219,6 +219,9 @@ export default function PublicDashboard({
                                 engineers={engineers}
                                 leaderboard={analytics?.leaderboard}
                                 initiatives={initiatives}
+                                filters={filters}
+                                onApplyFilters={applyFilters}
+                                isLoading={isTicketsLoading}
                             />
                         </TabsContent>
                     </Tabs>

@@ -26,7 +26,7 @@ class TestCommandRequest extends FormRequest
             'command' => [
                 'required',
                 'string',
-                'in:ops:send-snapshot morning,ops:send-snapshot evening,tickets:sync-open,tickets:sync-completed,attendance:sync,ops:backfill-ai-tickets --force',
+                'in:ops:send-snapshot morning,ops:send-snapshot evening,tickets:sync-open,tickets:sync-completed,attendance:sync,ops:backfill-ai-tickets --force,opstoday:sync-sharepoint,opstoday:sync-sharepoint --type=initiatives',
             ],
         ];
     }

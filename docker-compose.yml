@@ -2,7 +2,7 @@ services:
   init:
     image: registry.gitlab.com/naufalkhaddafy1/opstoday13/opstoday13-app:${APP_VERSION:-latest}
     restart: "no"
-    command: [ "sh", "-c", "php artisan optimize:clear && php artisan optimize && php artisan migrate --force && php artisan storage:link" ]
+    command: [ "sh", "-c", "php artisan optimize:clear && php artisan optimize && php artisan migrate --force && php artisan db:seed --class=SettingSeeder --force && php artisan storage:link" ]
     env_file:
       - .env.docker
     depends_on:

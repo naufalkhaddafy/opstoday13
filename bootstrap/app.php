@@ -80,9 +80,9 @@ return Application::configure(basePath: dirname(__DIR__))
             ->runInBackground()
             ->timezone(config('app.timezone'));
 
-        $syncSharePointInterval = $settings->get('sync_sharepoint_interval', '60');
+        $syncSharePointCron = $settings->get('sync_sharepoint_initiatives_cron', '0 * * * *');
         $schedule->command('opstoday:sync-sharepoint --type=initiatives')
-            ->cron('*/' . $syncSharePointInterval . ' * * * *')
+            ->cron($syncSharePointCron)
             ->withoutOverlapping(10)
             ->runInBackground()
             ->timezone(config('app.timezone'));

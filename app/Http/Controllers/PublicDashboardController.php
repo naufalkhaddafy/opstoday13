@@ -51,6 +51,11 @@ class PublicDashboardController extends Controller
             [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
         }
 
+        $leaderboardMonth = (int) $request->input('leaderboard_month', $today->month);
+        $leaderboardYear = (int) $request->input('leaderboard_year', $today->year);
+        $leaderboardDateFrom = CarbonImmutable::create($leaderboardYear, $leaderboardMonth, 1, 0, 0, 0, $timezone)->startOfMonth();
+        $leaderboardDateTo = $leaderboardDateFrom->endOfMonth();
+
         $companyInput = $request->input('company_id');
         $companyId = $companyInput && $companyInput !== 'all' ? (int) $companyInput : null;
 
@@ -69,7 +74,7 @@ class PublicDashboardController extends Controller
                 'today' => $today,
                 'shiftResolver' => $shiftResolver,
                 'tickets' => fn () => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10, $search, $sortBy, $sortDir, $status, $workGroup),
-                'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId, $workGroup),
+                'engineers' => fn () => $this->tickets->engineerSummaries($leaderboardDateFrom, $leaderboardDateTo, $companyId, $workGroup),
                 'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId, $workGroup),
                 'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId, null, null, $workGroup),
                 'initiatives' => fn () => SharePointData::ofType('initiative')->latest('last_synced_at')->get(),
@@ -87,6 +92,8 @@ class PublicDashboardController extends Controller
                     'work_group' => $workGroup,
                     'date_from' => $dateFrom->toDateString(),
                     'date_to' => $dateTo->toDateString(),
+                    'leaderboard_month' => $leaderboardMonth,
+                    'leaderboard_year' => $leaderboardYear,
                     'search' => $search,
                     'sort_by' => $sortBy,
                     'sort_dir' => $sortDir,
@@ -97,6 +104,8 @@ class PublicDashboardController extends Controller
                         'work_group' => null,
                         'date_from' => $today->toDateString(),
                         'date_to' => $today->toDateString(),
+                        'leaderboard_month' => $today->month,
+                        'leaderboard_year' => $today->year,
                         'search' => null,
                         'sort_by' => null,
                         'sort_dir' => 'desc',
