@@ -258,13 +258,12 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 return false;
             };
 
-            if ($checkValue($item->pic) || $checkValue($item->submitted_by)) {
+            if ($checkValue($item->submitted_by)) {
                 return true;
             }
 
             $personKeys = [
-                'PIC', 'PIC / Engineer', 'Engineer', 'Assignee', 'AssignedTo', 'Assigned To',
-                'SubmittedBy', 'Submitted By', 'Author', 'Owner', 'Lead', 'PICName', 'PIC_Name'
+                'SubmittedBy', 'Submitted By', 'Author', 'CreatedBy'
             ];
             foreach ($personKeys as $key) {
                 if (isset($item->data[$key]) && $checkValue($item->data[$key])) {
