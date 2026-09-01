@@ -139,7 +139,6 @@ class TicketSyncService
             $technicianIds = User::query()
                 ->whereNotNull('employee_id')
                 ->where('is_active', true)
-                ->where('employee_id', 'like', 'Z%')
                 ->pluck('employee_id')
                 ->flip();
 
