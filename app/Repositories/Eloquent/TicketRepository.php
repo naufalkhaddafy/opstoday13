@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\RoleName;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\TicketAssignmentHistory;
@@ -61,6 +62,22 @@ class TicketRepository implements TicketRepositoryInterface
                 'changed_at' => $now,
                 'sync_run_id' => $run->id,
             ]);
+
+            if ($ticket->dispatch_time_seconds === null) {
+                $isFromPool = User::query()
+                    ->where('employee_id', $ticket->assigned_to_id)
+                    ->whereHas('roles', function ($q) {
+                        $q->where('name', RoleName::PoolAccount->value);
+                    })
+                    ->exists();
+
+                if ($isFromPool) {
+                    $startDate = $ticket->api_creation_date ?? $ticket->first_seen_at;
+                    if ($startDate) {
+                        $ticket->dispatch_time_seconds = $now->diffInSeconds($startDate);
+                    }
+                }
+            }
 
             $ticket->assigned_to_id = $polledTechnicianId;
             $ticket->assigned_to_name = $record['assigned_to_name'] ?? null;
@@ -126,6 +143,38 @@ class TicketRepository implements TicketRepositoryInterface
         }
 
         if (! empty($record['assigned_to_id'])) {
+            if (! $isNew && $ticket->assigned_to_id !== $record['assigned_to_id']) {
+                // Handover detected during sync completed (blind spot caught!)
+                TicketAssignmentHistory::query()->create([
+                    'ticket_id' => $ticket->id,
+                    'from_assigned_to_id' => $ticket->assigned_to_id,
+                    'to_assigned_to_id' => $record['assigned_to_id'],
+                    'changed_at' => $now,
+                    'sync_run_id' => $run->id,
+                ]);
+
+                if ($ticket->dispatch_time_seconds === null) {
+                    $isFromPool = User::query()
+                        ->where('employee_id', $ticket->assigned_to_id)
+                        ->whereHas('roles', function ($q) {
+                            $q->where('name', RoleName::PoolAccount->value);
+                        })
+                        ->exists();
+
+                    if ($isFromPool) {
+                        $startDate = $ticket->api_creation_date ?? $ticket->first_seen_at;
+                        if ($startDate) {
+                            $ticket->dispatch_time_seconds = $now->diffInSeconds($startDate);
+                        }
+                    }
+                }
+
+                // Reset argometer so engineer is not penalized for pool wait time
+                $ticket->first_seen_at = $now;
+                $ticket->in_progress_at = $now;
+                $ticket->response_time_seconds = 0;
+            }
+
             $ticket->assigned_to_id = $record['assigned_to_id'];
             $ticket->assigned_to_user_id = $this->resolveUserId($record['assigned_to_id']);
         }

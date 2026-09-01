@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormField } from '@/components/shared/FormField';
 import UserController from '@/actions/App/Http/Controllers/Admin/UserController';
 import RosterController from '@/actions/App/Http/Controllers/Admin/RosterController';
+import AppLayout from '@/layouts/app-layout';
+import { usePage } from '@inertiajs/react';
 import type { AdminCompany, User } from '@/types';
 
 type ActiveShiftAssignment = {
@@ -56,9 +58,9 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
             if (activeAssignment && activeAssignment.schedule) {
                 if (Array.isArray(activeAssignment.schedule)) {
                     // Jika dari backend berupa array, kita perlu mengecek apakah ini 0-indexed atau 1-indexed
-                    const isZeroIndexed = activeAssignment.schedule.length === 7 || 
-                                          (activeAssignment.schedule.length > 0 && activeAssignment.schedule[0] !== null);
-                    
+                    const isZeroIndexed = activeAssignment.schedule.length === 7 ||
+                        (activeAssignment.schedule.length > 0 && activeAssignment.schedule[0] !== null);
+
                     activeAssignment.schedule.forEach((shiftId, index) => {
                         const dayId = isZeroIndexed ? index + 1 : index;
                         if (dayId >= 1 && dayId <= 7) {
@@ -126,7 +128,7 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                             <CardDescription>Perbarui informasi profil dan hak akses untuk {user.name}.</CardDescription>
                         </div>
                         <Button variant="outline" asChild>
-                            <Link href={isFromRoster ? RosterController.index().url : UserController.index().url}>
+                            <Link href={isFromRoster ? RosterController.index().url : (data.role === 'pool_account' ? '/admin/pool-accounts' : UserController.index().url)}>
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
                             </Link>
                         </Button>
@@ -137,7 +139,7 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                 {/* Left Column: Personal Data */}
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Informasi Profil</h3>
-                                    
+
                                     <FormField label="Nama Lengkap" htmlFor="name" required error={errors.name}>
                                         <Input
                                             id="name"
@@ -147,55 +149,61 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                         />
                                     </FormField>
 
-                                    <FormField label="Alamat Email" htmlFor="email" required error={errors.email}>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={data.email}
-                                            onChange={(e) => setData('email', e.target.value)}
-                                            required
-                                        />
-                                    </FormField>
+                                    {data.role !== 'pool_account' && (
+                                        <FormField label="Alamat Email" htmlFor="email" required error={errors.email}>
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                value={data.email}
+                                                onChange={(e) => setData('email', e.target.value)}
+                                                required
+                                            />
+                                        </FormField>
+                                    )}
 
-                                    <FormField label="Employee ID (Opsional)" htmlFor="employee_id" error={errors.employee_id}>
+                                    <FormField label="Employee ID" htmlFor="employee_id" error={errors.employee_id} required={data.role === 'pool_account'}>
                                         <Input
                                             id="employee_id"
                                             value={data.employee_id}
                                             onChange={(e) => setData('employee_id', e.target.value)}
                                         />
                                     </FormField>
-                                    
-                                    <div className="pt-2 text-sm text-muted-foreground border-t mt-4 pt-4">
-                                        <p>Info: Ubah password hanya dapat dilakukan oleh pengguna langsung dari halaman Profil akun mereka.</p>
-                                    </div>
+
+                                    {data.role !== 'pool_account' && (
+                                        <div className="pt-2 text-sm text-muted-foreground border-t mt-4 pt-4">
+                                            <p>Info: Ubah password hanya dapat dilakukan oleh pengguna langsung dari halaman Profil akun mereka.</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right Column: Role & Config */}
                                 <div className="space-y-4">
                                     <h3 className="text-sm font-medium border-b pb-2">Akses & Perusahaan</h3>
 
-                                    <FormField label="Role / Peran" htmlFor="role" required error={errors.role}>
-                                        <Select 
-                                            value={data.role} 
-                                            onValueChange={(value) => setData('role', value)}
-                                            required
-                                        >
-                                            <SelectTrigger id="role">
-                                                <SelectValue placeholder="Pilih Role" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {roles.map((role) => (
-                                                    <SelectItem key={role} value={role}>
-                                                        {formatRole(role)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormField>
+                                    {data.role !== 'pool_account' && (
+                                        <FormField label="Role / Peran" htmlFor="role" required error={errors.role}>
+                                            <Select
+                                                value={data.role}
+                                                onValueChange={(value) => setData('role', value)}
+                                                required
+                                            >
+                                                <SelectTrigger id="role">
+                                                    <SelectValue placeholder="Pilih Role" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {roles.map((role) => (
+                                                        <SelectItem key={role} value={role}>
+                                                            {formatRole(role)}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </FormField>
+                                    )}
 
                                     <FormField label="Perusahaan (Opsional)" htmlFor="company_id" error={errors.company_id}>
-                                        <Select 
-                                            value={data.company_id} 
+                                        <Select
+                                            value={data.company_id}
                                             onValueChange={(value) => setData('company_id', value)}
                                         >
                                             <SelectTrigger id="company_id">
@@ -213,8 +221,8 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                     </FormField>
 
                                     <FormField label="Grup / Divisi (Opsional)" htmlFor="group_id" error={errors.group_id}>
-                                        <Select 
-                                            value={data.group_id} 
+                                        <Select
+                                            value={data.group_id}
                                             onValueChange={(value) => setData('group_id', value)}
                                         >
                                             <SelectTrigger id="group_id">
@@ -234,8 +242,8 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                                     <div className="space-y-4 pt-4">
                                         <FormField label="User Aktif (Dapat login ke sistem)" htmlFor="is_active" error={errors.is_active}>
                                             <div className="flex items-center space-x-2 pt-1">
-                                                <Checkbox 
-                                                    id="is_active" 
+                                                <Checkbox
+                                                    id="is_active"
                                                     checked={data.is_active}
                                                     onCheckedChange={(checked) => setData('is_active', checked as boolean)}
                                                 />
@@ -247,8 +255,8 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
 
                                         <FormField label="Email Terverifikasi" htmlFor="is_verified" error={errors.is_verified}>
                                             <div className="flex items-center space-x-2 pt-1">
-                                                <Checkbox 
-                                                    id="is_verified" 
+                                                <Checkbox
+                                                    id="is_verified"
                                                     checked={data.is_verified}
                                                     onCheckedChange={(checked) => setData('is_verified', checked as boolean)}
                                                 />
@@ -262,70 +270,72 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
                             </div>
 
                             {/* Shift Assignment Section */}
-                            <div className="border-t pt-6 mt-2">
-                                <h3 className="text-sm font-medium border-b pb-2 mb-4 flex items-center gap-2">
-                                    <CalendarClock className="h-4 w-4 text-indigo-500" />
-                                    <span>Jadwal Kerja Mingguan</span>
-                                </h3>
-                                
-                                <div className="space-y-6">
-                                    {/* Grid Jadwal Senin - Minggu */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
-                                        {DAY_NAMES.map((day) => {
-                                            const currentVal = data.shift_schedule[day.id] || 'none';
-                                            return (
-                                                <div key={day.id} className="flex flex-col p-3 rounded-lg border bg-card/40 gap-2">
-                                                    <Label htmlFor={`day-shift-${day.id}`} className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
-                                                        {day.name}
-                                                    </Label>
-                                                    <Select 
-                                                        value={currentVal} 
-                                                        onValueChange={(val) => handleShiftScheduleChange(day.id, val)}
-                                                    >
-                                                        <SelectTrigger id={`day-shift-${day.id}`} className="h-8 text-xs px-2">
-                                                            <SelectValue placeholder="Libur" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="none" className="text-xs text-rose-600 dark:text-rose-400 font-medium">Libur</SelectItem>
-                                                            {shifts.map((shift) => (
-                                                                <SelectItem key={shift.id} value={shift.id.toString()} className="text-xs">
-                                                                    {shift.code.toUpperCase()}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                    {errors.shift_schedule && <p className="text-[0.8rem] font-medium text-destructive">{errors.shift_schedule}</p>}
+                            {data.role !== 'pool_account' && (
+                                <div className="border-t pt-6 mt-2">
+                                    <h3 className="text-sm font-medium border-b pb-2 mb-4 flex items-center gap-2">
+                                        <CalendarClock className="h-4 w-4 text-indigo-500" />
+                                        <span>Jadwal Kerja Mingguan</span>
+                                    </h3>
 
-                                    {/* Rentang Masa Berlaku */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
-                                        <FormField label="Mulai Berlaku" htmlFor="shift_effective_from" error={errors.shift_effective_from}>
-                                            <Input
-                                                id="shift_effective_from"
-                                                type="date"
-                                                value={data.shift_effective_from}
-                                                onChange={(e) => setData('shift_effective_from', e.target.value)}
-                                                disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
-                                            />
-                                        </FormField>
-                                        <FormField label="Berakhir (Opsional)" htmlFor="shift_effective_to" error={errors.shift_effective_to}>
-                                            <Input
-                                                id="shift_effective_to"
-                                                type="date"
-                                                value={data.shift_effective_to}
-                                                onChange={(e) => setData('shift_effective_to', e.target.value)}
-                                                disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
-                                            />
-                                        </FormField>
+                                    <div className="space-y-6">
+                                        {/* Grid Jadwal Senin - Minggu */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
+                                            {DAY_NAMES.map((day) => {
+                                                const currentVal = data.shift_schedule[day.id] || 'none';
+                                                return (
+                                                    <div key={day.id} className="flex flex-col p-3 rounded-lg border bg-card/40 gap-2">
+                                                        <Label htmlFor={`day-shift-${day.id}`} className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                            {day.name}
+                                                        </Label>
+                                                        <Select
+                                                            value={currentVal}
+                                                            onValueChange={(val) => handleShiftScheduleChange(day.id, val)}
+                                                        >
+                                                            <SelectTrigger id={`day-shift-${day.id}`} className="h-8 text-xs px-2">
+                                                                <SelectValue placeholder="Libur" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none" className="text-xs text-rose-600 dark:text-rose-400 font-medium">Libur</SelectItem>
+                                                                {shifts.map((shift) => (
+                                                                    <SelectItem key={shift.id} value={shift.id.toString()} className="text-xs">
+                                                                        {shift.code.toUpperCase()}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        {errors.shift_schedule && <p className="text-[0.8rem] font-medium text-destructive">{errors.shift_schedule}</p>}
+
+                                        {/* Rentang Masa Berlaku */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-4">
+                                            <FormField label="Mulai Berlaku" htmlFor="shift_effective_from" error={errors.shift_effective_from}>
+                                                <Input
+                                                    id="shift_effective_from"
+                                                    type="date"
+                                                    value={data.shift_effective_from}
+                                                    onChange={(e) => setData('shift_effective_from', e.target.value)}
+                                                    disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
+                                                />
+                                            </FormField>
+                                            <FormField label="Berakhir (Opsional)" htmlFor="shift_effective_to" error={errors.shift_effective_to}>
+                                                <Input
+                                                    id="shift_effective_to"
+                                                    type="date"
+                                                    value={data.shift_effective_to}
+                                                    onChange={(e) => setData('shift_effective_to', e.target.value)}
+                                                    disabled={!Object.values(data.shift_schedule).some(val => val !== '')}
+                                                />
+                                            </FormField>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Jika jadwal diganti, sistem akan menutup penugasan lama dan membuat penugasan baru secara otomatis.
+                                        </p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        Jika jadwal diganti, sistem akan menutup penugasan lama dan membuat penugasan baru secara otomatis.
-                                    </p>
                                 </div>
-                            </div>
+                            )}
 
                             <div className="flex justify-end pt-6 border-t mt-6">
                                 <Button type="submit" disabled={processing}>
@@ -340,9 +350,19 @@ export default function UserEdit({ user, companies, groups, shifts, roles, from 
     );
 }
 
-UserEdit.layout = {
-    breadcrumbs: [
-        { title: 'Manajemen User', href: UserController.index().url },
-        { title: 'Edit User', href: '#' }
-    ]
+const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
+    const { props } = usePage<any>();
+    const user = props.user;
+    const isPool = user?.role === 'pool_account';
+
+    return (
+        <AppLayout breadcrumbs={[
+            { title: isPool ? 'Manajemen Pool Account' : 'Manajemen User', href: isPool ? '/admin/pool-accounts' : UserController.index().url },
+            { title: 'Edit User', href: '#' }
+        ]}>
+            {children}
+        </AppLayout>
+    );
 };
+
+UserEdit.layout = (page: React.ReactNode) => <LayoutWrapper>{page}</LayoutWrapper>;

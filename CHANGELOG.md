@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.6.0] - 2026-09-01
+
+### Added
+- **Pool Dispatch Performance Tracking**: Introduced tracking for tickets dispatched by Regional Pool Accounts. The system now logs the assignment history and calculates the `dispatch_time_seconds` representing the waiting time before a ticket is handed over to an Engineer.
+- **Pool SLA Dashboard Component**: Added a new `PoolPerformanceCard` in the Public Dashboard's KPI metrics section, featuring a dynamic list of Regional Pool Accounts ranked by their average dispatch speeds.
+- **Pool Account Role Integration**: Added a dedicated `PoolAccount` role. Included a `RoleSeeder` into the `docker-compose.yml` initialization process to automatically provision the role on deployment.
+
+### Changed
+- **Global Leaderboard Cleanup**: Removed the small global Leaderboard card from the KPI section, streamlining the layout, as the Top Engineer tab now serves this purpose.
+- **Role Isolation**: Pool Accounts are now fully isolated and excluded from standard roster views, leaderboards, and Verification/WhatsApp reports to prevent statistical contamination.
+
+### Fixed
+- **SLA Handover Blind Spot**: Patched the `upsertCompleted` and `upsertOpen` sync logic in `TicketRepository` to actively detect and handle "Blind spot" tickets that were handed over between sync intervals, ensuring their SLA calculations are accurately updated.
+
 ## [v1.5.1] - 2026-08-31
 
 ### Added

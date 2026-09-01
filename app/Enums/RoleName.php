@@ -7,4 +7,5 @@ enum RoleName: string
     case SuperAdmin = 'super_admin';
     case Supv = 'supv';
     case Engineer = 'engineer';
+    case PoolAccount = 'pool_account';
 }

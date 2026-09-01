@@ -36,10 +36,13 @@ class UserRepository implements UserRepositoryInterface
             )
             ->when(
                 ! empty($filters['exclude_role']),
-                fn ($q) => $q->whereDoesntHave('roles', fn ($r) => $r->where('name', $filters['exclude_role']))
+                function ($q) use ($filters) {
+                    $exclude = (array) $filters['exclude_role'];
+                    return $q->whereDoesntHave('roles', fn ($r) => $r->whereIn('name', $exclude));
+                }
             )
             ->latest()
-            ->paginate(15)
+            ->paginate((int) ($filters['per_page'] ?? 10))
             ->withQueryString();
     }
 
@@ -101,6 +104,7 @@ class UserRepository implements UserRepositoryInterface
             ->where('is_verified', false)
             ->where('is_active', true)
             ->whereNotNull('employee_id')
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::PoolAccount->value))
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->orderBy('created_at', 'desc')
             ->get();
@@ -128,7 +132,7 @@ class UserRepository implements UserRepositoryInterface
                     $gq->where('name', $workGroup);
                 });
             })
-            ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::SuperAdmin->value))
+            ->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', [RoleName::SuperAdmin->value, RoleName::PoolAccount->value]))
             ->with([
                 'leaves' => fn ($q) => $q->approved()->where(function ($sub) use ($dateFrom, $dateTo) {
                     $sub->whereBetween('start_date', [$dateFrom, $dateTo])
@@ -151,7 +155,7 @@ class UserRepository implements UserRepositoryInterface
             ->with(['company', 'group', 'shiftAssignments', 'exceptions', 'leaves' => fn($q) => $q->approved()])
             ->whereNotNull('employee_id')
             ->where('is_active', true)
-            ->whereDoesntHave('roles', fn ($q) => $q->where('name', RoleName::SuperAdmin->value))
+            ->whereDoesntHave('roles', fn ($q) => $q->whereIn('name', [RoleName::SuperAdmin->value, RoleName::PoolAccount->value]))
             ->when(! empty($filters['search']), function ($q) use ($filters) {
                 $q->where(function ($inner) use ($filters) {
                     $inner->where('name', 'like', "%{$filters['search']}%")

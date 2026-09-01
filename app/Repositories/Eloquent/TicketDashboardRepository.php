@@ -301,6 +301,11 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             $responseStats = (clone $baseQuery)
                 ->where('status', '!=', TicketStatus::Assigned->value)
                 ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
+                ->whereHas('assignedUser', function ($q) {
+                    $q->whereDoesntHave('roles', function ($r) {
+                        $r->where('name', \App\Enums\RoleName::PoolAccount->value);
+                    });
+                })
                 ->selectRaw('
                     COUNT(*) as total_responded,
                     SUM(CASE WHEN (CASE WHEN response_time_seconds IS NULL OR response_time_seconds <= 0 THEN 60 ELSE response_time_seconds END) <= ? THEN 1 ELSE 0 END) as met_response_sla,
@@ -312,11 +317,22 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             $resolutionStats = (clone $baseQuery)
                 ->where('status', TicketStatus::Closed->value)
                 ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
+                ->whereHas('assignedUser', function ($q) {
+                    $q->whereDoesntHave('roles', function ($r) {
+                        $r->where('name', \App\Enums\RoleName::PoolAccount->value);
+                    });
+                })
                 ->selectRaw('
                     COUNT(*) as total_resolved,
                     SUM(CASE WHEN (CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) <= ? THEN 1 ELSE 0 END) as met_resolution_sla,
                     AVG(CASE WHEN resolution_time IS NULL OR CAST(resolution_time AS DECIMAL(10,2)) <= 0 THEN (1.0/60.0) ELSE CAST(resolution_time AS DECIMAL(10,2)) END) as avg_resolution_hours
                 ', [$resolutionSlaHours])
+                ->first();
+
+            // Dispatch (Pool Wait) SLA
+            $dispatchStats = (clone $baseQuery)
+                ->whereNotNull('dispatch_time_seconds')
+                ->selectRaw('AVG(dispatch_time_seconds) as avg_dispatch_seconds')
                 ->first();
 
             $totalResponded = (int) ($responseStats->total_responded ?? 0);
@@ -330,6 +346,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                 'resolution_sla_percent' => $totalResolved > 0 ? round(($metResolutionSla / $totalResolved) * 100, 1) : null,
                 'avg_response_seconds' => $responseStats->avg_response_seconds ? (float) $responseStats->avg_response_seconds : null,
                 'avg_resolution_hours' => $resolutionStats->avg_resolution_hours ? (float) $resolutionStats->avg_resolution_hours : null,
+                'avg_dispatch_seconds' => $dispatchStats->avg_dispatch_seconds ? (float) $dispatchStats->avg_dispatch_seconds : null,
                 'total_resolved' => $totalResolved,
             ];
         };
@@ -646,5 +663,68 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->orderBy('name')
             ->pluck('name')
             ->toArray();
+    }
+
+    public function getPoolPerformance(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+        ?string $workGroup = null,
+    ): array {
+        $poolUsers = User::whereHas('roles', function ($q) {
+            $q->where('name', \App\Enums\RoleName::PoolAccount->value);
+        })->get(['id', 'employee_id', 'name']);
+        
+        $poolEmployeeIds = $poolUsers->pluck('employee_id')->filter()->toArray();
+
+        if (empty($poolEmployeeIds)) {
+            return [];
+        }
+
+        $histories = \App\Models\TicketAssignmentHistory::query()
+            ->join('tickets', 'ticket_assignment_histories.ticket_id', '=', 'tickets.id')
+            ->whereIn('ticket_assignment_histories.from_assigned_to_id', $poolEmployeeIds)
+            ->whereNotNull('tickets.dispatch_time_seconds')
+            ->whereRaw('DATE(COALESCE(tickets.api_creation_date, tickets.first_seen_at, tickets.status_changed_at)) BETWEEN ? AND ?', [
+                $dateFrom->toDateString(),
+                $dateTo->toDateString(),
+            ])
+            ->when($companyId, function ($query) use ($companyId) {
+                $query->whereExists(function ($sub) use ($companyId) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('users as u')
+                        ->whereColumn('u.id', 'tickets.assigned_to_user_id')
+                        ->where('u.company_id', $companyId);
+                });
+            })
+            ->when($workGroup, function ($query) use ($workGroup) {
+                $query->whereExists(function ($sub) use ($workGroup) {
+                    $sub->select(\Illuminate\Support\Facades\DB::raw(1))
+                        ->from('users as u')
+                        ->join('groups as g', 'u.group_id', '=', 'g.id')
+                        ->whereColumn('u.id', 'tickets.assigned_to_user_id')
+                        ->where('g.name', $workGroup);
+                });
+            })
+            ->selectRaw('
+                ticket_assignment_histories.from_assigned_to_id as pool_employee_id,
+                COUNT(ticket_assignment_histories.id) as total_dispatched,
+                AVG(tickets.dispatch_time_seconds) as avg_dispatch_seconds
+            ')
+            ->groupBy('ticket_assignment_histories.from_assigned_to_id')
+            ->orderBy('avg_dispatch_seconds', 'asc')
+            ->get();
+
+        $result = [];
+        foreach ($histories as $h) {
+            $poolName = $poolUsers->firstWhere('employee_id', $h->pool_employee_id)?->name ?? 'Unknown Pool';
+            $result[] = [
+                'pool_name' => $poolName,
+                'total_dispatched' => (int) $h->total_dispatched,
+                'avg_dispatch_seconds' => (float) $h->avg_dispatch_seconds,
+            ];
+        }
+
+        return $result;
     }
 }

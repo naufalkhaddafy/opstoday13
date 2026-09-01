@@ -35,6 +35,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|supv'])
         Route::get('users/{user}/attendance/export', [UserController::class, 'attendanceExport'])->name('users.attendance.export');
         Route::get('users/{user}/tickets', [UserController::class, 'tickets'])->name('users.tickets');
         Route::get('users/{user}/tickets/export', [UserController::class, 'ticketsExport'])->name('users.tickets.export');
+        Route::get('pool-accounts', [UserController::class, 'poolAccounts'])->name('pool-accounts.index');
         Route::resource('users', UserController::class);
     });
 

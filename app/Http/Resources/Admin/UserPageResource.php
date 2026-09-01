@@ -27,6 +27,7 @@ class UserPageResource extends JsonResource
                     'total' => $paginator->total(),
                     'from' => $paginator->firstItem(),
                     'to' => $paginator->lastItem(),
+                    'links' => $paginator->linkCollection()->toArray(),
                 ],
                 'links' => [
                     'first' => $paginator->url(1),

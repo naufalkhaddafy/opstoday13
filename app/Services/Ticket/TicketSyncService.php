@@ -4,6 +4,8 @@ namespace App\Services\Ticket;
 
 use App\Enums\TicketSyncRunKind;
 use App\Enums\TicketSyncRunStatus;
+use App\Enums\RoleName;
+use Illuminate\Database\Eloquent\Builder;
 use App\Jobs\ReconcileCompletedTicketsJob;
 use App\Models\Ticket;
 use App\Models\TicketSyncRun;
@@ -40,7 +42,6 @@ class TicketSyncService
             $technicians = User::query()
                 ->whereNotNull('employee_id')
                 ->where('is_active', true)
-                ->where('employee_id', 'like', 'Z%')
                 ->pluck('employee_id');
 
             foreach ($technicians as $employeeId) {

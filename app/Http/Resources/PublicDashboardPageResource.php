@@ -80,6 +80,12 @@ class PublicDashboardPageResource extends JsonResource
                     $stats['current']['avg_resolution_label'] = null;
                 }
 
+                if (($stats['current']['avg_dispatch_seconds'] ?? null) !== null) {
+                    $stats['current']['avg_dispatch_label'] = $this->formatDuration($stats['current']['avg_dispatch_seconds']);
+                } else {
+                    $stats['current']['avg_dispatch_label'] = null;
+                }
+
                 return $stats;
             }),
             'initiatives' => Inertia::defer(function () {

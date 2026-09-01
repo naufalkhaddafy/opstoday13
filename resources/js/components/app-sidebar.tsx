@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft, Settings, MonitorSmartphone } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft, Settings, MonitorSmartphone, Bot } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -65,6 +65,11 @@ const managementItems: NavItem[] = [
         title: 'Users',
         href: UserController.index().url,
         icon: Users,
+    },
+    {
+        title: 'Pool Accounts',
+        href: '/admin/pool-accounts',
+        icon: Bot,
     },
     {
         title: 'Companies',

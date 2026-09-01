@@ -2,6 +2,7 @@
 
 namespace App\Services\Whatsapp;
 
+use App\Enums\RoleName;
 use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\User;
@@ -508,6 +509,9 @@ class OpsSnapshotBuilder
     {
         return User::where('company_id', $company->id)
             ->where('is_active', true)
+            ->whereDoesntHave('roles', function ($q) {
+                $q->where('name', RoleName::PoolAccount->value);
+            })
             ->orderBy('name')
             ->get();
     }

@@ -106,4 +106,16 @@ interface TicketDashboardRepositoryInterface
      * @return array<int, string>
      */
     public function getAvailableWorkGroups(): array;
+
+    /**
+     * Get pool account dispatch performance.
+     *
+     * @return array
+     */
+    public function getPoolPerformance(
+        CarbonImmutable $dateFrom,
+        CarbonImmutable $dateTo,
+        ?int $companyId = null,
+        ?string $workGroup = null,
+    ): array;
 }

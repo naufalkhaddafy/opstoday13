@@ -1,6 +1,7 @@
 import { Deferred } from '@inertiajs/react';
 import { ArrowUp } from 'lucide-react';
-import { KpiCard, LeaderboardCard } from '@/components/dashboard/MetricCards';
+import { KpiCard } from '@/components/dashboard/MetricCards';
+import { PoolPerformanceCard } from '@/components/dashboard/PoolPerformanceCard';
 import { StatCardSkeleton } from '@/components/dashboard/Skeletons';
 import { SlaTrendChart } from '@/components/charts/SlaTrendChart';
 import { SlaBreachChart } from '@/components/charts/SlaBreachChart';
@@ -46,44 +47,40 @@ export function KpiPerformanceSection({
             }>
                 {kpiStats && engineers && (
                     <div className="flex flex-col gap-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                            <div className="lg:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <KpiCard
-                                    title="Response Compliance"
-                                    value={kpiStats.current.response_sla_percent}
-                                    isPercentage
-                                    trendCurrent={kpiStats.current.response_sla_percent}
-                                    trendPrevious={kpiStats.previous.response_sla_percent}
-                                    subtitle={`Target: < ${kpiStats.targets.response_sla_seconds / 3600} hours`}
-                                />
-                                <KpiCard
-                                    title="Resolution Compliance"
-                                    value={kpiStats.current.resolution_sla_percent}
-                                    isPercentage
-                                    trendCurrent={kpiStats.current.resolution_sla_percent}
-                                    trendPrevious={kpiStats.previous.resolution_sla_percent}
-                                    subtitle={`Target: < ${kpiStats.targets.resolution_sla_hours} hours`}
-                                />
-                                <KpiCard
-                                    title="Avg Response"
-                                    value={kpiStats.current.avg_response_label ?? '-'}
-                                    trendCurrent={kpiStats.current.avg_response_seconds}
-                                    trendPrevious={kpiStats.previous.avg_response_seconds}
-                                    inverse
-                                    subtitle="Global average"
-                                />
-                                <KpiCard
-                                    title="Avg Resolution"
-                                    value={kpiStats.current.avg_resolution_label ?? '-'}
-                                    trendCurrent={kpiStats.current.avg_resolution_hours}
-                                    trendPrevious={kpiStats.previous.avg_resolution_hours}
-                                    inverse
-                                    subtitle="Global average"
-                                />
-                            </div>
-                            <div className="lg:col-span-1">
-                                <LeaderboardCard engineers={engineers} />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <KpiCard
+                                title="Response Compliance"
+                                value={kpiStats.current.response_sla_percent}
+                                isPercentage
+                                trendCurrent={kpiStats.current.response_sla_percent}
+                                trendPrevious={kpiStats.previous.response_sla_percent}
+                                subtitle={`Target: < ${kpiStats.targets.response_sla_seconds / 3600} hours`}
+                            />
+                            <KpiCard
+                                title="Resolution Compliance"
+                                value={kpiStats.current.resolution_sla_percent}
+                                isPercentage
+                                trendCurrent={kpiStats.current.resolution_sla_percent}
+                                trendPrevious={kpiStats.previous.resolution_sla_percent}
+                                subtitle={`Target: < ${kpiStats.targets.resolution_sla_hours} hours`}
+                            />
+                            <KpiCard
+                                title="Avg Response"
+                                value={kpiStats.current.avg_response_label ?? '-'}
+                                trendCurrent={kpiStats.current.avg_response_seconds}
+                                trendPrevious={kpiStats.previous.avg_response_seconds}
+                                inverse
+                                subtitle="Global average"
+                            />
+                            <KpiCard
+                                title="Avg Resolution"
+                                value={kpiStats.current.avg_resolution_label ?? '-'}
+                                trendCurrent={kpiStats.current.avg_resolution_hours}
+                                trendPrevious={kpiStats.previous.avg_resolution_hours}
+                                inverse
+                                subtitle="Global average"
+                            />
+                            <PoolPerformanceCard data={analytics?.poolPerformance || []} />
                         </div>
                         {analytics?.slaTrend && (
                             <div className="flex flex-col gap-3 pt-2">

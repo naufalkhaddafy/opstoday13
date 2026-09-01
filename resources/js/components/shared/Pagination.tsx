@@ -31,28 +31,25 @@ export function Pagination({ links, meta }: PaginationProps) {
     }
 
     return (
-        <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
+            <div className="text-sm text-muted-foreground w-full sm:w-auto text-center sm:text-left">
                 Menampilkan <span className="font-medium text-foreground">{meta.from || 0}</span> hingga <span className="font-medium text-foreground">{meta.to || 0}</span> dari <span className="font-medium text-foreground">{meta.total}</span> hasil
             </div>
-            <div className="flex gap-1">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!links.prev}
-                    onClick={() => links.prev && router.get(links.prev, {}, { preserveState: true, preserveScroll: true })}
-                >
-                    Sebelumnya
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!links.next}
-                    onClick={() => links.next && router.get(links.next, {}, { preserveState: true, preserveScroll: true })}
-                >
-                    Selanjutnya
-                </Button>
-            </div>
+            
+            {meta.links && meta.links.length > 3 && (
+                <div className="flex items-center gap-1 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto justify-center sm:justify-end">
+                    {meta.links.map((link: any, i: number) => (
+                        <Button
+                            key={i}
+                            variant={link.active ? "default" : "outline"}
+                            size="sm"
+                            disabled={!link.url}
+                            onClick={() => link.url && router.get(link.url, {}, { preserveState: true, preserveScroll: true })}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

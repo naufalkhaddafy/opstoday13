@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Pencil, Plus, Trash2, Search, FilterX, Calendar, Ticket, Users } from 'lucide-react';
+import { Pencil, Plus, Trash2, Search, FilterX, Calendar, Ticket, Users, Bot } from 'lucide-react';
 import { BRAND_ICON_BOX } from '@/lib/brand';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,11 +24,12 @@ type IndexProps = {
         company_id?: string;
         group_id?: string;
     };
+    pageType?: 'users' | 'pool_accounts';
 };
 
-export default function UserIndex({ users, companies, groups, roles, filters }: IndexProps) {
+export default function UserIndex({ users, companies, groups, roles, filters, pageType = 'users' }: IndexProps) {
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
-    const [roleFilter, setRoleFilter] = useState(filters.role || 'all');
+    const [perPage, setPerPage] = useState(filters.per_page || '10');
     const [companyFilter, setCompanyFilter] = useState(filters.company_id || 'all');
     const [groupFilter, setGroupFilter] = useState(filters.group_id || 'all');
     
@@ -46,16 +47,19 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
         };
     }, []);
 
+    const isPoolPage = pageType === 'pool_accounts';
+    const baseUrl = isPoolPage ? '/admin/pool-accounts' : UserController.index().url;
+
     // Apply filters
     const applyFilters = useCallback(
-        (newSearch?: string, newRole?: string, newCompany?: string, newGroup?: string) => {
+        (newSearch?: string, newPerPage?: string, newCompany?: string, newGroup?: string) => {
             const query: Record<string, string> = {};
             
             const searchVal = newSearch !== undefined ? newSearch : searchTerm;
             if (searchVal) query.search = searchVal;
             
-            const roleVal = newRole !== undefined ? newRole : roleFilter;
-            if (roleVal !== 'all') query.role = roleVal;
+            const perPageVal = newPerPage !== undefined ? newPerPage : perPage;
+            if (perPageVal && perPageVal !== '10') query.per_page = perPageVal;
             
             const companyVal = newCompany !== undefined ? newCompany : companyFilter;
             if (companyVal !== 'all') query.company_id = companyVal;
@@ -63,23 +67,23 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
             const groupVal = newGroup !== undefined ? newGroup : groupFilter;
             if (groupVal !== 'all') query.group_id = groupVal;
 
-            router.get(UserController.index().url, query, { preserveState: true, preserveScroll: true, replace: true });
+            router.get(baseUrl, query, { preserveState: true, preserveScroll: true, replace: true });
         },
-        [searchTerm, roleFilter, companyFilter, groupFilter]
+        [searchTerm, perPage, companyFilter, groupFilter, baseUrl]
     );
 
-    // Handle search input with debounce
+    // Debounce search
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            if (searchTerm !== filters.search) {
+            if (searchTerm !== (filters.search || '')) {
                 applyFilters(searchTerm, undefined, undefined, undefined);
             }
         }, 300);
         return () => clearTimeout(timeoutId);
     }, [searchTerm, filters.search, applyFilters]);
 
-    const handleRoleChange = (value: string) => {
-        setRoleFilter(value);
+    const handlePerPageChange = (value: string) => {
+        setPerPage(value);
         applyFilters(undefined, value, undefined, undefined);
     };
 
@@ -95,10 +99,10 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
 
     const clearFilters = () => {
         setSearchTerm('');
-        setRoleFilter('all');
+        setPerPage('10');
         setCompanyFilter('all');
         setGroupFilter('all');
-        router.get(UserController.index().url);
+        router.get(baseUrl);
     };
 
     const confirmDelete = (id: number, name: string) => {
@@ -139,23 +143,23 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
 
     return (
         <>
-            <Head title="Manajemen User" />
+            <Head title={isPoolPage ? "Manajemen Pool Account" : "Manajemen User"} />
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 <Card>
                     <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b mb-6">
                         <div className="flex items-center gap-3">
                             <div className={BRAND_ICON_BOX}>
-                                <Users className="h-6 w-6 text-brand-500" />
+                                {isPoolPage ? <Bot className="h-6 w-6 text-brand-500" /> : <Users className="h-6 w-6 text-brand-500" />}
                             </div>
                             <div>
-                                <CardTitle className="text-xl">Manajemen User</CardTitle>
-                                <CardDescription>Kelola data pengguna, peran, dan akses sistem.</CardDescription>
+                                <CardTitle className="text-xl">{isPoolPage ? "Manajemen Pool Account" : "Manajemen User"}</CardTitle>
+                                <CardDescription>{isPoolPage ? "Kelola data akun penampung tiket (Dump/Pool)." : "Kelola data pengguna, peran, dan akses sistem."}</CardDescription>
                             </div>
                         </div>
                         <Button asChild>
-                            <Link href={UserController.create().url}>
-                                <Plus className="mr-2 h-4 w-4" /> Tambah User
+                            <Link href={isPoolPage ? UserController.create().url + '?role=pool_account' : UserController.create().url}>
+                                <Plus className="mr-2 h-4 w-4" /> {isPoolPage ? "Tambah Pool Account" : "Tambah User"}
                             </Link>
                         </Button>
                     </CardHeader>
@@ -172,17 +176,15 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                 />
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <Select value={roleFilter} onValueChange={handleRoleChange}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih Role" />
+                                <Select value={perPage} onValueChange={handlePerPageChange}>
+                                    <SelectTrigger className="w-[80px]">
+                                        <SelectValue placeholder="Total" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Semua Role</SelectItem>
-                                        {roles.map((role) => (
-                                            <SelectItem key={role} value={role}>
-                                                {formatRole(role)}
-                                            </SelectItem>
-                                        ))}
+                                        <SelectItem value="10">10</SelectItem>
+                                        <SelectItem value="20">20</SelectItem>
+                                        <SelectItem value="50">50</SelectItem>
+                                        <SelectItem value="100">100</SelectItem>
                                     </SelectContent>
                                 </Select>
 
@@ -214,7 +216,7 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                     </SelectContent>
                                 </Select>
 
-                                {(filters.search || filters.role || filters.company_id || filters.group_id) && (
+                                {(filters.search || filters.company_id || filters.group_id || (filters.per_page && filters.per_page !== '10')) && (
                                     <Button variant="ghost" size="icon" onClick={clearFilters} title="Hapus Filter">
                                         <FilterX className="h-4 w-4" />
                                     </Button>
@@ -231,7 +233,7 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                         <th className="px-4 py-3">Employee ID</th>
                                         <th className="px-4 py-3">Role</th>
                                         <th className="px-4 py-3">Perusahaan & Grup</th>
-                                        <th className="px-4 py-3">Shift & Hari</th>
+                                        {!isPoolPage && <th className="px-4 py-3">Shift & Hari</th>}
                                         <th className="px-4 py-3 text-center">Status</th>
                                         <th className="px-4 py-3 text-right">Aksi</th>
                                     </tr>
@@ -246,26 +248,34 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                                 </td>
                                                 <td className="px-4 py-3">{user.employee_id || '-'}</td>
                                                 <td className="px-4 py-3">
-                                                    <Badge variant="outline">{formatRole(user.role)}</Badge>
+                                                    {user.role === 'pool_account' ? (
+                                                        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
+                                                            Pool Account
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline">{formatRole(user.role)}</Badge>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="font-medium text-foreground">{user.company?.name || '-'}</div>
                                                     <div className="text-xs text-muted-foreground">{user.group?.name || '-'}</div>
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    {user.active_assignment?.shift ? (
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <div className="font-medium text-foreground">
-                                                                {user.active_assignment.shift.name} ({user.active_assignment.shift.code})
+                                                {!isPoolPage && (
+                                                    <td className="px-4 py-3">
+                                                        {user.active_assignment?.shift ? (
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <div className="font-medium text-foreground">
+                                                                    {user.active_assignment.shift.name} ({user.active_assignment.shift.code})
+                                                                </div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    {formatDaysOfWeek(user.active_assignment.days_of_week)}
+                                                                </div>
                                                             </div>
-                                                            <div className="text-xs text-muted-foreground">
-                                                                {formatDaysOfWeek(user.active_assignment.days_of_week)}
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-muted-foreground text-xs">-</span>
-                                                    )}
-                                                </td>
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-xs">-</span>
+                                                        )}
+                                                    </td>
+                                                )}
                                                 <td className="px-4 py-3 text-center">
                                                     <div className="flex flex-col gap-1 items-center">
                                                         <Badge variant={user.is_active ? 'default' : 'secondary'} className="text-[10px] px-1 py-0 h-4">
@@ -280,27 +290,31 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex justify-end gap-2">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E7D32] hover:text-[#1B5E20] hover:bg-green-50 dark:text-[#4CAF50] dark:hover:text-green-300 dark:hover:bg-green-950/40" asChild>
-                                                                    <Link href={UserController.attendance({ user: user.id }).url}>
-                                                                        <Calendar className="h-4 w-4" />
-                                                                    </Link>
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>Lihat Absensi & KPI</TooltipContent>
-                                                        </Tooltip>
+                                                        {!isPoolPage && (
+                                                            <>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-[#2E7D32] hover:text-[#1B5E20] hover:bg-green-50 dark:text-[#4CAF50] dark:hover:text-green-300 dark:hover:bg-green-950/40" asChild>
+                                                                            <Link href={UserController.attendance({ user: user.id }).url}>
+                                                                                <Calendar className="h-4 w-4" />
+                                                                            </Link>
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Lihat Absensi & KPI</TooltipContent>
+                                                                </Tooltip>
 
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-950/40" asChild>
-                                                                    <Link href={UserController.tickets({ user: user.id }).url}>
-                                                                        <Ticket className="h-4 w-4" />
-                                                                    </Link>
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>Report Tiket</TooltipContent>
-                                                        </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-950/40" asChild>
+                                                                            <Link href={UserController.tickets({ user: user.id }).url}>
+                                                                                <Ticket className="h-4 w-4" />
+                                                                            </Link>
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Report Tiket</TooltipContent>
+                                                                </Tooltip>
+                                                            </>
+                                                        )}
 
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -332,7 +346,7 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={7} className="h-24 text-center text-muted-foreground">
+                                            <td colSpan={isPoolPage ? 6 : 7} className="h-24 text-center text-muted-foreground">
                                                 Tidak ada data pengguna yang ditemukan.
                                             </td>
                                         </tr>
@@ -366,12 +380,23 @@ export default function UserIndex({ users, companies, groups, roles, filters }: 
     );
 }
 
-UserIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Manajemen User',
-            href: UserController.index().url,
-        },
-    ],
+import AppLayout from '@/layouts/app-layout';
+import { usePage } from '@inertiajs/react';
+
+const LayoutWrapper = ({ children }: { children: React.ReactNode }) => {
+    const { props } = usePage<any>();
+    const isPoolPage = props.pageType === 'pool_accounts';
+    return (
+        <AppLayout breadcrumbs={[
+            {
+                title: isPoolPage ? 'Manajemen Pool Account' : 'Manajemen User',
+                href: isPoolPage ? '/admin/pool-accounts' : UserController.index().url,
+            }
+        ]}>
+            {children}
+        </AppLayout>
+    );
 };
+
+UserIndex.layout = (page: React.ReactNode) => <LayoutWrapper>{page}</LayoutWrapper>;
 

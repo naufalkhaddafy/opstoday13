@@ -39,20 +39,48 @@ class UserController extends Controller
      */
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'role', 'company_id', 'group_id']);
+        $filters = $request->only(['search', 'role', 'company_id', 'group_id', 'per_page']);
+
+        $excludeRoles = [RoleName::PoolAccount->value];
 
         if ($request->user()->hasRole(RoleName::Supv->value)) {
-            $filters['exclude_role'] = RoleName::SuperAdmin->value;
+            $excludeRoles[] = RoleName::SuperAdmin->value;
         }
+        $filters['exclude_role'] = $excludeRoles;
 
         $paginator = $this->users->paginate($filters);
 
         return Inertia::render(
             'admin/users/index',
-            UserPageResource::make([
-                'users' => $paginator,
-                'filters' => $filters,
-            ])->resolve(),
+            array_merge(
+                UserPageResource::make([
+                    'users' => $paginator,
+                    'filters' => $filters,
+                ])->resolve(),
+                ['pageType' => 'users']
+            )
+        );
+    }
+
+    /**
+     * Tampilkan daftar khusus pool accounts.
+     */
+    public function poolAccounts(Request $request): Response
+    {
+        $filters = $request->only(['search', 'company_id', 'group_id']);
+        $filters['role'] = RoleName::PoolAccount->value;
+
+        $paginator = $this->users->paginate($filters);
+
+        return Inertia::render(
+            'admin/users/index',
+            array_merge(
+                UserPageResource::make([
+                    'users' => $paginator,
+                    'filters' => $filters,
+                ])->resolve(),
+                ['pageType' => 'pool_accounts']
+            )
         );
     }
 
@@ -107,6 +135,10 @@ class UserController extends Controller
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User berhasil ditambahkan.']);
+
+        if ($role === RoleName::PoolAccount) {
+            return to_route('admin.pool-accounts.index');
+        }
 
         return to_route('admin.users.index');
     }
@@ -176,6 +208,10 @@ class UserController extends Controller
 
         if ($from === 'roster') {
             return to_route('admin.roster.index');
+        }
+
+        if ($role === RoleName::PoolAccount) {
+            return to_route('admin.pool-accounts.index');
         }
 
         return to_route('admin.users.index');
