@@ -74,7 +74,7 @@ class TicketRepository implements TicketRepositoryInterface
                 if ($isFromPool) {
                     $startDate = $ticket->api_creation_date ?? $ticket->first_seen_at;
                     if ($startDate) {
-                        $ticket->dispatch_time_seconds = $now->diffInSeconds($startDate);
+                        $ticket->dispatch_time_seconds = $this->secondsBetween($startDate, $now);
                     }
                 }
             }
@@ -164,7 +164,7 @@ class TicketRepository implements TicketRepositoryInterface
                     if ($isFromPool) {
                         $startDate = $ticket->api_creation_date ?? $ticket->first_seen_at;
                         if ($startDate) {
-                            $ticket->dispatch_time_seconds = $now->diffInSeconds($startDate);
+                            $ticket->dispatch_time_seconds = $this->secondsBetween($startDate, $now);
                         }
                     }
                 }
