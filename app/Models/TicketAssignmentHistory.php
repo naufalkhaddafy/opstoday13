@@ -32,4 +32,12 @@ class TicketAssignmentHistory extends Model
     {
         return $this->belongsTo(Ticket::class);
     }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function fromUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'from_assigned_to_id', 'employee_id');
+    }
 }

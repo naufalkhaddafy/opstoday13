@@ -142,6 +142,16 @@ class PublicDashboardPageResource extends JsonResource
     protected function transformTicket(Ticket $ticket): array
     {
         $isNonStandard = preg_match('/[a-zA-Z]/', (string) $ticket->ticket_no);
+        
+        $poolAccountName = null;
+        if ($ticket->dispatch_time_seconds !== null) {
+            $poolHistory = $ticket->assignmentHistories->first(function ($history) {
+                return $history->fromUser?->hasRole(\App\Enums\RoleName::PoolAccount->value);
+            });
+            if ($poolHistory) {
+                $poolAccountName = $poolHistory->fromUser->name;
+            }
+        }
 
         return [
             'id' => $ticket->id,
@@ -164,6 +174,13 @@ class PublicDashboardPageResource extends JsonResource
                 : '-',
             'resolution_time_label' => ($ticket->resolution_time !== null && is_numeric($ticket->resolution_time) && !$isNonStandard)
                 ? $this->formatHours((float) $ticket->resolution_time)
+                : '-',
+            'dispatch_time_label' => $ticket->dispatch_time_seconds !== null 
+                ? $this->formatDuration($ticket->dispatch_time_seconds) 
+                : '-',
+            'pool_account_name' => $poolAccountName,
+            'pending_time_label' => ($ticket->status === TicketStatus::Closed && $ticket->pending_time_seconds > 0)
+                ? $this->formatDuration($ticket->pending_time_seconds) 
                 : '-',
             'updated_at' => optional($ticket->status_changed_at ?? $ticket->last_synced_at)
                 ? Carbon::parse($ticket->status_changed_at ?? $ticket->last_synced_at)->toIso8601String()

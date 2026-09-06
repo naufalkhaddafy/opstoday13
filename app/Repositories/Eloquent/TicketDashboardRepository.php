@@ -31,7 +31,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?string $workGroup = null,
     ): LengthAwarePaginator {
         $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
-            ->with('assignedUser:id,name,employee_id');
+            ->with(['assignedUser:id,name,employee_id', 'assignmentHistories.fromUser']);
 
         if ($search) {
             $query->where(function (Builder $q) use ($search) {

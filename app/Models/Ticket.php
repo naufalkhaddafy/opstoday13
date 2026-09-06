@@ -35,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Ticket extends Model
 {
+    protected $appends = ['pending_time_seconds'];
+
     /**
      * @return array<string, string>
      */
@@ -81,5 +83,43 @@ class Ticket extends Model
     public function aiPrediction()
     {
         return $this->hasOne(TicketAIPrediction::class);
+    }
+
+    public function getPendingTimeSecondsAttribute(): int
+    {
+        $creation = $this->api_creation_date;
+        
+        if ($this->first_seen_at) {
+            if (! $creation) {
+                $creation = $this->first_seen_at;
+            } elseif ($creation->isSameDay($this->first_seen_at)) {
+                // Trik Pintar: Jika harinya sama, gunakan first_seen_at karena punya data JAM yang lebih akurat
+                $creation = $this->first_seen_at;
+            }
+        }
+
+        $completion = $this->completed_date;
+        
+        if ($this->status_changed_at) {
+            if (! $completion) {
+                $completion = $this->status_changed_at;
+            } elseif ($completion->isSameDay($this->status_changed_at)) {
+                // Trik Pintar: Jika harinya sama, gunakan status_changed_at karena punya data JAM yang lebih akurat
+                $completion = $this->status_changed_at;
+            }
+        }
+        
+        $completion = $completion ?? now();
+
+        if (! $creation) {
+            return 0;
+        }
+
+        $totalSeconds = max(0, $creation->diffInSeconds($completion));
+        $dispatchSeconds = $this->dispatch_time_seconds ?? 0;
+        $responseSeconds = $this->response_time_seconds ?? 0;
+        $resolutionSeconds = (int) (($this->resolution_time ?? 0) * 3600);
+
+        return max(0, $totalSeconds - $dispatchSeconds - $responseSeconds - $resolutionSeconds);
     }
 }

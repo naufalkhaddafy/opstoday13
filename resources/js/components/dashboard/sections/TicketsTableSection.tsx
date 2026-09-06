@@ -1,5 +1,6 @@
+import { useState, Fragment } from 'react';
 import { Deferred, Link } from '@inertiajs/react';
-import { Ticket as TicketIcon, X } from 'lucide-react';
+import { Ticket as TicketIcon, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,15 @@ export function TicketsTableSection({
     onStartLoading,
     onFinishLoading,
 }: TicketsTableSectionProps) {
+    const [expandedTickets, setExpandedTickets] = useState<Set<number>>(new Set());
+
+    const toggleExpand = (id: number) => {
+        const next = new Set(expandedTickets);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setExpandedTickets(next);
+    };
+
     return (
         <section id="tickets-table-section" className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -111,37 +121,69 @@ export function TicketsTableSection({
                                                 <th className="px-4 py-3 font-medium">Status</th>
                                                 <th className="px-4 py-3 font-medium">Created</th>
                                                 <th className="px-4 py-3 font-medium">Completed</th>
+                                                <th className="px-4 py-3 font-medium text-center w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {tickets.data.length === 0 ? (
                                                 <tr>
-                                                    <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
+                                                    <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">
                                                         <TicketIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
                                                         No tickets yet.
                                                     </td>
                                                 </tr>
                                             ) : (
-                                                tickets.data.map((ticket: any, i: number) => (
-                                                    <tr key={i} className="group hover:bg-muted/30 transition-colors">
-                                                        <td className="px-4 py-3 align-top">
-                                                            <div className="font-semibold text-foreground">{ticket.ticket_no}</div>
-                                                            <div className="text-muted-foreground truncate max-w-[200px]" title={ticket.title ?? undefined}>{ticket.title}</div>
-                                                            {ticket.requested_for && (
-                                                                <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
+                                                tickets.data.map((ticket: any, i: number) => {
+                                                    const isExpanded = expandedTickets.has(ticket.id);
+                                                    return (
+                                                        <Fragment key={ticket.id}>
+                                                            <tr 
+                                                                className={`group hover:bg-muted/30 transition-colors cursor-pointer ${isExpanded ? 'bg-muted/20' : ''}`}
+                                                                onClick={() => toggleExpand(ticket.id)}
+                                                            >
+                                                                <td className="px-4 py-3 align-top">
+                                                                    <div className="font-semibold text-foreground">{ticket.ticket_no}</div>
+                                                                    <div className="text-muted-foreground truncate max-w-[200px]" title={ticket.title ?? undefined}>{ticket.title}</div>
+                                                                    {ticket.requested_for && (
+                                                                        <div className="mt-0.5 text-xs text-muted-foreground">For: {ticket.requested_for}</div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
+                                                                <td className="px-4 py-3 align-top">
+                                                                    <TicketStatusBadge status={ticket.status} label={ticket.status_label} />
+                                                                </td>
+                                                                <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
+                                                                <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
+                                                                <td className="px-4 py-3 align-top text-center text-muted-foreground">
+                                                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                            {isExpanded && (
+                                                                <tr className="bg-muted/10 border-b border-border/50">
+                                                                    <td colSpan={9} className="px-4 py-4">
+                                                                        <div className="flex flex-col sm:flex-row gap-6 text-sm">
+                                                                            <div className="flex flex-col">
+                                                                                <span className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Dispatch Time</span>
+                                                                                <span className="font-medium text-foreground">
+                                                                                    {ticket.pool_account_name ? `${ticket.pool_account_name} (${ticket.dispatch_time_label})` : '-'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex flex-col">
+                                                                                <span className="text-muted-foreground text-xs uppercase tracking-wider mb-1">Pending Time</span>
+                                                                                <span className="font-medium text-foreground">{ticket.pending_time_label ?? '-'}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
                                                             )}
-                                                        </td>
-                                                        <td className="px-4 py-3 align-top text-muted-foreground">{ticket.category ?? '-'}</td>
-                                                        <td className="px-4 py-3 align-top">{ticket.assigned_user?.name ?? ticket.assigned_to_name ?? '-'}</td>
-                                                        <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.response_time_label ?? '-'}</td>
-                                                        <td className="px-4 py-3 align-top font-medium text-foreground">{ticket.resolution_time_label ?? '-'}</td>
-                                                        <td className="px-4 py-3 align-top">
-                                                            <TicketStatusBadge status={ticket.status} label={ticket.status_label} />
-                                                        </td>
-                                                        <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.created_date)}</td>
-                                                        <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDate(ticket.completed_date)}</td>
-                                                    </tr>
-                                                ))
+                                                        </Fragment>
+                                                    );
+                                                })
                                             )}
                                         </tbody>
                                     </table>
