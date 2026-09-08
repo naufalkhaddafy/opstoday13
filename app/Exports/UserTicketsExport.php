@@ -40,6 +40,8 @@ class UserTicketsExport implements FromArray, WithTitle, WithHeadings, WithStyle
                 ? date('d M Y', strtotime($ticket['completed_date'])) 
                 : '-';
 
+            $isNonStandard = preg_match('/[a-zA-Z]/', (string) $ticket['ticket_no']);
+
             $rows[] = [
                 $ticket['ticket_no'],
                 $ticket['title'] ?? '-',
@@ -47,9 +49,9 @@ class UserTicketsExport implements FromArray, WithTitle, WithHeadings, WithStyle
                 $ticket['sub_category'] ?? '-',
                 $ticket['status_label'] ?? '-',
                 $createdDate,
-                $ticket['response_time_label'] ?? '-',
+                (!$isNonStandard) ? ($ticket['response_time_label'] ?? '-') : '-',
                 $completedDate,
-                $ticket['resolution_time'] ? round($ticket['resolution_time'], 2) . ' Jam' : '-',
+                (!$isNonStandard) ? ($ticket['resolution_time_label'] ?? '-') : '-',
             ];
         }
 

@@ -4,6 +4,32 @@
     <meta charset="utf-8">
 </head>
 <body>
+    @php
+    if (!function_exists('formatDurationExcel')) {
+        function formatDurationExcel(int $seconds): string {
+            if ($seconds < 60) return $seconds.'s';
+            $minutes = intdiv($seconds, 60);
+            if ($minutes < 60) return $minutes.' min';
+            $hours = intdiv($minutes, 60);
+            $restMinutes = $minutes % 60;
+            if ($hours < 24) return $restMinutes > 0 ? "{$hours}h {$restMinutes}m" : "{$hours}h";
+            $days = intdiv($hours, 24);
+            $restHours = $hours % 24;
+            return $restHours > 0 ? "{$days}d {$restHours}h" : "{$days}d";
+        }
+        function formatHoursExcel(float $hours): string {
+            if ($hours < 1) return round($hours * 60).' min';
+            if ($hours < 24) {
+                $wholeHours = (int) floor($hours);
+                $minutes = (int) round(($hours - $wholeHours) * 60);
+                return $minutes > 0 ? "{$wholeHours}h {$minutes}m" : "{$wholeHours}h";
+            }
+            $days = (int) floor($hours / 24);
+            $restHours = (int) round($hours - ($days * 24));
+            return $restHours > 0 ? "{$days}d {$restHours}h" : "{$days}d";
+        }
+    }
+    @endphp
     <!-- Title Card -->
     <table>
         <tr>
@@ -69,8 +95,8 @@
                 <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['in_progress'] }}</td>
                 <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['pending'] }}</td>
                 <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['completed_today'] }}</td>
-                <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['avg_response_time_seconds'] !== null ? round($eng['avg_response_time_seconds'] / 3600, 2) : '-' }}</td>
-                <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['avg_resolution_time_hours'] !== null ? $eng['avg_resolution_time_hours'] : '-' }}</td>
+                <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['avg_response_time_seconds'] !== null ? formatDurationExcel((int)$eng['avg_response_time_seconds']) : '-' }}</td>
+                <td style="border: 1px solid #d1d5db; text-align: center;">{{ $eng['avg_resolution_time_hours'] !== null ? formatHoursExcel((float)$eng['avg_resolution_time_hours']) : '-' }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -98,6 +124,9 @@
         </thead>
         <tbody>
         @foreach($tickets as $ticket)
+            @php
+                $isNonStandard = preg_match('/[a-zA-Z]/', (string) $ticket->ticket_no);
+            @endphp
             <tr>
                 <td style="border: 1px solid #d1d5db;">{{ $ticket->ticket_no }}</td>
                 <td style="border: 1px solid #d1d5db;">{{ $ticket->status?->value ?? (is_string($ticket->status) ? $ticket->status : (string) $ticket->status) }}</td>
@@ -105,8 +134,8 @@
                 <td style="border: 1px solid #d1d5db;">{{ $ticket->assignedUser ? $ticket->assignedUser->name : $ticket->assigned_to_name }}</td>
                 <td style="border: 1px solid #d1d5db;">{{ $ticket->api_creation_date ? $ticket->api_creation_date->format('Y-m-d') : '' }}</td>
                 <td style="border: 1px solid #d1d5db;">{{ $ticket->completed_date ? $ticket->completed_date->format('Y-m-d') : '' }}</td>
-                <td style="border: 1px solid #d1d5db; text-align: right;">{{ $ticket->response_time_seconds !== null ? round($ticket->response_time_seconds / 3600, 2) : '' }}</td>
-                <td style="border: 1px solid #d1d5db; text-align: right;">{{ $ticket->resolution_time }}</td>
+                <td style="border: 1px solid #d1d5db; text-align: right;">{{ (!$isNonStandard && $ticket->response_time_seconds !== null) ? formatDurationExcel($ticket->response_time_seconds) : '-' }}</td>
+                <td style="border: 1px solid #d1d5db; text-align: right;">{{ (!$isNonStandard && is_numeric($ticket->resolution_time)) ? formatHoursExcel((float)$ticket->resolution_time) : '-' }}</td>
             </tr>
         @endforeach
         </tbody>
