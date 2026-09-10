@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.6.2] - 2026-09-11
+
+### Changed
+- **Decoupled Leaderboard Filters**: The Top Leaderboard Engineer tab has been re-isolated to use its own dedicated URL query parameters (`monthld` and `yearsld`) which default to the current month, preventing it from inadvertently inheriting the global daily date range filter.
+
+### Fixed
+- **Engineer Workload Synchronization**: Fixed a critical bug where the Engineer Workload cards (showing Assigned, Pending, and In Progress counts) in the Ticket Overview tab were incorrectly locked to the Leaderboard's monthly calendar instead of faithfully following the user's global Date Range selection.
+
+## [v1.6.1] - 2026-09-10
+
+### Fixed
+- **Bug Export Excel**: Fixed major bugs in the Excel export functionality where the ticket detail list was missing. Added proper export mappings and ensured the Top Engineer Leaderboard is accurately embedded based on the active dashboard date filter.
+- **Global Dashboard Filtering Sync**: Fixed an issue where Search and Ticket Status filters were only applied to the bottom table. These filters now correctly dynamically filter the entire dashboard's statistics (Ticket Overview, KPI Stats, SLA Trends, Trending Issues, etc.).
+
 ## [v1.6.0] - 2026-09-01
 
 ### Added

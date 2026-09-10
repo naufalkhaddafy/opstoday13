@@ -36,6 +36,8 @@ class PublicDashboardPageResource extends JsonResource
         $ticketsClosure = $this->resource['tickets'];
         /** @var \Closure $engineersClosure */
         $engineersClosure = $this->resource['engineers'];
+        /** @var \Closure $leaderboardEngineersClosure */
+        $leaderboardEngineersClosure = $this->resource['leaderboardEngineers'];
         /** @var \Closure $ticketStatsClosure */
         $ticketStatsClosure = $this->resource['ticketStats'];
         /** @var \Closure $kpiStatsClosure */
@@ -113,6 +115,11 @@ class PublicDashboardPageResource extends JsonResource
             'filters' => $filters,
             'engineers' => Inertia::defer(function () use ($engineersClosure) {
                 return $engineersClosure()
+                    ->map(fn (array $engineer) => $this->transformEngineer($engineer))
+                    ->all();
+            }),
+            'leaderboard_engineers' => Inertia::defer(function () use ($leaderboardEngineersClosure) {
+                return $leaderboardEngineersClosure()
                     ->map(fn (array $engineer) => $this->transformEngineer($engineer))
                     ->all();
             }),

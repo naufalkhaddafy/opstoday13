@@ -33,6 +33,8 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): Collection;
 
     /**
@@ -45,6 +47,8 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array;
 
     /**
@@ -57,6 +61,8 @@ interface TicketDashboardRepositoryInterface
         ?int $responseSlaSeconds = null,
         ?float $resolutionSlaHours = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array;
 
     /**
@@ -70,6 +76,8 @@ interface TicketDashboardRepositoryInterface
         ?int $companyId = null,
         ?int $limit = 10,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array;
 
     /**
@@ -82,6 +90,8 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array;
 
     /**
@@ -98,6 +108,8 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array;
 
     /**
@@ -117,5 +129,7 @@ interface TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array;
 }

@@ -25,6 +25,7 @@ export default function PublicDashboard({
     filters,
     workGroups,
     engineers,
+    leaderboard_engineers,
     tickets,
     analytics,
     holiday_name,
@@ -216,7 +217,7 @@ export default function PublicDashboard({
 
                         <TabsContent value="top-leaderboard" className="mt-0">
                             <TopLeaderboardEngineerTab
-                                engineers={engineers}
+                                engineers={leaderboard_engineers}
                                 leaderboard={analytics?.leaderboard}
                                 initiatives={initiatives}
                                 filters={filters}

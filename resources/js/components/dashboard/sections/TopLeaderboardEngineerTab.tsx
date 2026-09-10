@@ -291,8 +291,8 @@ export function TopLeaderboardEngineerTab({
                     {filters && onApplyFilters && (
                         <div className="flex items-center gap-2">
                             <Select
-                                value={String(filters.leaderboard_month)}
-                                onValueChange={(val) => onApplyFilters({ leaderboard_month: parseInt(val) })}
+                                value={String(filters.monthld)}
+                                onValueChange={(val) => onApplyFilters({ monthld: parseInt(val) })}
                             >
                                 <SelectTrigger className="w-[130px] h-9 text-xs">
                                     <SelectValue placeholder="Month" />
@@ -306,8 +306,8 @@ export function TopLeaderboardEngineerTab({
                                 </SelectContent>
                             </Select>
                             <Select
-                                value={String(filters.leaderboard_year)}
-                                onValueChange={(val) => onApplyFilters({ leaderboard_year: parseInt(val) })}
+                                value={String(filters.yearsld)}
+                                onValueChange={(val) => onApplyFilters({ yearsld: parseInt(val) })}
                             >
                                 <SelectTrigger className="w-[90px] h-9 text-xs">
                                     <SelectValue placeholder="Year" />

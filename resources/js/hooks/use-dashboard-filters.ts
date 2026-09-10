@@ -44,8 +44,8 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
             const companyId = next.company_id !== undefined ? next.company_id : filters.company_id;
             const dateFrom = next.date_from ?? filters.date_from;
             const dateTo = next.date_to ?? filters.date_to;
-            const leaderboardMonth = next.leaderboard_month ?? filters.leaderboard_month;
-            const leaderboardYear = next.leaderboard_year ?? filters.leaderboard_year;
+            const leaderboardMonth = next.monthld ?? filters.monthld;
+            const leaderboardYear = next.yearsld ?? filters.yearsld;
             const search = next.search !== undefined ? next.search : filters.search;
             const workGroup = next.work_group !== undefined ? next.work_group : filters.work_group;
             const sortBy = next.sort_by !== undefined ? next.sort_by : filters.sort_by;
@@ -58,21 +58,12 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
                 !workGroup &&
                 dateFrom === filters.defaults.date_from &&
                 dateTo === filters.defaults.date_to &&
-                leaderboardMonth === filters.defaults.leaderboard_month &&
-                leaderboardYear === filters.defaults.leaderboard_year &&
+                leaderboardMonth === filters.defaults.monthld &&
+                leaderboardYear === filters.defaults.yearsld &&
                 !search &&
                 !sortBy &&
                 sortDir === filters.defaults.sort_dir &&
                 !status;
-
-            const isTicketOnlyChange =
-                (next.search !== undefined || next.sort_by !== undefined || next.sort_dir !== undefined || next.status !== undefined) &&
-                next.company_id === undefined &&
-                next.work_group === undefined &&
-                next.date_from === undefined &&
-                next.date_to === undefined &&
-                next.leaderboard_month === undefined &&
-                next.leaderboard_year === undefined;
 
             const routerOptions: any = {
                 preserveState: true,
@@ -80,13 +71,8 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
                 replace: true,
                 onStart: () => setIsTicketsLoading(true),
                 onFinish: () => setIsTicketsLoading(false),
+                only: ['attendance', 'ticket_stats', 'kpi_stats', 'initiatives', 'engineers', 'leaderboard_engineers', 'tickets', 'analytics', 'filters'],
             };
-
-            if (isTicketOnlyChange) {
-                routerOptions.only = ['tickets', 'filters'];
-            } else {
-                routerOptions.only = ['attendance', 'ticket_stats', 'kpi_stats', 'initiatives', 'engineers', 'tickets', 'analytics', 'filters'];
-            }
 
             if (isDefault) {
                 router.get('/', {}, routerOptions);
@@ -96,8 +82,8 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
             const params: Record<string, string> = {
                 date_from: dateFrom,
                 date_to: dateTo,
-                leaderboard_month: String(leaderboardMonth),
-                leaderboard_year: String(leaderboardYear),
+                monthld: String(leaderboardMonth),
+                yearsld: String(leaderboardYear),
             };
             if (companyId) {
                 params.company_id = String(companyId);

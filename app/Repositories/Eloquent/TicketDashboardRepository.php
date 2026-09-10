@@ -30,27 +30,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?string $status = null,
         ?string $workGroup = null,
     ): LengthAwarePaginator {
-        $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->with(['assignedUser:id,name,employee_id', 'assignmentHistories.fromUser']);
-
-        if ($search) {
-            $query->where(function (Builder $q) use ($search) {
-                $q->where('ticket_no', 'like', "%{$search}%")
-                  ->orWhere('title', 'like', "%{$search}%")
-                  ->orWhere('assigned_to_name', 'like', "%{$search}%")
-                  ->orWhereHas('assignedUser', function (Builder $uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('aiPrediction', function (Builder $aq) use ($search) {
-                      $aq->where('cluster_label', 'like', "%{$search}%")
-                         ->orWhere('sub_cluster_label', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($status) {
-            $query->where('status', $status);
-        }
 
         $direction = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
@@ -74,6 +55,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): Collection {
         /** @var Collection<int, User> $engineers */
         $engineers = User::query()
@@ -92,14 +75,14 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->orderBy('name')
             ->get(['id', 'name', 'employee_id']);
 
-        $statusCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $statusCounts = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->whereNotNull('assigned_to_user_id')
             ->selectRaw('assigned_to_user_id, status as status_value, COUNT(*) as total')
             ->groupBy('assigned_to_user_id', 'status')
             ->get()
             ->groupBy('assigned_to_user_id');
 
-        $responseAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $responseAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', '!=', TicketStatus::Assigned->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
@@ -107,7 +90,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('assigned_to_user_id')
             ->pluck('avg_seconds', 'assigned_to_user_id');
 
-        $resolutionAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $resolutionAvgs = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
@@ -118,7 +101,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $settings = app(\App\Repositories\Contracts\SettingRepositoryInterface::class);
         $resolutionSlaHours = ((int) $settings->get('sla_resolution_time_green', 120)) / 60;
 
-        $resolutionSlaStats = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $resolutionSlaStats = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->whereNotNull('assigned_to_user_id')
             ->where('status', TicketStatus::Closed->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
@@ -234,8 +217,10 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array {
-        $byStatus = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        $byStatus = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->selectRaw('status as status_value, COUNT(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status_value');
@@ -263,6 +248,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): Builder {
         return Ticket::query()
             ->whereNull('disappeared_at')
@@ -277,7 +264,25 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->whereRaw(self::TICKET_DATE_EXPRESSION.' BETWEEN ? AND ?', [
                 $dateFrom->toDateString(),
                 $dateTo->toDateString(),
-            ]);
+            ])
+            ->when($search, function (Builder $query) use ($search) {
+                $query->where(function (Builder $q) use ($search) {
+                    $q->where('ticket_no', 'like', "%{$search}%")
+                      ->orWhere('title', 'like', "%{$search}%")
+                      ->orWhere('assigned_to_name', 'like', "%{$search}%")
+                      ->orWhereHas('assignedUser', function (Builder $uq) use ($search) {
+                          $uq->where('name', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('aiPrediction', function (Builder $aq) use ($search) {
+                          $aq->where('cluster_label', 'like', "%{$search}%")
+                             ->orWhere('sub_cluster_label', 'like', "%{$search}%");
+                      })
+                      ->orWhere('requested_for', 'like', "%{$search}%");
+                });
+            })
+            ->when($status, function (Builder $query) use ($status) {
+                $query->where('status', $status);
+            });
     }
 
     /**
@@ -290,12 +295,14 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?int $responseSlaSeconds = null,
         ?float $resolutionSlaHours = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array {
         $settings = app(SettingRepositoryInterface::class);
         $responseSlaSeconds ??= ((int) $settings->get('sla_response_time_green', 60)) * 60;
         $resolutionSlaHours ??= ((int) $settings->get('sla_resolution_time_green', 120)) / 60;
-        $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $workGroup, $responseSlaSeconds, $resolutionSlaHours) {
-            $baseQuery = $this->scopedTicketQuery($start, $end, $companyId, $workGroup);
+        $calculateForPeriod = function (CarbonImmutable $start, CarbonImmutable $end) use ($companyId, $workGroup, $responseSlaSeconds, $resolutionSlaHours, $search, $status) {
+            $baseQuery = $this->scopedTicketQuery($start, $end, $companyId, $workGroup, $search, $status);
 
             // Response SLA
             $responseStats = (clone $baseQuery)
@@ -380,9 +387,11 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?int $companyId = null,
         ?int $limit = 10,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array {
-        $getFormattedItems = function ($dFrom, $dTo) use ($companyId, $workGroup) {
-            $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId, $workGroup)
+        $getFormattedItems = function ($dFrom, $dTo) use ($companyId, $workGroup, $search, $status) {
+            $predictions = $this->scopedTicketQuery($dFrom, $dTo, $companyId, $workGroup, $search, $status)
                 ->join('ticket_ai_predictions', 'tickets.id', '=', 'ticket_ai_predictions.ticket_id')
                 ->whereNotNull('ticket_ai_predictions.cluster_label')
                 ->select('ticket_ai_predictions.cluster_label', 'ticket_ai_predictions.sub_cluster_label')
@@ -426,8 +435,10 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array {
-        return $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup)
+        return $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->whereNotNull('work_group')
             ->selectRaw('work_group, COUNT(*) as total')
             ->groupBy('work_group')
@@ -448,6 +459,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array {
         $refDate = $dateTo;
 
@@ -460,7 +473,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
 
         // 1. WEEK MODE (7 Hari Terakhir -> Harian)
         $weekStart = $refDate->subDays(6);
-        $weekResByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+        $weekResByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup, $search, $status)
             ->where('status', TicketStatus::Closed->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
@@ -470,7 +483,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('dt')
             ->pluck('avg_res', 'dt');
 
-        $weekRespByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+        $weekRespByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup, $search, $status)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
@@ -479,7 +492,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('dt')
             ->pluck('avg_resp', 'dt');
 
-        $weekCountsByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup)
+        $weekCountsByDate = $this->scopedTicketQuery($weekStart, $refDate, $companyId, $workGroup, $search, $status)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 DATE(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as dt,
@@ -517,7 +530,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $monthStart = $refDate->startOfMonth();
         $monthEnd = $refDate->endOfMonth();
 
-        $monthResByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+        $monthResByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup, $search, $status)
             ->where('status', TicketStatus::Closed->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
@@ -527,7 +540,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('wk')
             ->pluck('avg_res', 'wk');
 
-        $monthRespByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+        $monthRespByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup, $search, $status)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
@@ -536,7 +549,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('wk')
             ->pluck('avg_resp', 'wk');
 
-        $monthCountsByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup)
+        $monthCountsByWeek = $this->scopedTicketQuery($monthStart, $monthEnd, $companyId, $workGroup, $search, $status)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 (FLOOR((DAY(COALESCE(api_creation_date, first_seen_at, status_changed_at)) - 1) / 7) + 1) as wk,
@@ -571,7 +584,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         $yearStart = $refDate->startOfYear();
         $yearEnd = $refDate->endOfYear();
 
-        $yearResByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+        $yearResByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup, $search, $status)
             ->where('status', TicketStatus::Closed->value)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
@@ -581,7 +594,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('mn')
             ->pluck('avg_res', 'mn');
 
-        $yearRespByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+        $yearRespByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup, $search, $status)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
@@ -590,7 +603,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->groupBy('mn')
             ->pluck('avg_resp', 'mn');
 
-        $yearCountsByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup)
+        $yearCountsByMonth = $this->scopedTicketQuery($yearStart, $yearEnd, $companyId, $workGroup, $search, $status)
             ->whereRaw("ticket_no REGEXP '^[0-9]+$'")
             ->selectRaw("
                 MONTH(COALESCE(api_creation_date, first_seen_at, status_changed_at)) as mn,
@@ -670,6 +683,8 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?string $workGroup = null,
+        ?string $search = null,
+        ?string $status = null,
     ): array {
         $poolUsers = User::whereHas('roles', function ($q) {
             $q->where('name', \App\Enums\RoleName::PoolAccount->value);

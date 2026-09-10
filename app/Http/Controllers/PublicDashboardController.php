@@ -51,8 +51,8 @@ class PublicDashboardController extends Controller
             [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
         }
 
-        $leaderboardMonth = (int) $request->input('leaderboard_month', $today->month);
-        $leaderboardYear = (int) $request->input('leaderboard_year', $today->year);
+        $leaderboardMonth = (int) $request->input('monthld', $today->month);
+        $leaderboardYear = (int) $request->input('yearsld', $today->year);
         $leaderboardDateFrom = CarbonImmutable::create($leaderboardYear, $leaderboardMonth, 1, 0, 0, 0, $timezone)->startOfMonth();
         $leaderboardDateTo = $leaderboardDateFrom->endOfMonth();
 
@@ -74,17 +74,18 @@ class PublicDashboardController extends Controller
                 'today' => $today,
                 'shiftResolver' => $shiftResolver,
                 'tickets' => fn () => $this->tickets->paginateLatest($dateFrom, $dateTo, $companyId, 10, $search, $sortBy, $sortDir, $status, $workGroup),
-                'engineers' => fn () => $this->tickets->engineerSummaries($leaderboardDateFrom, $leaderboardDateTo, $companyId, $workGroup),
-                'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId, $workGroup),
-                'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId, null, null, $workGroup),
+                'engineers' => fn () => $this->tickets->engineerSummaries($dateFrom, $dateTo, $companyId, $workGroup, $search, $status),
+                'leaderboardEngineers' => fn () => $this->tickets->engineerSummaries($leaderboardDateFrom, $leaderboardDateTo, $companyId, $workGroup, $search, $status),
+                'ticketStats' => fn () => $this->tickets->globalStats($dateFrom, $dateTo, $companyId, $workGroup, $search, $status),
+                'kpiStats' => fn () => $this->tickets->kpiStats($dateFrom, $dateTo, $companyId, null, null, $workGroup, $search, $status),
                 'initiatives' => fn () => SharePointData::ofType('initiative')->latest('last_synced_at')->get(),
                 'analytics' => fn () => [
-                    'leaderboard' => $this->analyticsService->getDisciplineLeaderboard($dateFrom, $dateTo, $companyId, $workGroup),
+                    'leaderboard' => $this->analyticsService->getDisciplineLeaderboard($leaderboardDateFrom, $leaderboardDateTo, $companyId, $workGroup),
                     'lateTrend' => $this->analyticsService->getLateTrend($dateFrom, $dateTo, $companyId, $workGroup),
-                    'issueTrends' => $this->tickets->getTrendingKeywords($dateFrom, $dateTo, $companyId, 10, $workGroup),
-                    'workGroupDistribution' => $this->tickets->getTicketsByWorkGroup($dateFrom, $dateTo, $companyId, $workGroup),
-                    'slaTrend' => $this->tickets->getSlaTrend($dateFrom, $dateTo, $companyId, $workGroup),
-                    'poolPerformance' => $this->tickets->getPoolPerformance($dateFrom, $dateTo, $companyId, $workGroup),
+                    'issueTrends' => $this->tickets->getTrendingKeywords($dateFrom, $dateTo, $companyId, 10, $workGroup, $search, $status),
+                    'workGroupDistribution' => $this->tickets->getTicketsByWorkGroup($dateFrom, $dateTo, $companyId, $workGroup, $search, $status),
+                    'slaTrend' => $this->tickets->getSlaTrend($dateFrom, $dateTo, $companyId, $workGroup, $search, $status),
+                    'poolPerformance' => $this->tickets->getPoolPerformance($dateFrom, $dateTo, $companyId, $workGroup, $search, $status),
                 ],
                 'companies' => $this->companies->all(),
                 'workGroups' => fn () => $this->tickets->getAvailableWorkGroups(),
@@ -93,8 +94,8 @@ class PublicDashboardController extends Controller
                     'work_group' => $workGroup,
                     'date_from' => $dateFrom->toDateString(),
                     'date_to' => $dateTo->toDateString(),
-                    'leaderboard_month' => $leaderboardMonth,
-                    'leaderboard_year' => $leaderboardYear,
+                    'monthld' => $leaderboardMonth,
+                    'yearsld' => $leaderboardYear,
                     'search' => $search,
                     'sort_by' => $sortBy,
                     'sort_dir' => $sortDir,
@@ -105,8 +106,8 @@ class PublicDashboardController extends Controller
                         'work_group' => null,
                         'date_from' => $today->toDateString(),
                         'date_to' => $today->toDateString(),
-                        'leaderboard_month' => $today->month,
-                        'leaderboard_year' => $today->year,
+                        'monthld' => $today->month,
+                        'yearsld' => $today->year,
                         'search' => null,
                         'sort_by' => null,
                         'sort_dir' => 'desc',
