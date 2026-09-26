@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sticky Navbar Top Engineer Tab**: Added a dedicated "Top Engineer" navigation button to the Sticky Filter Bar on the Public Dashboard, allowing seamless tab switching while scrolling deep into the page.
 
 ### Changed
+- **Schedule Logs Performance Overhaul**: Completely resolved massive loading delays and timeout issues on the Admin Schedule Logs page (which was struggling to load over 236k+ rows and 27MB of data). 
+  - Switched from standard `paginate()` to `simplePaginate()` to completely bypass the extremely slow `COUNT(*)` SQL execution on the massive logs table.
+  - Excluded the massive `output` and `metadata` columns from the primary data load to drastically reduce the JSON payload size sent to the browser.
+  - Implemented an on-demand API endpoint (`/admin/schedule-logs/{id}`) that lazily fetches the full output and metadata only when a user clicks the "View Details" button, making the initial page load virtually instantaneous.
 - **Attendance Badge Coloring**: Differentiated the color coding for specific employee attendance statuses in the Engineer Cards to improve visual scanning. "Sick Leave" is now Orange, "Excused" (formerly Permission) is now Amber, and "On Leave" (formerly Leave) is now Violet, separating them from the standard "On Duty" Blue.
 - **Mobile Responsive Dashboard Pane**: Completely overhauled the Public Dashboard tab navigation to be fully responsive on mobile devices. The main tab pane now wraps gracefully instead of overflowing horizontally, and the Sticky Navbar now features a horizontally scrollable tab list with repositioned mobile filters for improved mobile UX.
 

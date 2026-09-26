@@ -8,10 +8,60 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon, Clock, TerminalSquare, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { BRAND_ICON_BOX } from '@/lib/brand';
+
+function LogDetailsDialog({ logId, command, children }: { logId: number, command: string, children: React.ReactNode }) {
+    const [open, setOpen] = useState(false);
+    const [details, setDetails] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (open && !details) {
+            setLoading(true);
+            axios.get(`/admin/schedule-logs/${logId}`)
+                .then(res => setDetails(res.data))
+                .catch(err => console.error(err))
+                .finally(() => setLoading(false));
+        }
+    }, [open, logId, details]);
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <DialogTitle className="font-mono text-sm">{command}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    {loading ? (
+                        <div className="flex justify-center p-8"><Clock className="animate-spin w-8 h-8 text-muted-foreground" /></div>
+                    ) : (
+                        <>
+                            <div>
+                                <h4 className="text-sm font-semibold mb-2">Output</h4>
+                                <div className="bg-black text-emerald-400 p-4 rounded-md font-mono text-xs whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                                    {details?.output || 'No output recorded.'}
+                                </div>
+                            </div>
+                            {details?.metadata && (
+                                <div>
+                                    <h4 className="text-sm font-semibold mb-2">Metadata</h4>
+                                    <div className="bg-muted p-4 rounded-md font-mono text-xs overflow-x-auto">
+                                        <pre>{JSON.stringify(details.metadata, null, 2)}</pre>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function ScheduleLogsIndex({ logs, filters }: any) {
     const [command, setCommand] = useState(filters.command || '');
@@ -121,35 +171,12 @@ export default function ScheduleLogsIndex({ logs, filters }: any) {
                                                 </TableCell>
                                                 <TableCell>{log.duration ? `${log.duration} ms` : '-'}</TableCell>
                                                 <TableCell>
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="outline" size="sm" className="h-8 gap-1">
-                                                                <TerminalSquare className="h-3.5 w-3.5" />
-                                                                View Details
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="sm:max-w-[600px]">
-                                                            <DialogHeader>
-                                                                <DialogTitle className="font-mono text-sm">{log.command}</DialogTitle>
-                                                            </DialogHeader>
-                                                            <div className="space-y-4">
-                                                                <div>
-                                                                    <h4 className="text-sm font-semibold mb-2">Output</h4>
-                                                                    <div className="bg-black text-emerald-400 p-4 rounded-md font-mono text-xs whitespace-pre-wrap max-h-[300px] overflow-y-auto">
-                                                                        {log.output || 'No output recorded.'}
-                                                                    </div>
-                                                                </div>
-                                                                {log.metadata && (
-                                                                    <div>
-                                                                        <h4 className="text-sm font-semibold mb-2">Metadata</h4>
-                                                                        <div className="bg-muted p-4 rounded-md font-mono text-xs overflow-x-auto">
-                                                                            <pre>{JSON.stringify(log.metadata, null, 2)}</pre>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </DialogContent>
-                                                    </Dialog>
+                                                    <LogDetailsDialog logId={log.id} command={log.command}>
+                                                        <Button variant="outline" size="sm" className="h-8 gap-1">
+                                                            <TerminalSquare className="h-3.5 w-3.5" />
+                                                            View Details
+                                                        </Button>
+                                                    </LogDetailsDialog>
                                                 </TableCell>
                                             </TableRow>
                                         ))
@@ -158,23 +185,28 @@ export default function ScheduleLogsIndex({ logs, filters }: any) {
                             </Table>
                         </div>
 
-                        {/* Pagination */}
-                        {logs.links && logs.links.length > 3 && (
-                            <div className="mt-4 flex justify-center">
-                                <div className="flex items-center gap-1">
-                                    {logs.links.map((link: any, i: number) => (
-                                        <Button
-                                            key={i}
-                                            variant={link.active ? "default" : "outline"}
-                                            size="sm"
-                                            disabled={!link.url}
-                                            onClick={() => link.url && router.get(link.url)}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {/* Simple Pagination */}
+                        <div className="mt-4 flex justify-between items-center px-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!logs.prev_page_url}
+                                onClick={() => logs.prev_page_url && router.get(logs.prev_page_url)}
+                            >
+                                Previous
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                                Page {logs.current_page}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!logs.next_page_url}
+                                onClick={() => logs.next_page_url && router.get(logs.next_page_url)}
+                            >
+                                Next
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

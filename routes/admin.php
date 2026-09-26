@@ -47,6 +47,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::resource('groups', GroupController::class);
         Route::resource('shifts', ShiftController::class);
         Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
+        Route::get('schedule-logs/{id}', [ScheduleLogController::class, 'show'])->name('schedule-logs.show');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
