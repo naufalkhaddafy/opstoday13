@@ -140,11 +140,11 @@ export default function PublicDashboard({
 
                 <div className="flex-1 w-full mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:px-8">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <div className="flex w-full items-center justify-between mb-6">
-                            <TabsList className="grid w-[620px] grid-cols-3">
-                                <TabsTrigger value="service-desk">Ticket Overview</TabsTrigger>
-                                <TabsTrigger value="team-attendance">Team & Attendance</TabsTrigger>
-                                <TabsTrigger value="top-leaderboard">Top Leaderboard Engineer</TabsTrigger>
+                        <div className="flex w-full flex-col sm:flex-row sm:items-center justify-between mb-6">
+                            <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-1 sm:grid-cols-3 h-auto sm:h-10">
+                                <TabsTrigger value="service-desk" className="py-2 sm:py-1.5">Ticket Overview</TabsTrigger>
+                                <TabsTrigger value="team-attendance" className="py-2 sm:py-1.5">Team & Attendance</TabsTrigger>
+                                <TabsTrigger value="top-leaderboard" className="py-2 sm:py-1.5">Top Leaderboard Engineer</TabsTrigger>
                             </TabsList>
                         </div>
 
