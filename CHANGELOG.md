@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.6.3] - 2026-09-26
+
+### Added
+- **Sticky Navbar Top Engineer Tab**: Added a dedicated "Top Engineer" navigation button to the Sticky Filter Bar on the Public Dashboard, allowing seamless tab switching while scrolling deep into the page.
+
+### Changed
+- **Attendance Badge Coloring**: Differentiated the color coding for specific employee attendance statuses in the Engineer Cards to improve visual scanning. "Sick Leave" is now Orange, "Excused" (formerly Permission) is now Amber, and "On Leave" (formerly Leave) is now Violet, separating them from the standard "On Duty" Blue.
+- **Mobile Responsive Dashboard Pane**: Completely overhauled the Public Dashboard tab navigation to be fully responsive on mobile devices. The main tab pane now wraps gracefully instead of overflowing horizontally, and the Sticky Navbar now features a horizontally scrollable tab list with repositioned mobile filters for improved mobile UX.
+
 ## [v1.6.2] - 2026-09-11
 
 ### Changed
