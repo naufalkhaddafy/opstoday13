@@ -132,7 +132,7 @@ export function AttendanceTable({ logs, currentMonthName, isLoading }: Attendanc
         <Card className="relative overflow-hidden">
             <CardHeader className="pb-2">
                 <CardTitle>Riwayat Absensi Harian</CardTitle>
-                <CardDescription>Rincian data perekaman tap fingerprint karyawan sepanjang bulan {currentMonthName}.</CardDescription>
+                <CardDescription>Rincian data perekaman tap fingerprint engineer sepanjang bulan {currentMonthName}.</CardDescription>
             </CardHeader>
             <CardContent className="p-0 sm:p-6 sm:pt-0">
                 <div className="overflow-x-auto rounded-md border">

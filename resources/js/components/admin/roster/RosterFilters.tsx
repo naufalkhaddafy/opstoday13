@@ -115,7 +115,7 @@ export function RosterFilters({
                 <div className="relative w-full sm:w-[220px]">
                     <Search className="absolute left-2.5 top-2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Cari karyawan..."
+                        placeholder="Cari engineer..."
                         className="pl-8 h-8 text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}

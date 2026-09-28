@@ -43,13 +43,13 @@ export default function Onboarding({ companies, groups }: Props) {
                 <div className="text-center">
                     <h1 className="text-2xl font-bold tracking-tight">Lengkapi Profil Anda</h1>
                     <p className="text-sm text-muted-foreground mt-2">
-                        Silakan lengkapi data ID Karyawan, Perusahaan, dan Tim sebelum menggunakan sistem.
+                        Silakan lengkapi data ID Engineer, Perusahaan, dan Tim sebelum menggunakan sistem.
                     </p>
                 </div>
 
                 <form onSubmit={submit} className="flex flex-col gap-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="employee_id">ID Karyawan (NIP/NIK)</Label>
+                        <Label htmlFor="employee_id">ID Engineer (NIP/NIK)</Label>
                         <Input
                             id="employee_id"
                             type="text"
@@ -58,7 +58,7 @@ export default function Onboarding({ companies, groups }: Props) {
                             onChange={(e) => setData('employee_id', e.target.value)}
                             required
                             autoFocus
-                            placeholder="Masukkan ID Karyawan Anda"
+                            placeholder="Masukkan ID Engineer Anda"
                         />
                         <InputError message={errors.employee_id} />
                     </div>

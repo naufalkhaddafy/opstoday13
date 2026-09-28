@@ -93,7 +93,7 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                             </div>
                             <div>
                                 <CardTitle className="text-xl">Manajemen Shift / Jadwal Kerja</CardTitle>
-                                <CardDescription>Kelola konfigurasi jam kerja karyawan secara global.</CardDescription>
+                                <CardDescription>Kelola konfigurasi jam kerja engineer secara global.</CardDescription>
                             </div>
                         </div>
                         <Button asChild>
@@ -217,7 +217,7 @@ export default function ShiftIndex({ shifts, filters }: IndexProps) {
                         <DialogDescription>
                             Apakah Anda yakin ingin menghapus shift <strong>{shiftToDelete?.code} ({shiftToDelete?.name})</strong>?
                             <br /><br />
-                            <span className="text-destructive font-semibold">Perhatian:</span> Shift tidak dapat dihapus jika masih ada karyawan yang ditugaskan pada jam kerja ini.
+                            <span className="text-destructive font-semibold">Perhatian:</span> Shift tidak dapat dihapus jika masih ada engineer yang ditugaskan pada jam kerja ini.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

@@ -200,7 +200,7 @@ export default function GroupIndex({ groups, filters }: IndexProps) {
                         <DialogDescription>
                             Apakah Anda yakin ingin menghapus grup <strong>{groupToDelete?.name}</strong>?
                             <br/><br/>
-                            <span className="text-destructive font-semibold">Perhatian:</span> Grup tidak dapat dihapus jika masih ada karyawan yang terdaftar pada grup tersebut.
+                            <span className="text-destructive font-semibold">Perhatian:</span> Grup tidak dapat dihapus jika masih ada engineer yang terdaftar pada grup tersebut.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

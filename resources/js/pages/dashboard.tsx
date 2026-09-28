@@ -127,7 +127,7 @@ export default function Dashboard(props: DashboardProps) {
                                         <p className="text-xs text-muted-foreground font-medium">Total Terjadwal</p>
                                         <p className="text-3xl font-bold mt-1">{stats.total_scheduled}</p>
                                         <p className="text-[11px] text-muted-foreground mt-1">
-                                            Dari {stats.total_users} karyawan
+                                            Dari {stats.total_users} engineer
                                         </p>
                                     </div>
                                     <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-xl">
@@ -195,7 +195,7 @@ export default function Dashboard(props: DashboardProps) {
                             <CardHeader className="border-b py-3 px-4 flex flex-row items-center justify-between space-y-0">
                                 <CardTitle className="text-base flex items-center gap-2">
                                     <Activity className="h-4 w-4 text-[#2E7D32]" />
-                                    Daftar Kehadiran Karyawan
+                                    Daftar Kehadiran Engineer
                                 </CardTitle>
                                 <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 px-2.5 py-1 rounded-md border border-green-200 dark:border-green-800/50">
                                     <CalendarClock className="h-4 w-4 text-[#2E7D32]" />
@@ -207,7 +207,7 @@ export default function Dashboard(props: DashboardProps) {
                                     <table className="w-full text-xs text-left">
                                         <thead className="text-[10px] text-muted-foreground uppercase bg-muted/40 border-b sticky top-0 z-10 shadow-sm">
                                             <tr>
-                                                <th className="px-4 py-3 font-medium">Nama Karyawan</th>
+                                                <th className="px-4 py-3 font-medium">Nama Engineer</th>
                                                 <th className="px-4 py-3 font-medium">Jadwal Shift</th>
                                                 <th className="px-4 py-3 font-medium">Status</th>
                                                 <th className="px-4 py-3 font-medium text-center">In / Out</th>
@@ -258,7 +258,7 @@ export default function Dashboard(props: DashboardProps) {
                                             ) : (
                                                 <tr>
                                                     <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                                                        Tidak ada data karyawan aktif.
+                                                        Tidak ada data engineer aktif.
                                                     </td>
                                                 </tr>
                                             )}

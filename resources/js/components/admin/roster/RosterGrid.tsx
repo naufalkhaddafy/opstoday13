@@ -170,7 +170,7 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
                 <thead>
                     <tr className="bg-muted/50 text-muted-foreground border-b font-medium">
                         <th className="px-3 py-2.5 min-w-[180px] border-r sticky left-0 bg-muted z-20 text-xs">
-                            Karyawan
+                            Engineer
                         </th>
                         {month_days.map((day) => {
                             const today = isToday(day.date);
@@ -263,7 +263,7 @@ export function RosterGrid({ roster, month_days, isLoading, openExceptionModal }
                     ) : (
                         <tr>
                             <td colSpan={month_days.length + 2} className="h-32 text-center text-muted-foreground">
-                                Tidak ada data roster karyawan yang ditemukan.
+                                Tidak ada data roster engineer yang ditemukan.
                             </td>
                         </tr>
                     )}

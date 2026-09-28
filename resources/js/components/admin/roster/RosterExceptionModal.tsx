@@ -81,7 +81,7 @@ export function RosterExceptionModal({
                                 </SelectContent>
                             </Select>
                             <p className="text-[11px] text-muted-foreground mt-1">
-                                Pengecualian ini akan menimpa jadwal mingguan karyawan hanya untuk tanggal ini saja.
+                                Pengecualian ini akan menimpa jadwal mingguan engineer hanya untuk tanggal ini saja.
                             </p>
                         </div>
                     </div>
