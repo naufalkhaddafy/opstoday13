@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InputError from '@/components/input-error';
+import { LEAVE_TYPE_LABELS } from '@/lib/brand';
 
 
 export default function LeaveCreate({ types, users }: any) {
@@ -27,20 +28,20 @@ export default function LeaveCreate({ types, users }: any) {
 
     return (
         <>
-            <Head title="Buat Pengajuan Cuti" />
+            <Head title="New Leave Request" />
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4 max-w-4xl mx-auto w-full">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <div>
-                            <CardTitle>Formulir Pengajuan Cuti</CardTitle>
+                            <CardTitle>Leave Request Form</CardTitle>
                             <CardDescription>
-                                {isEngineer ? 'Pengajuan Anda akan otomatis disetujui dalam sistem.' : 'Masukkan detail cuti untuk pegawai.'}
+                                {isEngineer ? 'Your request will be automatically approved in the system.' : 'Enter the leave details for the engineer.'}
                             </CardDescription>
                         </div>
                         <Button variant="outline" asChild>
                             <Link href="/leaves">
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Back
                             </Link>
                         </Button>
                     </CardHeader>
@@ -48,13 +49,13 @@ export default function LeaveCreate({ types, users }: any) {
                         <form onSubmit={submit} className="space-y-4">
                             {!isEngineer && users && (
                                 <div className="space-y-2">
-                                    <Label htmlFor="user_id">Pilih Pegawai <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="user_id">Select Engineer <span className="text-destructive">*</span></Label>
                                     <Select
                                         value={data.user_id}
                                         onValueChange={(val) => setData('user_id', val)}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Pilih Pegawai" />
+                                            <SelectValue placeholder="Select Engineer" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {users.map((u: any) => (
@@ -69,18 +70,18 @@ export default function LeaveCreate({ types, users }: any) {
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="type">Jenis Pengajuan <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="type">Leave Type <span className="text-destructive">*</span></Label>
                                 <Select
                                     value={data.type}
                                     onValueChange={(val) => setData('type', val)}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Pilih Jenis" />
+                                        <SelectValue placeholder="Select Leave Type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="cuti">Cuti Tahunan</SelectItem>
-                                        <SelectItem value="sakit">Sakit</SelectItem>
-                                        <SelectItem value="izin">Izin</SelectItem>
+                                        <SelectItem value="cuti">{LEAVE_TYPE_LABELS.cuti}</SelectItem>
+                                        <SelectItem value="sakit">{LEAVE_TYPE_LABELS.sakit}</SelectItem>
+                                        <SelectItem value="izin">{LEAVE_TYPE_LABELS.izin}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.type} />
@@ -88,7 +89,7 @@ export default function LeaveCreate({ types, users }: any) {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <Label htmlFor="start_date">Tanggal Mulai <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="start_date">Start Date <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="start_date"
                                         type="date"
@@ -99,7 +100,7 @@ export default function LeaveCreate({ types, users }: any) {
                                     <InputError message={errors.start_date} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="end_date">Tanggal Selesai <span className="text-destructive">*</span></Label>
+                                    <Label htmlFor="end_date">End Date <span className="text-destructive">*</span></Label>
                                     <Input
                                         id="end_date"
                                         type="date"
@@ -112,10 +113,10 @@ export default function LeaveCreate({ types, users }: any) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="description">Keterangan / Alasan</Label>
+                                <Label htmlFor="description">Description / Reason</Label>
                                 <textarea
                                     id="description"
-                                    placeholder="Opsional. Masukkan alasan atau keterangan..."
+                                    placeholder="Optional. Enter a reason or description..."
                                     value={data.description}
                                     onChange={(e) => setData('description', e.target.value)}
                                     rows={3}
@@ -125,7 +126,7 @@ export default function LeaveCreate({ types, users }: any) {
                             </div>
                             <div className="flex justify-end pt-6 border-t mt-6">
                                 <Button type="submit" disabled={processing}>
-                                    <Save className="mr-2 h-4 w-4" /> Simpan Pengajuan
+                                    <Save className="mr-2 h-4 w-4" /> Submit Request
                                 </Button>
                             </div>
                         </form>
@@ -138,7 +139,7 @@ export default function LeaveCreate({ types, users }: any) {
 
 LeaveCreate.layout = {
     breadcrumbs: [
-        { title: 'Pengajuan Cuti', href: '/leaves' },
-        { title: 'Baru', href: '/leaves/create' }
+        { title: 'Leave Requests', href: '/leaves' },
+        { title: 'New', href: '/leaves/create' }
     ],
 };

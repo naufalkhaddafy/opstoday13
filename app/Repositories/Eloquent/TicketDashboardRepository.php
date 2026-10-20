@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\RoleName;
 use App\Enums\TicketStatus;
 use App\Models\Group;
 use App\Models\SharePointData;
@@ -61,7 +62,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         /** @var Collection<int, User> $engineers */
         $engineers = User::query()
             ->where('is_active', true)
-            ->where('employee_id', 'like', 'Z%')
+            ->whereDoesntHave('roles', fn (Builder $query) => $query->whereIn('name', [RoleName::SuperAdmin->value, RoleName::PoolAccount->value]))
             ->when($companyId, fn (Builder $query) => $query->where('company_id', $companyId))
             ->when($workGroup, function ($q) use ($workGroup) {
                 $q->whereHas('group', function ($gq) use ($workGroup) {

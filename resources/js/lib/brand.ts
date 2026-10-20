@@ -11,6 +11,18 @@ export const BRAND = {
     black: '#0a0a0a',
 } as const;
 
+export const LEAVE_TYPE_LABELS: Record<string, string> = {
+    cuti: 'Annual Leave',
+    sakit: 'Sick Leave',
+    izin: 'Personal Leave',
+};
+
+export const LEAVE_TYPE_STYLES: Record<string, string> = {
+    cuti: 'border-violet-200 bg-violet-100 text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
+    sakit: 'border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+    izin: 'border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+};
+
 export const BRAND_LOGO_SRC = '/icon/b-hero-icon.png';
 
 export const BRAND_HEADER_GRADIENT =
@@ -27,6 +39,25 @@ export const TICKET_STATUS_STYLES: Record<string, string> = {
         'bg-yellow-50 text-yellow-800 border-yellow-300 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800',
     closed:
         'bg-green-50 text-green-700 border-green-300 dark:bg-green-950/40 dark:text-green-400 dark:border-green-700',
+};
+
+export const APPROVAL_STEP_STATUS_STYLES: Record<string, string> = {
+    closed: 'bg-muted text-muted-foreground border-border',
+    approved:
+        'bg-green-50 text-green-700 border-green-300 dark:bg-green-950/40 dark:text-green-400 dark:border-green-700',
+    rejected:
+        'bg-red-50 text-red-700 border-red-300 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800',
+    pending:
+        'bg-yellow-50 text-yellow-800 border-yellow-300 dark:bg-yellow-950/40 dark:text-yellow-300 dark:border-yellow-800',
+    waiting:
+        'bg-muted text-muted-foreground border-border',
+};
+
+export const APPROVAL_STEP_STATUS_LABELS: Record<string, string> = {
+    approved: 'Disetujui',
+    rejected: 'Ditolak',
+    pending: 'Menunggu',
+    waiting: 'Menunggu Giliran',
 };
 
 export const TICKET_CHART_COLORS = {

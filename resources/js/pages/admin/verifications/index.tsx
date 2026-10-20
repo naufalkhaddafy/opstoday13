@@ -107,7 +107,7 @@ export default function VerificationIndex({ users, companies, groups, roles, att
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>ID Karyawan</TableHead>
+                                        <TableHead>ID Engineer</TableHead>
                                         <TableHead>Nama</TableHead>
                                         <TableHead>Email</TableHead>
                                         <TableHead>Perusahaan</TableHead>
@@ -163,13 +163,13 @@ export default function VerificationIndex({ users, companies, groups, roles, att
                         <div className="my-4 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-md flex items-start gap-3 text-amber-800 dark:text-amber-200 text-sm">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <p>
-                                <strong>Penting:</strong> Pastikan data Badge Number (ID Karyawan) ini terdapat dan cocok dengan yang ada di sistem <a href={attendance_url} target="_blank" rel="noreferrer" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">Attendance</a> dan <a href={sihepi_url} target="_blank" rel="noreferrer" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">SiHepi</a>!
+                                <strong>Penting:</strong> Pastikan data Badge Number (ID Engineer) ini terdapat dan cocok dengan yang ada di sistem <a href={attendance_url} target="_blank" rel="noreferrer" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">Attendance</a> dan <a href={sihepi_url} target="_blank" rel="noreferrer" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">SiHepi</a>!
                             </p>
                         </div>
 
                         <div className="grid gap-4 py-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="employee_id">Badge Number / ID Karyawan</Label>
+                                <Label htmlFor="employee_id">Badge Number / ID Engineer</Label>
                                 <Input
                                     id="employee_id"
                                     value={data.employee_id}

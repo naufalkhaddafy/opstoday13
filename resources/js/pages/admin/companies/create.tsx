@@ -11,6 +11,19 @@ export default function CompanyCreate() {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         whatsapp_groups: [] as string[],
+        leave_approval_settings: {
+            rules: [
+                {
+                    id: 'rule_default',
+                    name: 'Aturan Default',
+                    group_ids: [],
+                    is_default: true,
+                    requirement: 'any',
+                    workflow_type: 'parallel',
+                    approver_ids: [],
+                },
+            ],
+        },
     });
 
     const addGroup = () => {
@@ -100,6 +113,25 @@ export default function CompanyCreate() {
                                     {errors.whatsapp_groups && typeof errors.whatsapp_groups === 'string' && (
                                         <InputError message={errors.whatsapp_groups} />
                                     )}
+                                </div>
+                                
+                                {/* Leave Approval Settings */}
+                                <div className="space-y-4 pt-4 border-t">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-medium">Alur Persetujuan Cuti</h3>
+                                            <p className="text-sm text-muted-foreground">Atur aturan persetujuan cuti per grup operasional.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="p-3.5 bg-blue-50 text-blue-800 rounded-md border border-blue-200 text-sm space-y-1">
+                                        <p className="font-semibold flex items-center gap-1.5">
+                                            ℹ️ Konfigurasi Aturan Persetujuan & Approver
+                                        </p>
+                                        <p className="text-xs text-blue-700 leading-relaxed">
+                                            Setelah perusahaan dibuat dan pengguna/engineer ditambahkan, Anda dapat membuat <strong>beberapa aturan persetujuan (multi-rules)</strong> dan menetapkannya ke grup-grup kerja yang relevan melalui menu <strong>Edit Perusahaan</strong>.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 

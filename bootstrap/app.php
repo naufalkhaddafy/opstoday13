@@ -86,5 +86,12 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping(10)
             ->runInBackground()
             ->timezone(config('app.timezone'));
+
+        $leaveRemindersCron = $settings->get('leave_reminders_cron', '0 9 * * *');
+        $schedule->command('leave:send-reminders')
+            ->cron($leaveRemindersCron)
+            ->withoutOverlapping(10)
+            ->runInBackground()
+            ->timezone(config('app.timezone'));
     })
     ->create();

@@ -251,7 +251,7 @@ export default function RosterIndex({
                             </div>
                             <div>
                                 <CardTitle className="text-xl">Roster Kerja Bulanan</CardTitle>
-                                <CardDescription>Jadwal shift karyawan {month_name} {year}</CardDescription>
+                                <CardDescription>Jadwal shift engineer {month_name} {year}</CardDescription>
                             </div>
                         </div>
                         <Button variant="outline" size="sm" onClick={handleExport} className="gap-2">
@@ -318,7 +318,7 @@ export default function RosterIndex({
 RosterIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Roster Kerja Karyawan',
+            title: 'Roster Kerja Engineer',
             href: '#',
         },
     ],

@@ -20,6 +20,7 @@ class UpdateCompanyRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'whatsapp_groups' => ['nullable', 'array'],
             'whatsapp_groups.*' => ['string', 'max:50'],
+            'leave_approval_settings' => ['nullable', 'array'],
         ];
     }
 }

@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.7.0] - 2026-10-20
+
+### Added
+
+- **Leave Approval Workflows**: Added company and group approval rules supporting Any One Approver, All Approvers, and sequential or parallel processing.
+- **Leave Approval Page**: Added pending approval tasks with approve/reject actions, required rejection reasons, and approval-chain details.
+- **Approval Status Tracking**: Added a Leave Request status modal showing approvers, decisions, timestamps, and rejection reasons. Any One Approver displays `or` between approvers and closes remaining tasks after approval.
+- **Email Notifications**: Added queued emails for new tasks, reminders, approved/rejected requests, and automatically approved sick/personal leave requests, using the account verification email layout.
+- **Single-Use Email Actions**: Added Approve, Reject, and View Pending Approvals buttons. Decision links require the assigned approver to sign in, expire after 48 hours, and become invalid after use or task closure. New reminder emails replace previous decision links.
+- **Approval Result Page**: Email approval runs automatically after authentication and displays approval details, including the approver, timestamp, and overall request status. Reject opens a form requiring a reason.
+- **Scheduled Reminders**: Registered daily reminders at 09:00 Asia/Makassar for pending tasks older than 24 hours. Added the configurable `leave_reminders_cron` setting to `SettingSeeder`, using the existing Redis-backed settings cache.
+
+### Changed
+
+- **Leave Request Interface**: Updated the list, filters, create form, and edit/delete dialogs to English. Standardized leave types as Annual Leave, Sick Leave, and Personal Leave.
+- **Shared Leave Badges**: Unified leave-type labels and badge colors between Leave Request and the public dashboard, including dark mode.
+- **Approval Table**: Removed the Status Approver column while retaining approval details in the confirmation modal.
+- **Approval Persistence**: Updated the existing leave workflow migration with a closed task status and hashed email token, expiry, and consumption fields.
+
+### Fixed
+
+- **Repeated Approval Decisions**: Added transactional row locking and task-state validation to prevent repeated decisions and invalidate related email actions when tasks are completed through the dashboard or email.
+- **Dashboard Account Filtering**: Removed the Employee ID `Z` prefix requirement from engineer summaries while excluding Super Admin and Pool Account roles.
+
 ## [v1.6.3] - 2026-09-26
 
 ### Added

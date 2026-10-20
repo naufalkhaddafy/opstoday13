@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\LeaveApprovalActionController;
 use App\Http\Controllers\PublicDashboardController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\OverallTicketController;
@@ -16,6 +17,12 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('leave-approval-actions/{approval}/result', [LeaveApprovalActionController::class, 'result'])
+        ->middleware('throttle:30,1')->name('leave-approval-actions.result');
+    Route::get('leave-approval-actions/{approval}/{action}', [LeaveApprovalActionController::class, 'show'])
+        ->whereIn('action', ['approve', 'reject'])->middleware('throttle:30,1')->name('leave-approval-actions.show');
+    Route::post('leave-approval-actions/{approval}/{action}', [LeaveApprovalActionController::class, 'store'])
+        ->whereIn('action', ['approve', 'reject'])->middleware('throttle:10,1')->name('leave-approval-actions.store');
     Route::get('/', [PublicDashboardController::class, 'index'])->name('home');
     Route::get('/export', [PublicDashboardController::class, 'export'])->name('home.export');
     

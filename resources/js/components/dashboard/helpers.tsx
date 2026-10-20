@@ -1,13 +1,13 @@
 import React from 'react';
+import { LeaveTypeBadge } from '@/components/shared/LeaveTypeBadge';
 import { Badge } from '@/components/ui/badge';
+import { LEAVE_TYPE_LABELS } from '@/lib/brand';
 import { EmployeeStatus } from '@/types/dashboard';
 
 const ATTENDANCE_LABELS: Record<string, string> = {
     hadir: 'Present',
     tidak_lengkap: 'Incomplete',
-    sakit: 'Sick Leave',
-    izin: 'Excused',
-    cuti: 'On Leave',
+    ...LEAVE_TYPE_LABELS,
     absen: 'Absent',
     tidak_hadir: 'Absent',
     off_day: 'Day Off',
@@ -27,11 +27,9 @@ export function attendanceBadge(attendance: EmployeeStatus) {
         case 'tidak_lengkap':
             return <Badge className="border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">{ATTENDANCE_LABELS[status]}</Badge>;
         case 'sakit':
-            return <Badge className="border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-400">{ATTENDANCE_LABELS[status]}</Badge>;
         case 'izin':
-            return <Badge className="border-amber-200 bg-amber-100 text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{ATTENDANCE_LABELS[status]}</Badge>;
         case 'cuti':
-            return <Badge className="border-violet-200 bg-violet-100 text-violet-700 dark:border-violet-800 dark:bg-violet-900/30 dark:text-violet-400">{ATTENDANCE_LABELS[status]}</Badge>;
+            return <LeaveTypeBadge type={status} />;
         case 'absen':
         case 'tidak_hadir':
             return <Badge className="border-rose-200 bg-rose-100 text-rose-700 dark:border-rose-800 dark:bg-rose-900/30 dark:text-rose-400">{ATTENDANCE_LABELS[status]}</Badge>;

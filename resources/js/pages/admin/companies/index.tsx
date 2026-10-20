@@ -203,7 +203,7 @@ export default function CompanyIndex({ companies, filters }: IndexProps) {
                         <DialogDescription>
                             Apakah Anda yakin ingin menghapus perusahaan <strong>{companyToDelete?.name}</strong>?
                             <br/><br/>
-                            <span className="text-destructive font-semibold">Perhatian:</span> Perusahaan tidak dapat dihapus jika masih ada karyawan yang terdaftar pada perusahaan tersebut.
+                            <span className="text-destructive font-semibold">Perhatian:</span> Perusahaan tidak dapat dihapus jika masih ada engineer yang terdaftar pada perusahaan tersebut.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

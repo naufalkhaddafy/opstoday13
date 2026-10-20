@@ -51,16 +51,78 @@ class LeaveController extends Controller
     {
         $validated = $request->validated();
         
-        // If engineer, force user_id to their own and status to approved as per new requirement
+        $isSelfRequest = false;
+
+        // If engineer, force user_id to their own
         if ($request->user()->hasRole(RoleName::Engineer->value)) {
             $validated['user_id'] = $request->user()->id;
-            $validated['status'] = 'approved'; 
+            $isSelfRequest = true;
         } else {
-            // Admins can create approved leaves directly
+            // Admins/SPV
+            if (!isset($validated['user_id']) || $validated['user_id'] == $request->user()->id) {
+                $validated['user_id'] = $request->user()->id;
+                $isSelfRequest = true;
+            }
+        }
+
+        if ($isSelfRequest) {
+            if ($validated['type'] === 'cuti') {
+                $validated['status'] = 'pending';
+            } else {
+                $validated['status'] = 'approved';
+            }
+        } else {
+            // Admins creating for someone else can bypass approval
             $validated['status'] = $validated['status'] ?? 'approved';
         }
 
-        $this->leaves->create($validated);
+        $leave = $this->leaves->create($validated);
+        $leave->load('user.company');
+
+        // Generate Approval Workflow if status is pending
+        if ($leave->status === 'pending' && $leave->user && $leave->user->company) {
+            $rule = $leave->user->company->resolveLeaveApprovalRule($leave->user->group_id);
+            $approverIds = $rule['approver_ids'] ?? [];
+
+            if (!empty($approverIds)) {
+                $workflowType = $rule['workflow_type'] ?? 'parallel';
+                $requirement = $rule['requirement'] ?? 'any';
+                $isSequential = $workflowType === 'sequential' && $requirement !== 'any';
+
+                foreach ($approverIds as $index => $approverId) {
+                    // Sequential step 2+ starts as 'waiting' — not visible until previous step is approved
+                    $isDownstreamSequential = $isSequential && $index > 0;
+
+                    \App\Models\UserLeaveApproval::create([
+                        'user_leave_id' => $leave->id,
+                        'approver_id'   => $approverId,
+                        'status'        => $isDownstreamSequential ? 'waiting' : 'pending',
+                        'step_order'    => $isSequential ? ($index + 1) : 1,
+                    ]);
+
+                    // Notify: parallel → all, any-requirement → all, sequential → only step 1
+                    if (!$isDownstreamSequential) {
+                        $approverUser = \App\Models\User::find($approverId);
+                        if ($approverUser) {
+                            \App\Jobs\SendLeaveNotificationJob::dispatch($leave, 'new_request', $approverUser);
+                        }
+                    }
+                }
+            }
+        } else if ($leave->status === 'approved' && $isSelfRequest && $leave->user && $leave->user->company && $leave->type !== 'cuti') {
+            // Auto approved (sakit/izin): just send info notification to all approvers
+            $rule = $leave->user->company->resolveLeaveApprovalRule($leave->user->group_id);
+            $approverIds = $rule['approver_ids'] ?? [];
+
+            if (!empty($approverIds)) {
+                foreach ($approverIds as $approverId) {
+                    $approverUser = \App\Models\User::find($approverId);
+                    if ($approverUser) {
+                        \App\Jobs\SendLeaveNotificationJob::dispatch($leave, 'auto_approved_info', $approverUser);
+                    }
+                }
+            }
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Pengajuan cuti berhasil dibuat.']);
 

@@ -28,6 +28,7 @@ class SettingSeeder extends Seeder
             ['group' => 'Scheduler', 'key' => 'sync_attendance_interval', 'value' => '1', 'type' => 'integer', 'description' => 'Interval sinkronisasi absensi (menit)'],
             ['group' => 'Scheduler', 'key' => 'sync_completed_tickets_cron', 'value' => '0 6,18 * * *', 'type' => 'string', 'description' => 'Cron interval sinkronisasi tiket completed'],
             ['group' => 'Scheduler', 'key' => 'sync_sharepoint_initiatives_cron', 'value' => '0 * * * *', 'type' => 'string', 'description' => 'Cron interval sinkronisasi SharePoint Initiatives'],
+            ['group' => 'Scheduler', 'key' => 'leave_reminders_cron', 'value' => '0 9 * * *', 'type' => 'string', 'description' => 'Jadwal reminder approval cuti pending lebih dari 24 jam'],
 
             // AI Configuration Group
             ['group' => 'AI Integrations', 'key' => 'ai_backfill_days', 'value' => '30', 'type' => 'integer', 'description' => 'Batas waktu (hari) untuk proses Backfill AI'],

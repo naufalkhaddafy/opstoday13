@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft, Settings, MonitorSmartphone, Bot } from 'lucide-react';
+import { BookOpen, FolderGit2, LayoutGrid, Users, Building, CalendarClock, CalendarRange, TerminalSquare, Ticket as TicketIcon, Activity, ArrowLeft, Settings, MonitorSmartphone, Bot, CheckCircle2 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -42,6 +42,11 @@ const rosterItems: NavItem[] = [
         title: 'Leave Requests',
         href: '/leaves',
         icon: CalendarRange,
+    },
+    {
+        title: 'Leave Approvals',
+        href: '/admin/leave-approvals',
+        icon: CheckCircle2,
     },
     {
         title: 'Attendance Overview',
@@ -124,6 +129,8 @@ const systemLogItems: NavItem[] = [
 export function AppSidebar() {
     const { auth, app_version } = usePage().props as any;
     const isSuperAdmin = auth?.user?.role === 'super_admin';
+    const isSpv = auth?.user?.role === 'supv';
+    const isSpvOrSuperAdmin = isSuperAdmin || isSpv;
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -136,8 +143,11 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={dashboardItems} title="Main" />
-                <NavMain items={rosterItems} title="Operational" />
-                {(isSuperAdmin || auth?.user?.role === 'supv') && (
+                <NavMain
+                    items={rosterItems.filter((item) => item.title !== 'Leave Approvals' || isSpvOrSuperAdmin)}
+                    title="Operational"
+                />
+                {isSpvOrSuperAdmin && (
                     <NavMain
                         items={managementItems.filter(item => isSuperAdmin || item.title === 'Account Verification' || item.title === 'Holidays' || item.title === 'Users')}
                         title="Master Data Management"

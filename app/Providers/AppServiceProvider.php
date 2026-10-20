@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Repositories\Contracts\FingerprintClientInterface;
+use App\Repositories\Contracts\LeaveApprovalRepositoryInterface;
+use App\Repositories\Eloquent\LeaveApprovalRepository;
 use App\Repositories\Contracts\SihepiTicketClientInterface;
 use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
 use App\Repositories\Contracts\TicketRepositoryInterface;
@@ -72,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(LeaveApprovalRepositoryInterface::class, LeaveApprovalRepository::class);
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(CompanyRepositoryInterface::class, CompanyRepository::class);
         $this->app->bind(ShiftRepositoryInterface::class, ShiftRepository::class);

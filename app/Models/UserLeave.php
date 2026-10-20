@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
@@ -54,6 +55,14 @@ class UserLeave extends Model
     {
         return $query->where('start_date', '<=', $date)
             ->where('end_date', '>=', $date);
+    }
+
+    /**
+     * @return HasMany<UserLeaveApproval, $this>
+     */
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(UserLeaveApproval::class);
     }
 
     public function getActivitylogOptions(): LogOptions

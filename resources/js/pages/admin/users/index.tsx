@@ -169,7 +169,7 @@ export default function UserIndex({ users, companies, groups, roles, filters, pa
                             <div className="relative w-full sm:max-w-sm">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Cari nama, email, atau ID karyawan..."
+                                    placeholder="Cari nama, email, atau ID engineer..."
                                     className="pl-8 w-full"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}

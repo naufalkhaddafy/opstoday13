@@ -11,7 +11,7 @@ class UserLeaveRepository implements UserLeaveRepositoryInterface
 {
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $query = UserLeave::query()->with('user');
+        $query = UserLeave::query()->with(['user.company', 'user.group', 'approvals.approver']);
 
         if ($userId = Arr::get($filters, 'user_id')) {
             $query->where('user_id', $userId);

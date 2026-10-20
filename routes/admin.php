@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ActiveSessionController;
+use App\Http\Controllers\Admin\LeaveApprovalController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])
@@ -21,6 +22,9 @@ Route::middleware(['auth', 'verified'])
         Route::get('roster/export', RosterExportController::class)->name('roster.export');
         Route::post('roster/exceptions', [RosterExceptionController::class, 'store'])->name('roster.exceptions.store');
         Route::delete('roster/exceptions', [RosterExceptionController::class, 'destroy'])->name('roster.exceptions.destroy');
+        Route::get('leave-approvals', [LeaveApprovalController::class, 'index'])->name('leave-approvals.index');
+        Route::post('leave-approvals/{approval}/approve', [LeaveApprovalController::class, 'approve'])->middleware('throttle:10,1')->name('leave-approvals.approve');
+        Route::post('leave-approvals/{approval}/reject', [LeaveApprovalController::class, 'reject'])->middleware('throttle:10,1')->name('leave-approvals.reject');
     });
 
 Route::middleware(['auth', 'verified', 'role:super_admin|supv'])
@@ -37,6 +41,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|supv'])
         Route::get('users/{user}/tickets/export', [UserController::class, 'ticketsExport'])->name('users.tickets.export');
         Route::get('pool-accounts', [UserController::class, 'poolAccounts'])->name('pool-accounts.index');
         Route::resource('users', UserController::class);
+
     });
 
 Route::middleware(['auth', 'verified', 'role:super_admin'])
@@ -46,6 +51,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::resource('companies', CompanyController::class);
         Route::resource('groups', GroupController::class);
         Route::resource('shifts', ShiftController::class);
+
         Route::get('schedule-logs', [ScheduleLogController::class, 'index'])->name('schedule-logs.index');
         Route::get('schedule-logs/{id}', [ScheduleLogController::class, 'show'])->name('schedule-logs.show');
         Route::get('activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
