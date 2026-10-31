@@ -74,7 +74,7 @@ export function StickyFilterBar({
                 </div>
 
                 {/* Tabs row */}
-                <div className="flex-1 flex overflow-x-auto hide-scrollbar sm:border-none border-b border-border/40 pb-1 sm:pb-0">
+                <div className="min-w-0 flex-1 flex items-center gap-3 overflow-x-auto hide-scrollbar sm:border-none border-b border-border/40 pb-1 sm:pb-0">
                     <div className="flex bg-muted/50 rounded-md p-0.5 whitespace-nowrap min-w-max mx-auto sm:mx-0">
                         <span className="text-muted-foreground/40 text-sm">•</span>
                         <div className="flex bg-muted/50 rounded-md p-0.5">
@@ -99,7 +99,7 @@ export function StickyFilterBar({
                         </div>
                     </div>
                     {selectedCompany && (
-                        <span className="text-sm font-bold text-[#1B5E20] dark:text-emerald-400">
+                        <span className="shrink-0 whitespace-nowrap text-sm font-bold leading-none text-[#1B5E20] dark:text-emerald-400">
                             {selectedCompany}
                         </span>
                     )}

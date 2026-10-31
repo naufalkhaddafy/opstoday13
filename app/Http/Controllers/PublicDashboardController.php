@@ -13,7 +13,7 @@ use Carbon\CarbonImmutable;
 use App\Models\Setting;
 use App\Models\SharePointData;
 use App\Exports\DashboardExport;
-use Illuminate\Http\Request;
+use App\Http\Requests\DashboardFilterRequest;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,7 +29,7 @@ class PublicDashboardController extends Controller
     /**
      * Dashboard publik (tanpa login): ringkasan kehadiran & operasional tiket IT.
      */
-    public function index(Request $request, ShiftAssignmentResolver $shiftResolver): Response
+    public function index(DashboardFilterRequest $request, ShiftAssignmentResolver $shiftResolver): Response
     {
         $timezone = config('app.timezone');
         $today = CarbonImmutable::now($timezone)->startOfDay();
@@ -63,8 +63,7 @@ class PublicDashboardController extends Controller
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir', 'desc');
         $status = $request->input('status');
-        $workGroupInput = $request->input('work_group');
-        $workGroup = $workGroupInput && $workGroupInput !== 'all' ? $workGroupInput : null;
+        $workGroup = $request->validated('work_group');
 
         return Inertia::render(
             'public-dashboard',
@@ -103,7 +102,7 @@ class PublicDashboardController extends Controller
                     'slaHighTicketLoad' => (int) (Setting::where('key', 'sla_high_ticket_load')->value('value') ?? 10),
                     'defaults' => [
                         'company_id' => null,
-                        'work_group' => null,
+                        'work_group' => [],
                         'date_from' => $today->toDateString(),
                         'date_to' => $today->toDateString(),
                         'monthld' => $today->month,
@@ -118,7 +117,7 @@ class PublicDashboardController extends Controller
         );
     }
 
-    public function export(Request $request)
+    public function export(DashboardFilterRequest $request)
     {
         set_time_limit(300);
 
@@ -146,6 +145,6 @@ class PublicDashboardController extends Controller
         $status = $request->input('status');
 
         $fileName = 'dashboard-export-' . $dateFrom->format('Y-m-d') . '-to-' . $dateTo->format('Y-m-d') . '.xlsx';
-        return (new DashboardExport($dateFrom, $dateTo, $companyId, $search, $status))->download($fileName);
+        return (new DashboardExport($dateFrom, $dateTo, $companyId, $search, $status, $request->validated('work_group'), $request->input('sort_by'), $request->input('sort_dir', 'desc')))->download($fileName);
     }
 }

@@ -16,6 +16,7 @@
                 Date Range: {{ $dateFrom->format('d M Y') }} - {{ $dateTo->format('d M Y') }} | Exported At: {{ now()->format('d M Y H:i:s') }}
             </td>
         </tr>
+        @include('exports.public_dashboard.partials.work_group_filter', ['columns' => 4])
         <tr>
             <td colspan="4" style="height: 10px;"></td> <!-- Spacer -->
         </tr>

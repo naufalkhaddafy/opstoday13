@@ -55,7 +55,7 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
             // If all filters match defaults, navigate to clean URL '/'
             const isDefault =
                 !companyId &&
-                !workGroup &&
+                workGroup.length === 0 &&
                 dateFrom === filters.defaults.date_from &&
                 dateTo === filters.defaults.date_to &&
                 leaderboardMonth === filters.defaults.monthld &&
@@ -79,7 +79,7 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
                 return;
             }
 
-            const params: Record<string, string> = {
+            const params: Record<string, string | string[]> = {
                 date_from: dateFrom,
                 date_to: dateTo,
                 monthld: String(leaderboardMonth),
@@ -88,7 +88,7 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
             if (companyId) {
                 params.company_id = String(companyId);
             }
-            if (workGroup) {
+            if (workGroup.length > 0) {
                 params.work_group = workGroup;
             }
             if (search) {
@@ -156,9 +156,14 @@ export function useDashboardFilters(filters: DashboardFilters, companies: Compan
         if (filters.date_from) params.set('date_from', filters.date_from);
         if (filters.date_to) params.set('date_to', filters.date_to);
         if (filters.company_id) params.set('company_id', String(filters.company_id));
-        if (filters.work_group) params.set('work_group', filters.work_group);
+        filters.work_group.forEach((group) => params.append('work_group[]', group));
         if (filters.search) params.set('search', filters.search);
         if (filters.status) params.set('status', filters.status);
+        if (filters.sort_by) {
+            params.set('sort_by', filters.sort_by);
+        }
+
+        params.set('sort_dir', filters.sort_dir);
 
         window.location.href = `/export?${params.toString()}`;
 

@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v1.7.1] - 2026-10-31
 
+### Added
+
+- **Multiple Work Group Selection**: Added a searchable checkbox dropdown with Apply and Clear actions. Dashboard ticket, attendance, and analytics queries now support selecting multiple work groups, while existing single-group URLs remain supported.
+- **Export Filter Summary**: Added the selected work group names to the header of all three export sheets. Exports without a group selection display `All work groups`.
+
 ### Fixed
 
 - **Public Dashboard Export Timeout**: Reduced spreadsheet styling overhead by writing ticket details directly to the worksheet in batches of 1,000 rows and applying borders to the data range instead of parsing borders on every HTML cell. Preserved summary sections, ticket columns, and duration formatting.
 - **Export Execution Limit**: Increased the PHP execution limit to 300 seconds specifically for Public Dashboard exports, allowing more time for queries and multi-sheet workbook generation.
 - **Spreadsheet Formula Handling**: Exported ticket values beginning with `=` as text to prevent them from being interpreted as formulas.
+- **Dashboard Export Filters**: Passed selected work groups to all three export sheets, applied ticket search and status filters to ticket summaries and issue statistics, and preserved the selected ticket sorting in exports.
+- **Sticky Company Alignment**: Centered the company name alongside the sticky dashboard tabs and kept it on one line with horizontal scrolling on smaller screens.
 
 ### Changed
 

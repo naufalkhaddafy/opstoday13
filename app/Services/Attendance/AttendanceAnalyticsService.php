@@ -14,7 +14,7 @@ class AttendanceAnalyticsService
     /**
      * @return Collection<int, array>
      */
-    public function getDisciplineLeaderboard(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId, ?string $workGroup = null): Collection
+    public function getDisciplineLeaderboard(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId, string|array|null $workGroup = null): Collection
     {
         $query = AttendanceDay::query()
             ->with('user:id,name,employee_id,company_id')
@@ -26,7 +26,7 @@ class AttendanceAnalyticsService
 
         if ($workGroup) {
             $query->whereHas('user.group', function ($gq) use ($workGroup) {
-                $gq->where('name', $workGroup);
+                $gq->whereIn('name', (array) $workGroup);
             });
         }
 
@@ -105,7 +105,7 @@ class AttendanceAnalyticsService
     /**
      * @return array<string, int>
      */
-    public function getLateTrend(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId, ?string $workGroup = null): array
+    public function getLateTrend(CarbonImmutable $dateFrom, CarbonImmutable $dateTo, ?int $companyId, string|array|null $workGroup = null): array
     {
         $query = AttendanceDay::query()
             ->whereBetween('work_date', [$dateFrom->toDateString(), $dateTo->toDateString()])
@@ -117,7 +117,7 @@ class AttendanceAnalyticsService
 
         if ($workGroup) {
             $query->whereHas('user.group', function ($gq) use ($workGroup) {
-                $gq->where('name', $workGroup);
+                $gq->whereIn('name', (array) $workGroup);
             });
         }
 

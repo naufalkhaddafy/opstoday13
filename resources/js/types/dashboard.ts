@@ -119,7 +119,7 @@ export type CompanyOption = { id: number; name: string };
 
 export type DashboardFilters = {
     company_id: number | null;
-    work_group: string | null;
+    work_group: string[];
     date_from: string;
     date_to: string;
     monthld: number;
@@ -131,7 +131,7 @@ export type DashboardFilters = {
     slaHighTicketLoad: number;
     defaults: {
         company_id: number | null;
-        work_group: string | null;
+        work_group: string[];
         date_from: string;
         date_to: string;
         monthld: number;

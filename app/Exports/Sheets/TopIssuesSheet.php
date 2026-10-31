@@ -5,17 +5,20 @@ namespace App\Exports\Sheets;
 use App\Repositories\Contracts\TicketDashboardRepositoryInterface;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithTitle;
 
-class TopIssuesSheet implements FromView, WithTitle, ShouldAutoSize
+class TopIssuesSheet implements FromView, ShouldAutoSize, WithTitle
 {
     private $dateFrom;
+
     private $dateTo;
+
     private $companyId;
+
     private $companyName;
 
-    public function __construct($dateFrom, $dateTo, $companyId, $companyName = null)
+    public function __construct($dateFrom, $dateTo, $companyId, $companyName = null, private array $workGroups = [], private ?string $search = null, private ?string $status = null)
     {
         $this->dateFrom = $dateFrom;
         $this->dateTo = $dateTo;
@@ -26,25 +29,34 @@ class TopIssuesSheet implements FromView, WithTitle, ShouldAutoSize
     public function view(): View
     {
         $repo = app(TicketDashboardRepositoryInterface::class);
-        
+
         // Trending keywords based on AI Predictions
         $aiTrends = $repo->getTrendingKeywords(
             $this->dateFrom,
             $this->dateTo,
             $this->companyId,
-            null
+            null,
+            $this->workGroups,
+            $this->search,
+            $this->status
         );
-        
+
         // Tickets by Work Group (Standard Categories)
         $workGroups = $repo->getTicketsByWorkGroup(
             $this->dateFrom,
             $this->dateTo,
-            $this->companyId
+            $this->companyId,
+            $this->workGroups,
+            $this->search,
+            $this->status
         );
         $globalStats = $repo->globalStats(
             $this->dateFrom,
             $this->dateTo,
-            $this->companyId
+            $this->companyId,
+            $this->workGroups,
+            $this->search,
+            $this->status
         );
 
         $stats = [
@@ -60,6 +72,7 @@ class TopIssuesSheet implements FromView, WithTitle, ShouldAutoSize
             'dateFrom' => $this->dateFrom,
             'dateTo' => $this->dateTo,
             'companyName' => $this->companyName,
+            'selectedWorkGroups' => $this->workGroups,
         ]);
     }
 

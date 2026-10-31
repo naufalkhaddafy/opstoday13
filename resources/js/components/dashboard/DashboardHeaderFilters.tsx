@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { WorkGroupMultiSelect } from '@/components/dashboard/WorkGroupMultiSelect';
 import { Button } from '@/components/ui/button';
 import { Download, SlidersHorizontal, X, Building2, CalendarClock, TicketIcon, RefreshCw, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -51,7 +52,7 @@ export function DashboardHeaderFilters({
 
     const isFiltered =
         filters.company_id !== filters.defaults.company_id ||
-        filters.work_group !== filters.defaults.work_group ||
+        filters.work_group.length > 0 ||
         filters.date_from !== filters.defaults.date_from ||
         filters.date_to !== filters.defaults.date_to ||
         filters.search !== filters.defaults.search ||
@@ -66,7 +67,7 @@ export function DashboardHeaderFilters({
     const handleReset = () => {
         onApply({
             company_id: null,
-            work_group: null,
+            work_group: [],
             date_from: filters.defaults.date_from,
             date_to: filters.defaults.date_to,
             search: null,
@@ -176,25 +177,14 @@ export function DashboardHeaderFilters({
 
                         {/* Work Group */}
                         <div className="space-y-2">
-                            <Label htmlFor="work-group-filter" className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <Label className="flex items-center gap-2 text-sm font-medium text-foreground">
                                 <Building2 className="h-4 w-4 text-[#2E7D32]" /> Work Group
                             </Label>
-                            <Select
-                                value={filters.work_group ? filters.work_group : 'all'}
-                                onValueChange={(value) => onApply({ work_group: value === 'all' ? null : value })}
-                            >
-                                <SelectTrigger id="work-group-filter" className="h-10 w-full">
-                                    <SelectValue placeholder="All work groups" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All work groups</SelectItem>
-                                    {workGroups.map((group) => (
-                                        <SelectItem key={group} value={group}>
-                                            {group}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <WorkGroupMultiSelect
+                                options={workGroups}
+                                value={filters.work_group}
+                                onChange={(groups) => onApply({ work_group: groups })}
+                            />
                         </div>
 
                         {/* Date range */}

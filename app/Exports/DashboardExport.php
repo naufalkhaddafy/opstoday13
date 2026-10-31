@@ -11,12 +11,16 @@ class DashboardExport implements WithMultipleSheets
     use Exportable;
 
     private $dateFrom;
+
     private $dateTo;
+
     private $companyId;
+
     private $search;
+
     private $status;
 
-    public function __construct($dateFrom, $dateTo, $companyId, $search, $status)
+    public function __construct($dateFrom, $dateTo, $companyId, $search, $status, private array $workGroups = [], private ?string $sortBy = null, private string $sortDir = 'desc')
     {
         $this->dateFrom = $dateFrom;
         $this->dateTo = $dateTo;
@@ -33,9 +37,9 @@ class DashboardExport implements WithMultipleSheets
         }
 
         return [
-            new Sheets\TicketsSheet($this->dateFrom, $this->dateTo, $this->companyId, $this->search, $this->status, $companyName),
-            new Sheets\AttendanceSheet($this->dateFrom, $this->dateTo, $this->companyId, $companyName),
-            new Sheets\TopIssuesSheet($this->dateFrom, $this->dateTo, $this->companyId, $companyName),
+            new Sheets\TicketsSheet($this->dateFrom, $this->dateTo, $this->companyId, $this->search, $this->status, $companyName, $this->workGroups, $this->sortBy, $this->sortDir),
+            new Sheets\AttendanceSheet($this->dateFrom, $this->dateTo, $this->companyId, $companyName, $this->workGroups),
+            new Sheets\TopIssuesSheet($this->dateFrom, $this->dateTo, $this->companyId, $companyName, $this->workGroups, $this->search, $this->status),
         ];
     }
 }

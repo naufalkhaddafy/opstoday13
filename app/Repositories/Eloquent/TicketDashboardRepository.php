@@ -29,7 +29,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?string $sortBy = null,
         ?string $sortDir = 'desc',
         ?string $status = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
     ): LengthAwarePaginator {
         $query = $this->scopedTicketQuery($dateFrom, $dateTo, $companyId, $workGroup, $search, $status)
             ->with(['assignedUser:id,name,employee_id', 'assignmentHistories.fromUser']);
@@ -55,7 +55,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): Collection {
@@ -66,7 +66,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             ->when($companyId, fn (Builder $query) => $query->where('company_id', $companyId))
             ->when($workGroup, function ($q) use ($workGroup) {
                 $q->whereHas('group', function ($gq) use ($workGroup) {
-                    $gq->where('name', $workGroup);
+                    $gq->whereIn('name', (array) $workGroup);
                 });
             })
             ->with(['sharepointInitiatives' => function ($query) use ($dateFrom, $dateTo) {
@@ -132,7 +132,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             })
             ->when($workGroup, function ($query) use ($workGroup) {
                 $query->whereHas('assignedUser.group', function ($gq) use ($workGroup) {
-                    $gq->where('name', $workGroup);
+                    $gq->whereIn('name', (array) $workGroup);
                 });
             })
             ->selectRaw('assigned_to_user_id, YEAR(completed_date) as yr, MONTH(completed_date) as mo, COUNT(*) as total')
@@ -217,7 +217,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): array {
@@ -248,7 +248,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): Builder {
@@ -259,7 +259,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
             })
             ->when($workGroup, function (Builder $query) use ($workGroup) {
                 $query->whereHas('assignedUser.group', function (Builder $gq) use ($workGroup) {
-                    $gq->where('name', $workGroup);
+                    $gq->whereIn('name', (array) $workGroup);
                 });
             })
             ->whereRaw(self::TICKET_DATE_EXPRESSION.' BETWEEN ? AND ?', [
@@ -295,7 +295,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         ?int $companyId = null,
         ?int $responseSlaSeconds = null,
         ?float $resolutionSlaHours = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): array {
@@ -387,7 +387,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateTo,
         ?int $companyId = null,
         ?int $limit = 10,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): array {
@@ -435,7 +435,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): array {
@@ -459,7 +459,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): array {
@@ -683,7 +683,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
         CarbonImmutable $dateFrom,
         CarbonImmutable $dateTo,
         ?int $companyId = null,
-        ?string $workGroup = null,
+        string|array|null $workGroup = null,
         ?string $search = null,
         ?string $status = null,
     ): array {
@@ -719,7 +719,7 @@ class TicketDashboardRepository implements TicketDashboardRepositoryInterface
                         ->from('users as u')
                         ->join('groups as g', 'u.group_id', '=', 'g.id')
                         ->whereColumn('u.id', 'tickets.assigned_to_user_id')
-                        ->where('g.name', $workGroup);
+                        ->whereIn('g.name', (array) $workGroup);
                 });
             })
             ->selectRaw('

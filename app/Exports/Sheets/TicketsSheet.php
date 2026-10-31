@@ -33,7 +33,7 @@ class TicketsSheet extends DefaultValueBinder implements FromView, WithColumnWid
 
     private $companyName;
 
-    public function __construct($dateFrom, $dateTo, $companyId, $search, $status, $companyName = null)
+    public function __construct($dateFrom, $dateTo, $companyId, $search, $status, $companyName = null, private array $workGroups = [], private ?string $sortBy = null, private string $sortDir = 'desc')
     {
         $this->dateFrom = $dateFrom;
         $this->dateTo = $dateTo;
@@ -53,21 +53,28 @@ class TicketsSheet extends DefaultValueBinder implements FromView, WithColumnWid
             $this->companyId,
             100000,
             $this->search,
-            null,
-            'desc',
-            $this->status
+            $this->sortBy,
+            $this->sortDir,
+            $this->status,
+            $this->workGroups
         );
 
         $stats = $repo->globalStats(
             $this->dateFrom,
             $this->dateTo,
-            $this->companyId
+            $this->companyId,
+            $this->workGroups,
+            $this->search,
+            $this->status
         );
 
         $engineers = $repo->engineerSummaries(
             $this->dateFrom,
             $this->dateTo,
-            $this->companyId
+            $this->companyId,
+            $this->workGroups,
+            $this->search,
+            $this->status
         );
 
         $this->tickets = $paginator->items();
@@ -78,6 +85,7 @@ class TicketsSheet extends DefaultValueBinder implements FromView, WithColumnWid
             'dateFrom' => $this->dateFrom,
             'dateTo' => $this->dateTo,
             'companyName' => $this->companyName,
+            'selectedWorkGroups' => $this->workGroups,
         ]);
     }
 
