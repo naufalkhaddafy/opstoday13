@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.7.1] - 2026-10-31
+
+### Fixed
+
+- **Public Dashboard Export Timeout**: Reduced spreadsheet styling overhead by writing ticket details directly to the worksheet in batches of 1,000 rows and applying borders to the data range instead of parsing borders on every HTML cell. Preserved summary sections, ticket columns, and duration formatting.
+- **Export Execution Limit**: Increased the PHP execution limit to 300 seconds specifically for Public Dashboard exports, allowing more time for queries and multi-sheet workbook generation.
+- **Spreadsheet Formula Handling**: Exported ticket values beginning with `=` as text to prevent them from being interpreted as formulas.
+
+### Changed
+
+- **Ticket Sheet Column Widths**: Replaced automatic column sizing with fixed widths to avoid scanning every ticket cell during export.
+
 ## [v1.7.0] - 2026-10-20
 
 ### Added

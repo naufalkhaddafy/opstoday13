@@ -120,6 +120,8 @@ class PublicDashboardController extends Controller
 
     public function export(Request $request)
     {
+        set_time_limit(300);
+
         $timezone = config('app.timezone');
         $today = CarbonImmutable::now($timezone)->startOfDay();
 

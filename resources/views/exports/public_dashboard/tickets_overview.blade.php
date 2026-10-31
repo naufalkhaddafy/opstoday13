@@ -123,21 +123,7 @@
             </tr>
         </thead>
         <tbody>
-        @foreach($tickets as $ticket)
-            @php
-                $isNonStandard = preg_match('/[a-zA-Z]/', (string) $ticket->ticket_no);
-            @endphp
-            <tr>
-                <td style="border: 1px solid #d1d5db;">{{ $ticket->ticket_no }}</td>
-                <td style="border: 1px solid #d1d5db;">{{ $ticket->status?->value ?? (is_string($ticket->status) ? $ticket->status : (string) $ticket->status) }}</td>
-                <td style="border: 1px solid #d1d5db;">{{ $ticket->requested_for }}</td>
-                <td style="border: 1px solid #d1d5db;">{{ $ticket->assignedUser ? $ticket->assignedUser->name : $ticket->assigned_to_name }}</td>
-                <td style="border: 1px solid #d1d5db;">{{ $ticket->api_creation_date ? $ticket->api_creation_date->format('Y-m-d') : '' }}</td>
-                <td style="border: 1px solid #d1d5db;">{{ $ticket->completed_date ? $ticket->completed_date->format('Y-m-d') : '' }}</td>
-                <td style="border: 1px solid #d1d5db; text-align: right;">{{ (!$isNonStandard && $ticket->response_time_seconds !== null) ? formatDurationExcel($ticket->response_time_seconds) : '-' }}</td>
-                <td style="border: 1px solid #d1d5db; text-align: right;">{{ (!$isNonStandard && is_numeric($ticket->resolution_time)) ? formatHoursExcel((float)$ticket->resolution_time) : '-' }}</td>
-            </tr>
-        @endforeach
+
         </tbody>
     </table>
 </body>
